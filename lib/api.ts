@@ -36,7 +36,9 @@ export default api;
 
 // Helper function for fetch-style API calls
 export async function fetchAPI(endpoint: string, options?: RequestInit) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token = typeof window !== "undefined"
+    ? (localStorage.getItem("alumni_token") ?? localStorage.getItem("token"))
+    : null;
   
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}${endpoint}`,

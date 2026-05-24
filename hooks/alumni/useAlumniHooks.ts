@@ -84,6 +84,7 @@ export function useMyPresences() {
 // Kirim qr_token yang didapat dari scan kamera
 export function useScanQR() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (qr_token: string) =>
       fetchAPI("/alumni/presences/scan", {
@@ -91,9 +92,9 @@ export function useScanQR() {
         body: JSON.stringify({ qr_token }),
       }),
     onSuccess: () => {
-      // Refresh riwayat presensi setelah scan berhasil
       queryClient.invalidateQueries({ queryKey: ["my-presences"] });
       queryClient.invalidateQueries({ queryKey: ["my-recommendations"] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-events"] });
     },
   });
 }

@@ -11,7 +11,7 @@ export default function AlumniHeader() {
       <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold">
-            {user?.first_name?.[0] ?? "A"}
+            {user?.name?.[0] ?? "A"}
           </div>
           <div>
             <p className="text-xs text-slate-500">Dashboard</p>

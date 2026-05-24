@@ -5,7 +5,7 @@ import type { LoginPayload, AuthResponse } from "@/types/auth";
 import type { AxiosError } from "axios";
 
 async function loginFn(payload: LoginPayload): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>("/alumni/login", payload);
+  const { data } = await api.post<AuthResponse>("/auth/login", payload);
   return data;
 }
 
@@ -15,15 +15,16 @@ export function useLogin() {
   return useMutation<AuthResponse, AxiosError<{ message: string }>, LoginPayload>(
     {
       mutationFn: loginFn,
-      onSuccess: (data, variables) => {
-        // Persist token
+      onSuccess: (response, variables) => {
+        // Persist token from response.data.access_token
+        const token = response.data.access_token;
         if (variables.remember) {
-          localStorage.setItem("alumni_token", data.token);
+          localStorage.setItem("alumni_token", token);
         } else {
-          sessionStorage.setItem("alumni_token", data.token);
-          localStorage.setItem("alumni_token", data.token);
+          sessionStorage.setItem("alumni_token", token);
+          localStorage.setItem("alumni_token", token);
         }
-        router.push("/dashboard");
+        router.push("/alumni/dashboard");
       },
     }
   );

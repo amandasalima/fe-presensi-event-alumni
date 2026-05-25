@@ -5,12 +5,15 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  name: string;
+  first_name: string;
+  last_name: string;
   gender: string;
   email: string;
   phone: string;
-  angkatan: string;
+  graduation_year: string;
+  birth_date: string;
   password: string;
+  password_confirmation: string;
 }
 
 export interface AuthResponse {
@@ -26,15 +29,19 @@ export interface AuthResponse {
 export interface AlumniUser {
   id: number;
   name: string;
+  first_name?: string;
+  last_name?: string;
   gender: string;
   email: string;
   phone: string;
   angkatan: string | null;
+  graduation_year?: string | null;
+  tanggal_lahir?: string | null;
+  birth_date?: string | null;
   role: string;
   email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
-  tanggal_lahir?: string | null;
 }
 
 export interface AdminUser {

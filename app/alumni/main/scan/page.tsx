@@ -137,7 +137,6 @@ export default function ScanPage() {
           });
         },
         () => {
-          // Error kecil saat QR belum terbaca tidak perlu ditampilkan
         }
       );
 

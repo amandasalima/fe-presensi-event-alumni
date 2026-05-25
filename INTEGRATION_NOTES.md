@@ -4,12 +4,15 @@
 
 ### 1. Update Types (`types/auth.ts`)
 - Mengubah struktur `RegisterPayload` untuk menyesuaikan dengan API:
-  - `name` (string) - nama lengkap
+  - `first_name` (string) - nama depan
+  - `last_name` (string) - nama belakang
   - `gender` (string) - jenis kelamin
   - `email` (string)
   - `phone` (string)
-  - `angkatan` (string) - tahun angkatan
+  - `graduation_year` (string) - tahun kelulusan
+  - `birth_date` (string) - tanggal lahir (format: YYYY-MM-DD)
   - `password` (string)
+  - `password_confirmation` (string)
 
 - Mengubah struktur `AuthResponse` untuk menyesuaikan dengan response API:
   ```typescript
@@ -25,10 +28,10 @@
   ```
 
 - Mengubah struktur `AlumniUser`:
-  - `name` (bukan `first_name` dan `last_name`)
-  - `gender`
-  - `angkatan` (bukan `graduation_year`)
-  - Menambahkan field: `role`, `email_verified_at`, `tanggal_lahir`
+  - `first_name` dan `last_name` (bukan `name`)
+  - `graduation_year` (bukan `angkatan`)
+  - `birth_date` (bukan `tanggal_lahir`)
+  - Menambahkan field: `role`, `email_verified_at`
 
 ### 2. Update Hooks
 
@@ -40,7 +43,12 @@
 #### `hooks/alumni/useRegister.ts`
 - Endpoint: `/auth/register` (sebelumnya `/alumni/register`)
 - Mengambil token dari `response.data.access_token`
-- Redirect ke `/alumni/dashboard`
+- Redirect ke `/alumni/main/dashboard`
+- **Transformasi Data**: Mengirim field lama dan baru untuk backward compatibility:
+  - `name` = `first_name + last_name` (field lama)
+  - `tanggal_lahir` = `birth_date` (field lama)
+  - `angkatan` = `graduation_year` (field lama)
+  - Plus semua field baru (`first_name`, `last_name`, `birth_date`, `graduation_year`)
 
 ### 3. Update Components
 
@@ -66,7 +74,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 
 ### Register
 - **URL**: `POST http://localhost:8000/api/auth/register`
-- **Payload**:
+- **Payload yang Dikirim** (field lama untuk kompatibilitas dengan backend):
   ```json
   {
     "name": "Ahmad Fauzi",
@@ -74,16 +82,30 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
     "email": "ahmad@example.com",
     "phone": "081234567890",
     "angkatan": "2015",
-    "password": "password123"
+    "tanggal_lahir": "1995-05-15",
+    "password": "password123",
+    "password_confirmation": "password123",
+    "role": "alumni"
   }
   ```
+  **Note:** 
+  - Frontend menggunakan UI dengan `first_name` + `last_name` terpisah
+  - Tapi mengirim sebagai `name` (gabungan) ke backend
+  - Field `graduation_year` di UI → dikirim sebagai `angkatan`
+  - Field `birth_date` di UI → dikirim sebagai `tanggal_lahir`
+  - **Ini untuk kompatibilitas dengan backend yang belum diupdate**
+  
 - **Response**:
   ```json
   {
     "success": true,
     "message": "Registration successful",
     "data": {
-      "user": { ... },
+      "user": {
+        "name": "Ahmad Fauzi",
+        "email": "ahmad@example.com",
+        ...
+      },
       "access_token": "token_string",
       "token_type": "Bearer"
     }

@@ -23,10 +23,11 @@ export default function AlumniHeader() {
   const { data: profile, isLoading: loadingProfile } = useMyProfile();
   const { data: notifications = [] } = useMyNotifications();
 
-  const firstName = profile?.first_name ?? "Alumni";
-  const fullName = profile
-    ? `${profile.first_name} ${profile.last_name}`
-    : "Alumni";
+  // Support both old and new field names
+  const firstName = profile?.first_name ?? profile?.name?.split(' ')[0] ?? "Alumni";
+  const fullName = profile?.first_name 
+    ? `${profile.first_name} ${profile.last_name}` 
+    : profile?.name ?? "Alumni";
   const email = profile?.email ?? "";
 
   const unreadNotif = notifications.filter(
@@ -87,7 +88,7 @@ export default function AlumniHeader() {
             onClose={() => setShowProfile(false)}
             onProfile={() => {
               setShowProfile(false);
-              router.push("/alumni/profil");
+              router.push("/alumni/main/profil");
             }}
             onLogout={handleLogout}
           />

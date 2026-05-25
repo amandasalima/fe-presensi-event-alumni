@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Calendar, Phone } from "lucide-react";
 import { useLogin } from "@/hooks/alumni/useLogin";
 import { useRegister } from "@/hooks/alumni/useRegister";
-import { useGoogleAuth } from "@/hooks/alumni/useGoogleAuth";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
+import SuccessModal from "./SuccessModal";
 
 type Tab = "masuk" | "daftar";
 
@@ -135,16 +136,21 @@ function LoginForm() {
 
 /* ─── Register Form ───────────────────────────────────────── */
 function RegisterForm() {
-  const currentYear = new Date().getFullYear();
+  const router = useRouter();
   const [form, setForm] = useState<RegisterPayload>({
-    name: "",
+    first_name: "",
+    last_name: "",
     gender: "Laki-laki",
     email: "",
     phone: "",
-    angkatan: String(currentYear),
+    graduation_year: "",
+    birth_date: "",
     password: "",
+    password_confirmation: "",
   });
   const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { mutate: register, isPending, error } = useRegister();
 
   const serverError =
@@ -153,26 +159,56 @@ function RegisterForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    register(form);
+    console.log("Register payload:", form);
+    register(form, {
+      onSuccess: () => {
+        setShowSuccessModal(true);
+      },
+    });
+  }
+
+  function handleSuccessModalClose() {
+    setShowSuccessModal(false);
+    router.push("/alumni/login");
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {serverError && (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-100">
-          {serverError}
+          <p className="font-semibold mb-1">{serverError}</p>
+          {Object.keys(fieldErrors).length > 0 && (
+            <ul className="list-disc list-inside text-xs mt-2 space-y-1">
+              {Object.entries(fieldErrors).map(([field, errors]) => (
+                <li key={field}>
+                  <strong>{field}:</strong> {(errors as string[]).join(", ")}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
-      <Field label="Nama Lengkap" error={fieldErrors.name?.[0]}>
-        <Input
-          type="text"
-          placeholder="masukkan nama lengkap Anda"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Nama Depan" error={fieldErrors.first_name?.[0]}>
+          <Input
+            type="text"
+            placeholder="Ahmad"
+            value={form.first_name}
+            onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+            required
+          />
+        </Field>
+        <Field label="Nama Belakang" error={fieldErrors.last_name?.[0]}>
+          <Input
+            type="text"
+            placeholder="Fauzi"
+            value={form.last_name}
+            onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+            required
+          />
+        </Field>
+      </div>
 
       <Field label="Jenis Kelamin" error={fieldErrors.gender?.[0]}>
         <select
@@ -213,19 +249,34 @@ function RegisterForm() {
         </div>
       </Field>
 
-      <Field label="Angkatan" error={fieldErrors.angkatan?.[0]}>
+      <Field label="Angkatan (Tahun Lulus)" error={fieldErrors.graduation_year?.[0]}>
+        <select
+          value={form.graduation_year}
+          onChange={(e) => setForm({ ...form, graduation_year: e.target.value })}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+          required
+        >
+          <option value="">Pilih Tahun Lulus</option>
+          {Array.from({ length: 50 }, (_, i) => {
+            const year = new Date().getFullYear() - i;
+            return (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            );
+          })}
+        </select>
+      </Field>
+
+      <Field label="Tanggal Lahir" error={fieldErrors.birth_date?.[0]}>
         <div className="relative">
           <Input
-            type="text"
-            placeholder="2015"
-            value={form.angkatan}
-            onChange={(e) => setForm({ ...form, angkatan: e.target.value })}
+            type="date"
+            value={form.birth_date}
+            onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
             required
-            className="pr-11"
-          />
-          <Calendar
-            size={18}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            max={new Date().toISOString().split('T')[0]}
+            className="pr-4"
           />
         </div>
       </Field>
@@ -234,10 +285,11 @@ function RegisterForm() {
         <div className="relative">
           <Input
             type={showPass ? "text" : "password"}
-            placeholder="masukkan kata sandi Anda"
+            placeholder="masukkan kata sandi Anda (min. 8 karakter)"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
+            minLength={8}
             className="pr-11"
           />
           <button
@@ -246,6 +298,27 @@ function RegisterForm() {
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
           >
             {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+      </Field>
+
+      <Field label="Konfirmasi Kata Sandi" error={fieldErrors.password_confirmation?.[0]}>
+        <div className="relative">
+          <Input
+            type={showConfirmPass ? "text" : "password"}
+            placeholder="ulangi kata sandi Anda"
+            value={form.password_confirmation}
+            onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
+            required
+            minLength={8}
+            className="pr-11"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPass(!showConfirmPass)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+          >
+            {showConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
       </Field>
@@ -260,6 +333,14 @@ function RegisterForm() {
       >
         {isPending ? "Memproses..." : "Daftar"}
       </button>
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        title="Registrasi Berhasil!"
+        message="Akun Anda telah berhasil dibuat. Silakan login dengan email dan password yang telah Anda daftarkan."
+        onClose={handleSuccessModalClose}
+      />
     </form>
   );
 }
@@ -270,7 +351,8 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
   const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
 
   return (
-    <div className="min-h-screen w-full flex items-start justify-center px-4 pt-10 pb-8"
+    <div 
+      className="min-h-screen w-full flex items-start justify-center px-4 pt-10 pb-8"
       style={{
         background:
           "linear-gradient(160deg, #ecfdf5 0%, #d1fae5 40%, #a7f3d0 100%)",

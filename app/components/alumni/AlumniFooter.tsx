@@ -15,7 +15,7 @@ export default function AlumniFooter() {
         <div className="bg-white border border-gray-100 rounded-3xl shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-6 py-3">
           <div className="grid grid-cols-3 items-center">
             <button
-              onClick={() => router.push("/alumni/dashboard")}
+              onClick={() => router.push("/alumni/main/dashboard")}
               className={`flex flex-col items-center gap-1 py-1.5 rounded-xl transition-colors ${
                 isActive("/alumni/dashboard")
                   ? "text-teal-600"
@@ -31,7 +31,7 @@ export default function AlumniFooter() {
             <div />
 
             <button
-              onClick={() => router.push("/alumni/events")}
+              onClick={() => router.push("/alumni/main/events")}
               className={`flex flex-col items-center gap-1 py-1.5 rounded-xl transition-colors ${
                 isActive("/alumni/events")
                   ? "text-teal-600"
@@ -47,7 +47,7 @@ export default function AlumniFooter() {
         </div>
 
         <button
-          onClick={() => router.push("/alumni/scan")}
+          onClick={() => router.push("/alumni/main/scan")}
           className="absolute left-1/2 -top-8 -translate-x-1/2 flex flex-col items-center gap-1 text-teal-700 active:scale-95 transition-transform"
         >
           <span

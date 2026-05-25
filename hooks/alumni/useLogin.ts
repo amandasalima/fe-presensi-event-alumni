@@ -24,7 +24,7 @@ export function useLogin() {
           sessionStorage.setItem("alumni_token", token);
           localStorage.setItem("alumni_token", token);
         }
-        router.push("/alumni/dashboard");
+        router.push("/alumni/main/dashboard");
       },
     }
   );

@@ -5,29 +5,36 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  first_name: string;
-  last_name: string;
+  name: string;
+  gender: string;
   email: string;
-  graduation_year: number;
   phone: string;
+  angkatan: string;
   password: string;
 }
 
 export interface AuthResponse {
-  token: string;
-  user: AlumniUser;
+  success: boolean;
+  message: string;
+  data: {
+    user: AlumniUser;
+    access_token: string;
+    token_type: string;
+  };
 }
 
 export interface AlumniUser {
   id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
+  gender: string;
   email: string;
-  graduation_year: number;
   phone: string;
-  avatar?: string;
+  angkatan: string | null;
+  role: string;
+  email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
+  tanggal_lahir?: string | null;
 }
 
 export interface AdminUser {

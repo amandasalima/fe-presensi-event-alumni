@@ -20,7 +20,7 @@ export function useGoogleAuth() {
     {
       mutationFn: googleAuthFn,
       onSuccess: (data) => {
-        localStorage.setItem("alumni_token", data.token);
+        localStorage.setItem("alumni_token", data.data.access_token);
         router.push("/dashboard");
       },
     }

@@ -5,7 +5,7 @@ import type { RegisterPayload, AuthResponse } from "@/types/auth";
 import type { AxiosError } from "axios";
 
 async function registerFn(payload: RegisterPayload): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>("/alumni/register", payload);
+  const { data } = await api.post<AuthResponse>("/auth/register", payload);
   return data;
 }
 
@@ -18,9 +18,11 @@ export function useRegister() {
     RegisterPayload
   >({
     mutationFn: registerFn,
-    onSuccess: (data) => {
-      localStorage.setItem("alumni_token", data.token);
-      router.push("/dashboard");
+    onSuccess: (response) => {
+      // Persist token from response.data.access_token
+      const token = response.data.access_token;
+      localStorage.setItem("alumni_token", token);
+      router.push("/alumni/dashboard");
     },
   });
 }

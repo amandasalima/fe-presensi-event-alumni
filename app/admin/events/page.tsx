@@ -1,29 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import {
 	useEvents,
 	useCreateEvent,
 	useDeleteEvent,
+	useEventCategories,
 	type Event,
 } from "@/hooks/admin/useEvents";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function parseDate(datetime: string) {
-	const d = new Date(datetime);
+function parseEventDate(event: Event) {
+	const monthNames = [
+		"Jan",
+		"Feb",
+		"Mar",
+		"Apr",
+		"Mei",
+		"Jun",
+		"Jul",
+		"Agu",
+		"Sep",
+		"Okt",
+		"Nov",
+		"Des",
+	];
 
-	if (Number.isNaN(d.getTime())) {
+	const formatDate = (dateValue: string) => {
+		const d = new Date(dateValue);
+
+		if (Number.isNaN(d.getTime())) {
+			return "-";
+		}
+
+		const day = String(d.getDate()).padStart(2, "0");
+		const month = monthNames[d.getMonth()];
+		const year = d.getFullYear();
+
+		return `${day} - ${month} - ${year}`;
+	};
+
+	const formatTime = (timeValue?: string) => {
+		if (!timeValue) return "-";
+
+		return timeValue.slice(0, 5);
+	};
+
+	if (event.event_date) {
 		return {
-			date: "-",
-			time: "-",
+			date: formatDate(event.event_date),
+			time: formatTime(event.start_time),
+		};
+	}
+
+	if (event.event_datetime) {
+		return {
+			date: formatDate(event.event_datetime),
+			time: formatTime(event.start_time),
 		};
 	}
 
 	return {
-		date: d.toISOString().split("T")[0],
-		time: d.toTimeString().slice(0, 5),
+		date: "-",
+		time: "-",
 	};
 }
 
@@ -77,9 +118,14 @@ function CreateEventModal({
 	onClose: () => void;
 }) {
 	const createEvent = useCreateEvent();
+	const {
+		data: categories = [],
+		isLoading: isCategoryLoading,
+		isError: isCategoryError,
+	} = useEventCategories();
 
 	const [form, setForm] = useState({
-		category_id: 1,
+		category_id: 0,
 		event_title: "",
 		description: "",
 		location: "",
@@ -88,22 +134,33 @@ function CreateEventModal({
 		end_time: "",
 	});
 
+	useEffect(() => {
+		if (categories.length > 0 && form.category_id === 0) {
+			setForm((prev) => ({
+				...prev,
+				category_id: categories[0].id,
+			}));
+		}
+	}, [categories, form.category_id]);
+
 	if (!isOpen) return null;
 
 	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+		e: React.ChangeEvent<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>,
 	) => {
 		const { name, value } = e.target;
 
 		setForm((prev) => ({
 			...prev,
-			[name]: value,
+			[name]: name === "category_id" ? Number(value) : value,
 		}));
 	};
 
 	const resetForm = () => {
 		setForm({
-			category_id: 1,
+			category_id: categories[0]?.id ?? 0,
 			event_title: "",
 			description: "",
 			location: "",
@@ -115,6 +172,10 @@ function CreateEventModal({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+
+		if (!form.category_id) {
+			return;
+		}
 
 		createEvent.mutate(form, {
 			onSuccess: () => {
@@ -149,15 +210,36 @@ function CreateEventModal({
 						<label className="block text-sm font-medium text-gray-700 mb-1">
 							Kategori
 						</label>
-						<input
-							type="text"
-							value="Alumni"
-							disabled
-							className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
-						/>
-						<p className="text-xs text-gray-400 mt-1">
-							Category ID dikirim sebagai 1 untuk sementara.
-						</p>
+
+						<select
+							name="category_id"
+							value={form.category_id}
+							onChange={handleChange}
+							disabled={isCategoryLoading || categories.length === 0}
+							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+							required
+						>
+							{isCategoryLoading && (
+								<option value={0}>Memuat kategori...</option>
+							)}
+
+							{!isCategoryLoading && categories.length === 0 && (
+								<option value={0}>Kategori belum tersedia</option>
+							)}
+
+							{!isCategoryLoading &&
+								categories.map((category) => (
+									<option key={category.id} value={category.id}>
+										{category.category_name}
+									</option>
+								))}
+						</select>
+
+						{isCategoryError && (
+							<p className="text-xs text-red-500 mt-1">
+								Gagal memuat kategori event.
+							</p>
+						)}
 					</div>
 
 					<div>
@@ -268,7 +350,12 @@ function CreateEventModal({
 
 						<button
 							type="submit"
-							disabled={createEvent.isPending}
+							disabled={
+								createEvent.isPending ||
+								isCategoryLoading ||
+								categories.length === 0 ||
+								!form.category_id
+							}
 							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
 						>
 							{createEvent.isPending ? (
@@ -295,8 +382,7 @@ function EventCardUpcoming({
 	event: Event;
 	onDelete: (id: number) => void;
 }) {
-	const { date, time } = parseDate(event.event_datetime);
-
+	const { date, time } = parseEventDate(event);
 	return (
 		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
 			<div className="flex items-start justify-between mb-3">
@@ -350,8 +436,7 @@ function EventCardDone({
 	event: Event;
 	onDelete: (id: number) => void;
 }) {
-	const { date, time } = parseDate(event.event_datetime);
-
+	const { date, time } = parseEventDate(event);
 	const pct =
 		event.quota && event.registered !== undefined
 			? Math.round((event.registered / event.quota) * 100)

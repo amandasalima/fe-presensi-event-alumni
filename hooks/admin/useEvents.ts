@@ -41,6 +41,12 @@ export interface EventPayload {
 	end_time: string;
 }
 
+export interface EventCategory {
+	id: number;
+	category_name: string;
+	description: string;
+}
+
 type RawEvent = {
 	id: number;
 	event_title: string;
@@ -75,6 +81,12 @@ type EventsData = {
 };
 
 type EventsResponse = ApiResponse<EventsData>;
+
+type CategoriesData = {
+	categories: EventCategory[];
+};
+
+type CategoriesResponse = ApiResponse<CategoriesData>;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -212,6 +224,22 @@ export function useEvent(id: number) {
 			return normalizeEvent(response.data);
 		},
 		enabled: !!id,
+	});
+}
+
+// ─── GET kategori event admin ────────────────────────────────────────────────
+
+export function useEventCategories() {
+	return useQuery({
+		queryKey: ["admin-event-categories"],
+		queryFn: async () => {
+			const response = (await fetchAPI(
+				"/admin/event-categories",
+			)) as CategoriesResponse;
+
+			return response.data.categories ?? [];
+		},
+		staleTime: 5 * 60 * 1000,
 	});
 }
 

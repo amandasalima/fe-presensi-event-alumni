@@ -88,6 +88,30 @@ type CategoriesData = {
 
 type CategoriesResponse = ApiResponse<CategoriesData>;
 
+export interface EventQrCode {
+	id: number;
+	event_id: number;
+	qr_token: string;
+	qr_code_image: string;
+	qr_code_url: string;
+	valid_from: string;
+	timeout_minutes: number;
+	is_active: boolean;
+	created_at: string;
+	expired_at: string;
+	is_valid_now: boolean;
+	is_expired: boolean;
+}
+
+type EventQrCodeResponse = ApiResponse<{
+	qr_code: EventQrCode;
+}>;
+
+export interface GenerateQrPayload {
+	valid_from: string;
+	timeout_minutes: number;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildQueryParams(
@@ -311,13 +335,40 @@ export function useGenerateQR() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (eventId: number) => {
-			return (await fetchAPI(`/admin/events/${eventId}/generate-qr`, {
+		mutationFn: async ({
+			eventId,
+			data,
+		}: {
+			eventId: number;
+			data: GenerateQrPayload;
+		}) => {
+			return (await fetchAPI(`/admin/events/${eventId}/qr/generate`, {
 				method: "POST",
-			})) as ApiResponse<unknown>;
+				body: JSON.stringify(data),
+			})) as EventQrCodeResponse;
 		},
-		onSuccess: () => {
+		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+			queryClient.invalidateQueries({
+				queryKey: ["admin-event-qr", variables.eventId],
+			});
 		},
+	});
+}
+
+// ─── GET QR code untuk event ────────────────────────────────────────────────
+
+export function useEventQr(eventId: number | null) {
+	return useQuery({
+		queryKey: ["admin-event-qr", eventId],
+		queryFn: async () => {
+			const response = (await fetchAPI(
+				`/admin/events/${eventId}/qr`,
+			)) as EventQrCodeResponse;
+
+			return response.data.qr_code;
+		},
+		enabled: !!eventId,
+		retry: false,
 	});
 }

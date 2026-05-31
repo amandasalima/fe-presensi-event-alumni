@@ -36,6 +36,19 @@ function formatTime(timeStr: string) {
   return timeStr;
 }
 
+function getMessage(value: unknown) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "message" in value &&
+    typeof value.message === "string"
+  ) {
+    return value.message;
+  }
+
+  return null;
+}
+
 export default function AlumniEventDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -65,7 +78,7 @@ export default function AlumniEventDetailPage() {
           Maaf, data event tidak berhasil dimuat atau event tersebut tidak terdaftar di sistem.
         </p>
         <button
-          onClick={() => router.push("/alumni/events")}
+          onClick={() => router.push("/alumni/main/events")}
           className="bg-teal-600 text-white text-xs font-semibold px-4 py-2 rounded-xl"
         >
           Kembali ke Daftar Event
@@ -79,15 +92,15 @@ export default function AlumniEventDetailPage() {
   const handleRegister = () => {
     setMessage(null);
     registerMutation.mutate(id, {
-      onSuccess: (res: any) => {
+      onSuccess: (res: unknown) => {
         setMessage({
-          text: res?.message || "Berhasil mendaftar event! Sampai jumpa di lokasi 🎉",
+          text: getMessage(res) || "Berhasil mendaftar event! Sampai jumpa di lokasi.",
           type: "success",
         });
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         setMessage({
-          text: err.message || "Gagal mendaftar ke event ini.",
+          text: getMessage(err) || "Gagal mendaftar ke event ini.",
           type: "error",
         });
       },
@@ -97,15 +110,15 @@ export default function AlumniEventDetailPage() {
   const handleCancel = () => {
     setMessage(null);
     cancelMutation.mutate(id, {
-      onSuccess: (res: any) => {
+      onSuccess: (res: unknown) => {
         setMessage({
-          text: res?.message || "Pendaftaran event berhasil dibatalkan.",
+          text: getMessage(res) || "Pendaftaran event berhasil dibatalkan.",
           type: "success",
         });
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         setMessage({
-          text: err.message || "Gagal membatalkan pendaftaran.",
+          text: getMessage(err) || "Gagal membatalkan pendaftaran.",
           type: "error",
         });
       },
@@ -119,7 +132,7 @@ export default function AlumniEventDetailPage() {
     <div className="space-y-5 pb-6">
       {/* Tombol Back */}
       <button
-        onClick={() => router.push("/alumni/events")}
+        onClick={() => router.push("/alumni/main/events")}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm font-semibold transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -129,15 +142,15 @@ export default function AlumniEventDetailPage() {
       {/* Konten Utama Detail */}
       <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
         {/* Cover Pattern / Gradient */}
-        <div className="h-28 bg-gradient-to-br from-teal-500 to-emerald-600 px-6 flex items-end pb-4">
-          <span className="text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
+        <div className="h-28 bg-gradient-to-br from-teal-500 to-emerald-600 px-4 sm:px-6 flex items-end pb-4">
+          <span className="min-w-0 max-w-full text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
             <Tag className="w-3 h-3" />
-            {event?.category?.category_name || "Kategori"}
+            <span className="truncate">{event?.category?.category_name || "Kategori"}</span>
           </span>
         </div>
 
         {/* Info Event */}
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           <div className="space-y-2">
             <h1 className="text-xl font-bold text-gray-800 leading-snug">
               {event?.event_title}

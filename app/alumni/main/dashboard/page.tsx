@@ -16,8 +16,8 @@ interface Event {
   event_title: string;
   event_datetime: string;
   location: string;
-  category: string;
-  status_event: "Mendatang" | "Selesai";
+  category?: unknown;
+  status_event?: string;
 }
 
 interface Presence {
@@ -214,7 +214,7 @@ export default function AlumniDashboard() {
             </span>
 
             <button
-              onClick={() => router.push("/alumni/rekomendasi")}
+              onClick={() => router.push("/alumni/main/events")}
               className="text-xs text-green-200 hover:text-white transition-colors"
             >
               Lihat Semua →
@@ -252,7 +252,7 @@ export default function AlumniDashboard() {
 
           <button
             onClick={() =>
-              router.push(`/alumni/events/${topRecommendation.id}`)
+              router.push(`/alumni/main/events/${topRecommendation.id}`)
             }
             className="w-full bg-white text-teal-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-green-50 transition-colors"
           >
@@ -267,7 +267,7 @@ export default function AlumniDashboard() {
           <h2 className="font-bold text-gray-900">Event Hari Ini</h2>
 
           <button
-            onClick={() => router.push("/alumni/events")}
+            onClick={() => router.push("/alumni/main/events")}
             className="text-xs text-teal-600"
           >
             Lihat Semua →
@@ -306,6 +306,7 @@ export default function AlumniDashboard() {
 
                   <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                     <Icon name="clock" className="w-3.5 h-3.5" />
+                    <span>
                     {new Date(event.event_datetime).toLocaleTimeString(
                       "id-ID",
                       {
@@ -313,6 +314,7 @@ export default function AlumniDashboard() {
                         minute: "2-digit",
                       }
                     )}
+                    </span>
                     <span className="mx-1">·</span>
                     <Icon name="pin" className="w-3.5 h-3.5" />
                     <span className="truncate">{event.location}</span>
@@ -320,7 +322,7 @@ export default function AlumniDashboard() {
                 </div>
 
                 <button
-                  onClick={() => router.push(`/alumni/events/${event.id}`)}
+                  onClick={() => router.push(`/alumni/main/events/${event.id}`)}
                   className="text-xs border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg flex-shrink-0"
                 >
                   Detail
@@ -337,7 +339,7 @@ export default function AlumniDashboard() {
           <h2 className="font-bold text-gray-900">Event Mendatang</h2>
 
           <button
-            onClick={() => router.push("/alumni/events")}
+            onClick={() => router.push("/alumni/main/events")}
             className="text-xs text-teal-600"
           >
             Lihat Semua →
@@ -372,7 +374,7 @@ export default function AlumniDashboard() {
                 </div>
 
                 <button
-                  onClick={() => router.push(`/alumni/events/${event.id}`)}
+                  onClick={() => router.push(`/alumni/main/events/${event.id}`)}
                   className="text-xs text-white px-4 py-2 rounded-xl font-medium flex-shrink-0"
                   style={{
                     background:
@@ -393,7 +395,7 @@ export default function AlumniDashboard() {
           <h2 className="font-bold text-gray-900">Riwayat Kehadiran</h2>
 
           <button
-            onClick={() => router.push("/alumni/riwayat")}
+            onClick={() => router.push("/alumni/main/riwayat")}
             className="text-xs text-teal-600"
           >
             Lihat Semua →

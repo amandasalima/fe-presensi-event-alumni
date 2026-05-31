@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { CheckCircle } from "lucide-react";
 
 interface SuccessModalProps {
@@ -15,9 +16,9 @@ export default function SuccessModal({
   message,
   onClose,
 }: SuccessModalProps) {
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
         <div className="flex flex-col items-center text-center">
@@ -44,6 +45,7 @@ export default function SuccessModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -200,7 +200,7 @@ function Toast({
 }) {
   return (
     <div
-      className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all ${
+      className={`fixed bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all ${
         type === "success" ? "bg-emerald-500" : "bg-red-500"
       }`}
     >
@@ -212,6 +212,25 @@ function Toast({
       {message}
     </div>
   );
+}
+
+function getApiMessage(value: unknown) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "response" in value &&
+    value.response &&
+    typeof value.response === "object" &&
+    "data" in value.response &&
+    value.response.data &&
+    typeof value.response.data === "object" &&
+    "message" in value.response.data &&
+    typeof value.response.data.message === "string"
+  ) {
+    return value.response.data.message;
+  }
+
+  return null;
 }
 
 /* ─── Main Profile Page ───────────────────────────────────── */
@@ -229,9 +248,7 @@ export default function AlumniProfilePage() {
 
   const [draft, setDraft] = useState<UpdateProfilePayload>({});
 
-  const serverError =
-    (error as any)?.response?.data?.message ??
-    (isError ? "Gagal memuat profil" : null);
+  const serverError = getApiMessage(error) ?? (isError ? "Gagal memuat profil" : null);
 
   function showToast(type: "success" | "error", message: string) {
     setToast({ type, message });
@@ -267,9 +284,8 @@ export default function AlumniProfilePage() {
         setDraft({});
         showToast("success", "Profil berhasil diperbarui!");
       },
-      onError: (err: any) => {
-        const msg =
-          err?.response?.data?.message ?? "Gagal menyimpan perubahan";
+      onError: (err: unknown) => {
+        const msg = getApiMessage(err) ?? "Gagal menyimpan perubahan";
         showToast("error", msg);
       },
     });
@@ -352,8 +368,8 @@ export default function AlumniProfilePage() {
   return (
     <div className="space-y-5">
       {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-800 leading-tight">
             Profil Saya
           </h1>

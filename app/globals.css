@@ -24,3 +24,90 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+html,
+body {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.qr-scanner-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -52px 90px rgba(2, 6, 23, 0.34);
+}
+
+.qr-scanner-reader,
+.qr-scanner-reader > div,
+.qr-scanner-reader #qr-reader__scan_region {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+}
+
+.qr-scanner-reader {
+  position: absolute !important;
+  inset: 0;
+  overflow: hidden;
+  background: #020617;
+}
+
+.qr-scanner-reader video,
+.qr-scanner-reader canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.qr-scanner-reader video {
+  transform: scaleX(-1);
+}
+
+.qr-scanner-reader img {
+  object-fit: cover !important;
+}
+
+.qr-scanner-reader #qr-reader__dashboard,
+.qr-scanner-reader #qr-reader__header_message {
+  display: none !important;
+}
+
+.qr-scanner-sweep {
+  top: 0;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(52, 211, 153, 0.22) 48%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.95) 50%, transparent 100%);
+  filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.72));
+  animation: qr-scanner-sweep 2.35s ease-in-out infinite alternate;
+}
+
+.qr-scanner-sweep::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(110, 231, 183, 0.95);
+}
+
+@keyframes qr-scanner-sweep {
+  from {
+    top: 0;
+    transform: translateY(-50%);
+  }
+
+  to {
+    top: 100%;
+    transform: translateY(-50%);
+  }
+}

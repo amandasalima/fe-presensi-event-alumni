@@ -51,14 +51,22 @@ api.interceptors.response.use(
 	(response) => response,
 	(error) => {
 		if (error.response?.status === 401 && typeof window !== "undefined") {
-			clearAuthStorage();
-
 			const currentPath = window.location.pathname;
 
-			if (currentPath.startsWith("/admin")) {
-				window.location.href = "/admin/login";
-			} else {
-				window.location.href = "/login";
+			// Don't redirect if already on login/register pages
+			// Let the form handle showing credential error messages
+			const isAuthPage =
+				currentPath.includes("/login") ||
+				currentPath.includes("/register");
+
+			if (!isAuthPage) {
+				clearAuthStorage();
+
+				if (currentPath.startsWith("/admin")) {
+					window.location.href = "/admin/login";
+				} else {
+					window.location.href = "/alumni/login";
+				}
 			}
 		}
 

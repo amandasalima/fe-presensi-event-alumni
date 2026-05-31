@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import SearchInput from "@/app/components/SearchInput";
 import {
 	useEvents,
 	useCreateEvent,
@@ -134,14 +135,7 @@ function CreateEventModal({
 		end_time: "",
 	});
 
-	useEffect(() => {
-		if (categories.length > 0 && form.category_id === 0) {
-			setForm((prev) => ({
-				...prev,
-				category_id: categories[0].id,
-			}));
-		}
-	}, [categories, form.category_id]);
+	const selectedCategoryId = form.category_id || categories[0]?.id || 0;
 
 	if (!isOpen) return null;
 
@@ -173,16 +167,22 @@ function CreateEventModal({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!form.category_id) {
+		if (!selectedCategoryId) {
 			return;
 		}
 
-		createEvent.mutate(form, {
-			onSuccess: () => {
-				resetForm();
-				onClose();
+		createEvent.mutate(
+			{
+				...form,
+				category_id: selectedCategoryId,
 			},
-		});
+			{
+				onSuccess: () => {
+					resetForm();
+					onClose();
+				},
+			},
+		);
 	};
 
 	return (
@@ -213,7 +213,7 @@ function CreateEventModal({
 
 						<select
 							name="category_id"
-							value={form.category_id}
+							value={selectedCategoryId}
 							onChange={handleChange}
 							disabled={isCategoryLoading || categories.length === 0}
 							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
@@ -348,16 +348,16 @@ function CreateEventModal({
 							Batal
 						</button>
 
-						<button
-							type="submit"
-							disabled={
-								createEvent.isPending ||
-								isCategoryLoading ||
-								categories.length === 0 ||
-								!form.category_id
-							}
-							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
-						>
+							<button
+								type="submit"
+								disabled={
+									createEvent.isPending ||
+									isCategoryLoading ||
+									categories.length === 0 ||
+									!selectedCategoryId
+								}
+								className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
+							>
 							{createEvent.isPending ? (
 								<>
 									<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -599,16 +599,14 @@ export default function KelolEventPage() {
 							</button>
 						</div>
 
-						<div className="flex items-center bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 gap-2">
-							<span className="text-gray-400">🔍</span>
-							<input
-								type="text"
-								placeholder="Cari event..."
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								className="bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400"
-							/>
-						</div>
+						<SearchInput
+							leadingIcon={<span className="text-gray-400">🔍</span>}
+							wrapperClassName="flex items-center bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 gap-2"
+							placeholder="Cari event..."
+							value={search}
+							onValueChange={setSearch}
+							className="bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400"
+						/>
 
 						{isLoading && (
 							<div className="space-y-6">

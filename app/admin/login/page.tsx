@@ -165,15 +165,15 @@ const AdminLogin = () => {
 								</div>
 							</li>
 						))}
-					</ul>
-					<blockquote className="mt-8 text-cyan-100 italic text-sm">
-						"Barangsiapa yang memudahkan urusan orang lain, maka Allah akan
-						memudahkan urusannya di dunia dan akhirat" - HR. Muslim
-					</blockquote>
+						</ul>
+						<blockquote className="mt-8 text-cyan-100 italic text-sm">
+							&ldquo;Barangsiapa yang memudahkan urusan orang lain, maka Allah akan
+							memudahkan urusannya di dunia dan akhirat&rdquo; - HR. Muslim
+						</blockquote>
+					</div>
 				</div>
-			</div>
 
-			{/* ── Right Panel ── */}
+				{/* ── Right Panel ── */}
 			<div className="w-1/2 flex items-center justify-center bg-white p-16">
 				<div className="w-full max-w-md">
 					{/* Logo */}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import SearchInput from "@/app/components/SearchInput";
 import {
 	useEvents,
 	useGenerateQR,
@@ -307,10 +308,10 @@ export default function GenerateQRPage() {
 	const selectedEvent = events.find((event) => event.id === selectedId) ?? null;
 
 	const displayedQr = generatedQr ?? activeQr ?? null;
+	const displayedQrId = displayedQr?.id ?? null;
 
 	useEffect(() => {
-		if (!selectedId || !displayedQr) {
-			setQrImageObjectUrl(null);
+		if (!selectedId || !displayedQrId) {
 			return;
 		}
 
@@ -356,7 +357,7 @@ export default function GenerateQRPage() {
 				URL.revokeObjectURL(objectUrl);
 			}
 		};
-	}, [selectedId, displayedQr, API_BASE_URL]);
+	}, [selectedId, displayedQrId]);
 
 	const filteredEvents = useMemo(() => {
 		return events;
@@ -365,6 +366,7 @@ export default function GenerateQRPage() {
 	const handleSelectEvent = (event: Event) => {
 		setSelectedId(event.id);
 		setGeneratedQr(null);
+		setQrImageObjectUrl(null);
 	};
 
 	const handleGenerate = () => {
@@ -380,46 +382,11 @@ export default function GenerateQRPage() {
 			},
 			{
 				onSuccess: (response) => {
+					setQrImageObjectUrl(null);
 					setGeneratedQr(response.data.qr_code);
 				},
 			},
 		);
-	};
-
-	const handleDownloadSvg = async () => {
-		if (!selectedId || !selectedEvent) return;
-
-		try {
-			const token = getAuthToken();
-
-			const response = await fetch(
-				`${API_BASE_URL}/admin/events/${selectedId}/qr-image`,
-				{
-					method: "GET",
-					headers: {
-						Accept: "image/svg+xml",
-						...(token ? { Authorization: `Bearer ${token}` } : {}),
-					},
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error("Gagal download QR");
-			}
-
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
-
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `QR-${selectedEvent.event_title}.svg`;
-			link.click();
-
-			URL.revokeObjectURL(url);
-		} catch (error) {
-			console.error(error);
-			alert("Gagal download QR Code");
-		}
 	};
 
 	const isGenerateDisabled =
@@ -473,16 +440,14 @@ export default function GenerateQRPage() {
 									Cari Event
 								</label>
 
-								<div className="flex items-center bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 gap-2">
-									<span className="text-gray-400">🔍</span>
-									<input
-										type="text"
-										placeholder="Cari nama event..."
-										value={search}
-										onChange={(e) => setSearch(e.target.value)}
-										className="bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400"
-									/>
-								</div>
+								<SearchInput
+									leadingIcon={<span className="text-gray-400">🔍</span>}
+									wrapperClassName="flex items-center bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 gap-2"
+									placeholder="Cari nama event..."
+									value={search}
+									onValueChange={setSearch}
+									className="bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400"
+								/>
 							</div>
 
 							{/* Event Select */}
@@ -491,14 +456,15 @@ export default function GenerateQRPage() {
 									Event
 								</label>
 
-								<div className="relative">
-									<select
-										value={selectedId ?? ""}
-										onChange={(e) => {
-											setSelectedId(Number(e.target.value) || null);
-											setGeneratedQr(null);
-										}}
-										disabled={loadingEvents}
+									<div className="relative">
+										<select
+											value={selectedId ?? ""}
+											onChange={(e) => {
+												setSelectedId(Number(e.target.value) || null);
+												setGeneratedQr(null);
+												setQrImageObjectUrl(null);
+											}}
+											disabled={loadingEvents}
 										className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent cursor-pointer disabled:bg-gray-100"
 									>
 										<option value="">Pilih event...</option>

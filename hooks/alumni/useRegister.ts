@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import type { RegisterPayload, AuthResponse } from "@/types/auth";
 import type { AxiosError } from "axios";
@@ -24,21 +23,12 @@ async function registerFn(payload: RegisterPayload): Promise<AuthResponse> {
 }
 
 export function useRegister() {
-  const router = useRouter();
-
   return useMutation<
     AuthResponse,
     AxiosError<{ message: string; errors?: Record<string, string[]> }>,
     RegisterPayload
   >({
     mutationFn: registerFn,
-    onSuccess: (response) => {
-      // Show success message
-      alert("Registrasi berhasil! Silakan login dengan akun Anda.");
-      
-      // Redirect to login page
-      router.push("/alumni/login");
-    },
     onError: (error) => {
       console.error("Register error:", error.response?.data);
     },

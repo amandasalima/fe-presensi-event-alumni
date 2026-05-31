@@ -1,7 +1,6 @@
 "use client";
 
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import queryClient from "@/lib/queryClient";
 
 import AlumniHeader from "@/app/components/alumni/AlumniHeader";
@@ -14,21 +13,17 @@ export default function AlumniLayout({
 }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-100 flex justify-center">
-        <div className="w-full max-w-[430px] bg-gray-50 relative shadow-xl min-h-screen pb-32">
+      <div className="min-h-dvh bg-gray-100 overflow-x-hidden">
+        <div className="w-full min-w-0 bg-gray-50 relative min-h-dvh overflow-x-hidden">
           <AlumniHeader />
 
-          <main className="px-3 pt-5 space-y-5">
+          <main className="w-full px-3 sm:px-4 md:px-6 lg:px-8 pt-[calc(4.75rem+env(safe-area-inset-top))] pb-[calc(8.75rem+env(safe-area-inset-bottom))] space-y-5">
             {children}
           </main>
 
           <AlumniFooter />
         </div>
       </div>
-
-      {process.env.NODE_ENV === "development" && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
     </QueryClientProvider>
   );
 }

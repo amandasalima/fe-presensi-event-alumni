@@ -3,24 +3,13 @@
 import { useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
-import { useAlumni, useCreateAlumni, useUpdateAlumni, useDeleteAlumni } from "@/hooks/admin/useAlumni";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-export interface Alumni {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  graduation_year: string;
-  gender: "Laki-laki" | "Perempuan";
-  created_at: string;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function fullName(a: Alumni) {
-  return `${a.first_name} ${a.last_name}`;
-}
+import SearchInput from "@/app/components/SearchInput";
+import {
+  Alumni,
+  AlumniModalMode,
+  getAlumniFullName,
+  useAlumniManagement,
+} from "@/hooks/admin/useAlumniManagement";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -47,7 +36,7 @@ function TableSkeleton() {
 
 // ─── Modal Tambah / Edit ──────────────────────────────────────────────────────
 interface ModalProps {
-  mode: "tambah" | "edit";
+  mode: AlumniModalMode;
   initial?: Alumni | null;
   onClose: () => void;
   onSubmit: (data: Partial<Alumni>) => void;
@@ -132,54 +121,24 @@ function AlumniModal({ mode, initial, onClose, onSubmit, loading }: ModalProps) 
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function UsersPage() {
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState<"tambah" | "edit" | null>(null);
-  const [selected, setSelected] = useState<Alumni | null>(null);
-
-  // ── TanStack Query ──
-  const { data: alumni = [], isLoading, isError } = useAlumni();
-  const createAlumni = useCreateAlumni();
-  const updateAlumni = useUpdateAlumni();
-  const deleteAlumni = useDeleteAlumni();
-
-  // ── Filter & Stats ──
-  const filtered = alumni.filter((a: Alumni) =>
-    fullName(a).toLowerCase().includes(search.toLowerCase()) ||
-    a.email.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const totalLaki = alumni.filter((a: Alumni) => a.gender === "Laki-laki").length;
-  const totalPerempuan = alumni.filter((a: Alumni) => a.gender === "Perempuan").length;
-  const bulanIni = alumni.filter((a: Alumni) => {
-    const d = new Date(a.created_at);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
-
-  // ── Handlers ──
-  const handleSubmit = (data: Partial<Alumni>) => {
-    if (modal === "tambah") {
-      createAlumni.mutate(data, { onSuccess: () => setModal(null) });
-    } else if (modal === "edit" && selected) {
-      updateAlumni.mutate(
-        { id: selected.id, data },
-        { onSuccess: () => { setModal(null); setSelected(null); } }
-      );
-    }
-  };
-
-  const handleEdit = (a: Alumni) => {
-    setSelected(a);
-    setModal("edit");
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm("Yakin ingin menghapus alumni ini?")) {
-      deleteAlumni.mutate(id);
-    }
-  };
-
-  const isMutating = createAlumni.isPending || updateAlumni.isPending;
+  const {
+    alumni,
+    closeModal,
+    deleteAlumni,
+    filtered,
+    handleDelete,
+    handleEdit,
+    handleSubmit,
+    isError,
+    isLoading,
+    isMutating,
+    modal,
+    openCreateModal,
+    search,
+    selected,
+    setSearch,
+    stats,
+  } = useAlumniManagement();
 
   return (
     <div className="h-screen bg-gray-100 flex overflow-hidden">
@@ -194,9 +153,9 @@ export default function UsersPage() {
           <div className="grid grid-cols-4 gap-6 mb-8">
             {[
               { title: "Total Alumni", value: isLoading ? "..." : alumni.length, desc: "Alumni terdaftar" },
-              { title: "Laki-laki", value: isLoading ? "..." : totalLaki, desc: "Alumni pria" },
-              { title: "Perempuan", value: isLoading ? "..." : totalPerempuan, desc: "Alumni wanita" },
-              { title: "Bulan Ini", value: isLoading ? "..." : bulanIni, desc: "Pendaftar baru" },
+              { title: "Laki-laki", value: isLoading ? "..." : stats.totalLaki, desc: "Alumni pria" },
+              { title: "Perempuan", value: isLoading ? "..." : stats.totalPerempuan, desc: "Alumni wanita" },
+              { title: "Bulan Ini", value: isLoading ? "..." : stats.bulanIni, desc: "Pendaftar baru" },
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-3xl border-2 border-cyan-400 p-7">
                 <p className="text-gray-500 text-lg">{item.title}</p>
@@ -219,7 +178,7 @@ export default function UsersPage() {
                   Export Data
                 </button>
                 <button
-                  onClick={() => setModal("tambah")}
+                  onClick={openCreateModal}
                   className="px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity"
                 >
                   + Tambah Alumni
@@ -229,12 +188,11 @@ export default function UsersPage() {
 
             <div className="p-8">
               {/* Search */}
-              <input
-                type="text"
+              <SearchInput
                 placeholder="Cari nama atau email..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-5 py-4 border rounded-2xl outline-none focus:border-cyan-500 mb-8 text-sm"
+                onValueChange={setSearch}
+                className="w-full px-5 py-4 border rounded-2xl outline-none focus:border-cyan-500 mb-8 text-sm text-gray-800 placeholder-gray-400"
               />
 
               {/* ── Error State ── */}
@@ -278,7 +236,7 @@ export default function UsersPage() {
                                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                                   {user.first_name[0]}
                                 </div>
-                                <span className="font-semibold text-gray-800">{fullName(user)}</span>
+                                <span className="font-semibold text-gray-800">{getAlumniFullName(user)}</span>
                               </div>
                             </td>
                             <td className="p-5 text-gray-500 text-sm">{user.email}</td>
@@ -349,7 +307,7 @@ export default function UsersPage() {
         <AlumniModal
           mode={modal}
           initial={modal === "edit" ? selected : null}
-          onClose={() => { setModal(null); setSelected(null); }}
+          onClose={closeModal}
           onSubmit={handleSubmit}
           loading={isMutating}
         />

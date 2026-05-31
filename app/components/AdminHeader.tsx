@@ -17,7 +17,7 @@ export default function AdminHeader({
           <input
             type="text"
             placeholder="Search Here..."
-            className="bg-transparent outline-none w-full"
+            className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-400"
           />
         </div>
 

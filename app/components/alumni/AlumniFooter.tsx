@@ -10,14 +10,14 @@ export default function AlumniFooter() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-4">
+    <nav className="fixed inset-x-0 bottom-0 z-50 w-full px-3 sm:px-4 md:px-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-[env(safe-area-inset-bottom)]">
       <div className="relative">
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-6 py-3">
+        <div className="bg-white border border-gray-100 rounded-3xl md:rounded-none md:border-x-0 md:border-b-0 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-3 min-[360px]:px-5 sm:px-6 md:px-8 py-2.5 min-[360px]:py-3">
           <div className="grid grid-cols-3 items-center">
             <button
               onClick={() => router.push("/alumni/main/dashboard")}
               className={`flex flex-col items-center gap-1 py-1.5 rounded-xl transition-colors ${
-                isActive("/alumni/dashboard")
+                isActive("/alumni/main/dashboard")
                   ? "text-teal-600"
                   : "text-gray-400"
               }`}
@@ -33,7 +33,7 @@ export default function AlumniFooter() {
             <button
               onClick={() => router.push("/alumni/main/events")}
               className={`flex flex-col items-center gap-1 py-1.5 rounded-xl transition-colors ${
-                isActive("/alumni/events")
+                isActive("/alumni/main/events")
                   ? "text-teal-600"
                   : "text-gray-400"
               }`}
@@ -48,16 +48,16 @@ export default function AlumniFooter() {
 
         <button
           onClick={() => router.push("/alumni/main/scan")}
-          className="absolute left-1/2 -top-8 -translate-x-1/2 flex flex-col items-center gap-1 text-teal-700 active:scale-95 transition-transform"
+          className="absolute left-1/2 -top-7 min-[360px]:-top-8 -translate-x-1/2 flex flex-col items-center gap-1 text-teal-700 active:scale-95 transition-transform"
         >
           <span
-            className="w-16 h-16 rounded-full text-white flex items-center justify-center border-4 border-white"
+            className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 rounded-full text-white flex items-center justify-center border-4 border-white"
             style={{
               background: "linear-gradient(135deg, #3ecf8e 0%, #20b070 100%)",
               boxShadow: "0 8px 24px rgba(32,176,112,0.35)",
             }}
           >
-            <Icon name="qr" className="w-7 h-7" />
+            <Icon name="qr" className="w-6 h-6 min-[360px]:w-7 min-[360px]:h-7" />
           </span>
           <span className="text-[11px] font-semibold leading-none">
             Scan QR

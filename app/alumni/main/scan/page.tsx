@@ -57,6 +57,19 @@ function Icon({
 
 type ScanStatus = "idle" | "scanning" | "success" | "error";
 
+function getMessage(value: unknown) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "message" in value &&
+    typeof value.message === "string"
+  ) {
+    return value.message;
+  }
+
+  return null;
+}
+
 export default function ScanPage() {
   const router = useRouter();
 
@@ -120,10 +133,10 @@ export default function ScanPage() {
           await stopScanner();
 
           scanQR.mutate(decodedText, {
-            onSuccess: (data: any) => {
+            onSuccess: (data: unknown) => {
               setStatus("success");
               setCameraReady(false);
-              setMessage(data?.message || "Presensi berhasil dicatat");
+              setMessage(getMessage(data) || "Presensi berhasil dicatat");
             },
             onError: (error) => {
               setStatus("error");
@@ -173,7 +186,7 @@ export default function ScanPage() {
 
   return (
     <div
-      className="min-h-screen px-4 pt-5 pb-6"
+      className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-5 pb-6"
       style={{
         background:
           "linear-gradient(180deg, #f8fbff 0%, #eef8ff 36%, #d7f3e6 100%)",
@@ -188,23 +201,23 @@ export default function ScanPage() {
           Scan QR Presensi
         </h1>
 
-        <p className="text-sm text-gray-500 mt-2 leading-relaxed px-6">
+        <p className="text-sm text-gray-500 mt-2 leading-relaxed px-2 sm:px-6">
           {message}
         </p>
       </section>
 
       <section className="mt-6">
-        <div className="relative bg-slate-900 rounded-xl overflow-hidden shadow-xl h-[342px] flex items-center justify-center">
-          <div id="qr-reader" className="w-full h-full" />
+        <div className="qr-scanner-shell relative bg-slate-950 rounded-[24px] overflow-hidden shadow-2xl aspect-square w-full flex items-center justify-center border border-white/70">
+          <div id="qr-reader" className="qr-scanner-reader w-full h-full" />
 
           {!cameraReady && (
-            <div className="absolute inset-0 flex items-center justify-center text-slate-600">
+            <div className="absolute inset-0 z-20 flex items-center justify-center text-slate-500 bg-slate-950">
               {status === "success" ? (
-                <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Icon name="check" className="w-9 h-9" />
                 </div>
               ) : status === "error" ? (
-                <div className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-500/30">
                   <Icon name="x" className="w-9 h-9" />
                 </div>
               ) : (
@@ -213,10 +226,18 @@ export default function ScanPage() {
             </div>
           )}
 
-          <div className="absolute top-8 left-8 w-12 h-12 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl" />
-          <div className="absolute top-8 right-8 w-12 h-12 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl" />
-          <div className="absolute bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl" />
-          <div className="absolute bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-emerald-400 rounded-br-xl" />
+          <div className="pointer-events-none absolute inset-0 z-10 bg-slate-950/20" />
+
+          <div className="pointer-events-none absolute inset-x-[12%] inset-y-[12%] z-20 rounded-[28px]">
+            {cameraReady && (
+              <div className="qr-scanner-sweep absolute left-3 right-3 h-12 rounded-full" />
+            )}
+
+            <div className="absolute top-0 left-0 w-12 h-12 sm:w-14 sm:h-14 border-t-[5px] border-l-[5px] border-emerald-400 rounded-tl-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
+            <div className="absolute top-0 right-0 w-12 h-12 sm:w-14 sm:h-14 border-t-[5px] border-r-[5px] border-emerald-400 rounded-tr-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
+            <div className="absolute bottom-0 left-0 w-12 h-12 sm:w-14 sm:h-14 border-b-[5px] border-l-[5px] border-emerald-400 rounded-bl-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
+            <div className="absolute bottom-0 right-0 w-12 h-12 sm:w-14 sm:h-14 border-b-[5px] border-r-[5px] border-emerald-400 rounded-br-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
+          </div>
         </div>
 
         {(status === "idle" || status === "error") && (
@@ -245,7 +266,7 @@ export default function ScanPage() {
 
         {status === "success" && (
           <button
-            onClick={() => router.push("/alumni/riwayat")}
+            onClick={() => router.push("/alumni/main/riwayat")}
             className="mt-5 w-full rounded-2xl py-3.5 font-semibold text-white bg-emerald-600"
           >
             Lihat Riwayat Kehadiran

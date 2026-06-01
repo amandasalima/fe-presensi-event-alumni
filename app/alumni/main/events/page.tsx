@@ -96,6 +96,12 @@ export default function AlumniEventsPage() {
             </div>
           ))}
         </div>
+      ) : events.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center text-gray-400 border border-gray-100 shadow-sm space-y-2">
+          <Calendar className="w-10 h-10 text-gray-300 mx-auto" />
+          <p className="text-sm font-medium">Belum ada event aktif saat ini</p>
+          <p className="text-xs text-gray-400">Silakan periksa kembali nanti untuk melihat event terbaru.</p>
+        </div>
       ) : filteredEvents.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center text-gray-400 border border-gray-100 shadow-sm space-y-2">
           <Calendar className="w-10 h-10 text-gray-300 mx-auto" />

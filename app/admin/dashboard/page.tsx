@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { X } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import { useAlumni } from "@/hooks/admin/useAlumni";
 import { useEvents } from "@/hooks/admin/useEvents";
 import { usePresences } from "@/hooks/admin/usePresences";
+import { useActivityLogs, ActivityLog } from "@/hooks/admin/useActivityLogs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Event {
@@ -66,6 +69,65 @@ function formatDateTime(dateValue?: string | null) {
 		hour: "2-digit",
 		minute: "2-digit",
 	});
+}
+
+function renderLogItem(log: ActivityLog, i: number) {
+	let label = "Aktivitas";
+	let badgeColor = "bg-gray-100 text-gray-700 border-gray-200";
+
+	switch (log.action) {
+		case "login":
+			label = "Login Admin";
+			badgeColor = "bg-blue-50 text-blue-700 border-blue-100";
+			break;
+		case "generate_qr":
+			label = "QR Generated";
+			badgeColor = "bg-teal-50 text-teal-700 border-teal-100";
+			break;
+		case "edit_user":
+			label = "User Updated";
+			badgeColor = "bg-yellow-50 text-yellow-700 border-yellow-100";
+			break;
+		case "delete_user":
+			label = "User Deleted";
+			badgeColor = "bg-red-50 text-red-700 border-red-100";
+			break;
+		case "create_event":
+			label = "Event Created";
+			badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
+			break;
+		case "update_event":
+			label = "Event Updated";
+			badgeColor = "bg-amber-50 text-amber-700 border-amber-100";
+			break;
+		case "delete_event":
+			label = "Event Deleted";
+			badgeColor = "bg-rose-50 text-rose-700 border-rose-100";
+			break;
+		case "toggle_event":
+			label = "Event Status Toggled";
+			badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-100";
+			break;
+	}
+
+	return (
+		<div
+			key={log.id ?? i}
+			className="py-2.5 px-1 border-b border-gray-100 last:border-b-0 flex flex-col gap-0.5"
+		>
+			<div className="flex items-center justify-between gap-2">
+				<span className={`text-[10px] px-2 py-0.5 font-semibold rounded-full border ${badgeColor}`}>
+					{label}
+				</span>
+				<span className="text-[10px] text-gray-400 font-mono">
+					{formatDateTime(log.created_at)}
+				</span>
+			</div>
+			<p className="text-xs text-gray-700 mt-1 leading-normal font-medium">
+				{log.description}
+			</p>
+		</div>
+	);
 }
 
 function getEventDate(event: Event) {
@@ -185,6 +247,8 @@ export default function DashboardPage() {
 	const { data: alumni = [], isLoading: loadingAlumni } = useAlumni();
 	const { data: events = [], isLoading: loadingEvents } = useEvents();
 	const { data: presences = [], isLoading: loadingPresences } = usePresences();
+	const { data: activityLogs = [], isLoading: loadingActivityLogs } = useActivityLogs();
+	const [showAllLogs, setShowAllLogs] = useState(false);
 
 	const isLoading = loadingAlumni || loadingEvents || loadingPresences;
 
@@ -386,40 +450,32 @@ export default function DashboardPage() {
 								<h2 className="text-2xl font-bold text-gray-800 mb-6">
 									Aktivitas Terbaru
 								</h2>
-								{loadingPresences ? (
+								{loadingActivityLogs ? (
 									<div className="space-y-3">
 										{[1, 2, 3].map((i) => (
 											<div
 												key={i}
-												className="h-14 bg-gray-100 rounded-2xl animate-pulse"
+												className="h-10 bg-gray-100 rounded-xl animate-pulse"
 											/>
 										))}
 									</div>
 								) : (
-									<div className="space-y-3">
-										{presences
-											.slice(-3)
-											.reverse()
-											.map((p: Presence, i: number) => (
-												<div
-													key={p.id ?? i}
-													className="p-4 rounded-2xl bg-gray-50 flex items-center gap-3"
-												>
-													<span className="text-xl">📍</span>
-													<div>
-														<p className="text-sm font-medium text-gray-700">
-															QR Code di-scan
-														</p>
-														<p className="text-xs text-gray-400">
-															{formatDateTime(p.scanned_at)}
-														</p>
-													</div>
-												</div>
-											))}
-										{presences.length === 0 && (
+									<div className="flex flex-col">
+										{activityLogs
+											.slice(0, 4)
+											.map((log: ActivityLog, i: number) => renderLogItem(log, i))}
+										{activityLogs.length === 0 && (
 											<p className="text-sm text-gray-400 text-center py-4">
 												Belum ada aktivitas
 											</p>
+										)}
+										{activityLogs.length > 4 && (
+											<button
+												onClick={() => setShowAllLogs(true)}
+												className="w-full mt-4 py-2 text-center text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors border border-dashed border-teal-200 hover:border-teal-300 rounded-xl bg-teal-50/20 hover:bg-teal-50/55 flex items-center justify-center gap-2"
+											>
+												Lihat Lainnya
+											</button>
 										)}
 									</div>
 								)}
@@ -432,6 +488,37 @@ export default function DashboardPage() {
 					</footer>
 				</main>
 			</div>
+
+			{showAllLogs && (
+				<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+					<div className="bg-white rounded-3xl shadow-xl w-full max-w-lg flex flex-col max-h-[80vh]">
+						<div className="p-6 border-b border-gray-100 flex items-center justify-between">
+							<div>
+								<h3 className="font-bold text-gray-800 text-lg">Semua Aktivitas Admin</h3>
+								<p className="text-xs text-gray-400 mt-1">Daftar lengkap log riwayat aktivitas admin</p>
+							</div>
+							<button
+								onClick={() => setShowAllLogs(false)}
+								className="text-gray-400 hover:text-gray-650 p-2 hover:bg-gray-50 rounded-xl transition-colors"
+								aria-label="Tutup"
+							>
+								<X size={20} />
+							</button>
+						</div>
+						<div className="p-6 overflow-y-auto flex-1 divide-y divide-gray-100">
+							{activityLogs.map((log: ActivityLog, i: number) => renderLogItem(log, i))}
+						</div>
+						<div className="p-6 border-t border-gray-100 flex justify-end">
+							<button
+								onClick={() => setShowAllLogs(false)}
+								className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-2xl text-sm transition-colors"
+							>
+								Tutup
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

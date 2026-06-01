@@ -1,24 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Info, Plus, Trash2 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
-import { FormInput, FormSelect, FormTextarea } from "@/app/components/FormControl";
+import {
+	FormInput,
+	FormSelect,
+	FormTextarea,
+} from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
 import { getApiErrorMessage } from "@/lib/api";
 import {
 	useEvents,
+	useCreateEvent,
+	useUpdateEvent,
 	useDeleteEvent,
+	useEventCategories,
 	type Event,
 } from "@/hooks/admin/useEvents";
 import type { EventBroadcastTarget } from "@/hooks/admin/useBroadcast";
-import { useCreateEventForm } from "./_hooks/useCreateEventForm";
 import { useEventBroadcastForm } from "./_hooks/useEventBroadcastForm";
 import {
 	parseEventDate,
 	sanitizeBroadcastMessage,
 } from "./_utils/eventFormatters";
+
+type EventFormMode = "create" | "edit";
+
+type EventFormState = {
+	category_id: number;
+	event_title: string;
+	description: string;
+	location: string;
+	event_date: string;
+	start_time: string;
+	end_time: string;
+};
+
+const initialEventForm: EventFormState = {
+	category_id: 0,
+	event_title: "",
+	description: "",
+	location: "",
+	event_date: "",
+	start_time: "",
+	end_time: "",
+};
+
+function toInputDate(value?: string | null) {
+	if (!value) return "";
+
+	if (value.includes("T")) {
+		return value.split("T")[0];
+	}
+
+	return value.slice(0, 10);
+}
+
+function toInputTime(value?: string | null) {
+	if (!value) return "";
+
+	return value.slice(0, 5);
+}
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 function CardSkeleton() {
@@ -82,26 +126,109 @@ const broadcastTargetDescriptions: Record<
 	},
 };
 
-// ─── Create Event Modal ───────────────────────────────────────────────────────
-function CreateEventModal({
+// ─── Create/Edit Event Modal ──────────────────────────────────────────────────
+function EventFormModal({
 	isOpen,
+	mode,
+	event,
 	onClose,
 }: {
 	isOpen: boolean;
+	mode: EventFormMode;
+	event: Event | null;
 	onClose: () => void;
 }) {
+	const createEvent = useCreateEvent();
+	const updateEvent = useUpdateEvent();
+
 	const {
-		form,
-		categories,
-		selectedCategoryId,
-		createEvent,
-		handleChange,
-		handleSubmit,
-		isCategoryLoading,
-		isCategoryError,
-	} = useCreateEventForm(onClose);
+		data: categories = [],
+		isLoading: isCategoryLoading,
+		isError: isCategoryError,
+	} = useEventCategories();
+
+	const [form, setForm] = useState<EventFormState>(initialEventForm);
+
+	useEffect(() => {
+		if (!isOpen) return;
+
+		if (mode === "edit" && event) {
+			const matchedCategory = categories.find(
+				(category) => category.category_name === event.category,
+			);
+
+			setForm({
+				category_id:
+					event.category_id ?? matchedCategory?.id ?? categories[0]?.id ?? 0,
+				event_title: event.event_title ?? "",
+				description: event.description ?? "",
+				location: event.location ?? "",
+				event_date: toInputDate(event.event_date ?? event.event_datetime),
+				start_time: toInputTime(event.start_time),
+				end_time: toInputTime(event.end_time),
+			});
+
+			return;
+		}
+
+		setForm({
+			...initialEventForm,
+			category_id: categories[0]?.id ?? 0,
+		});
+	}, [isOpen, mode, event, categories]);
 
 	if (!isOpen) return null;
+
+	const isPending = createEvent.isPending || updateEvent.isPending;
+	const isError = createEvent.isError || updateEvent.isError;
+
+	const errorMessage =
+		createEvent.error instanceof Error
+			? createEvent.error.message
+			: updateEvent.error instanceof Error
+				? updateEvent.error.message
+				: "Gagal menyimpan event";
+
+	const handleChange = (
+		e: React.ChangeEvent<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>,
+	) => {
+		const { name, value } = e.target;
+
+		setForm((prev) => ({
+			...prev,
+			[name]: name === "category_id" ? Number(value) : value,
+		}));
+	};
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (!form.category_id) return;
+
+		if (mode === "edit" && event) {
+			updateEvent.mutate(
+				{
+					id: event.id,
+					data: form,
+				},
+				{
+					onSuccess: () => {
+						onClose();
+					},
+				},
+			);
+
+			return;
+		}
+
+		createEvent.mutate(form, {
+			onSuccess: () => {
+				onClose();
+			},
+		});
+	};
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -109,9 +236,13 @@ function CreateEventModal({
 				<div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
 					<div>
 						<h3 className="text-lg font-semibold text-gray-800">
-							Buat Event Baru
+							{mode === "edit" ? "Edit Event" : "Buat Event Baru"}
 						</h3>
-						<p className="text-sm text-gray-400">Tambahkan data event alumni</p>
+						<p className="text-sm text-gray-400">
+							{mode === "edit"
+								? "Perbarui data event alumni"
+								: "Tambahkan data event alumni"}
+						</p>
 					</div>
 
 					<button
@@ -131,7 +262,7 @@ function CreateEventModal({
 
 						<FormSelect
 							name="category_id"
-							value={selectedCategoryId}
+							value={form.category_id}
 							onChange={handleChange}
 							disabled={isCategoryLoading || categories.length === 0}
 							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
@@ -249,11 +380,9 @@ function CreateEventModal({
 						</div>
 					</div>
 
-					{createEvent.isError && (
+					{isError && (
 						<div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
-							{createEvent.error instanceof Error
-								? createEvent.error.message
-								: "Gagal membuat event"}
+							{errorMessage}
 						</div>
 					)}
 
@@ -269,18 +398,20 @@ function CreateEventModal({
 						<button
 							type="submit"
 							disabled={
-								createEvent.isPending ||
+								isPending ||
 								isCategoryLoading ||
 								categories.length === 0 ||
-								!selectedCategoryId
+								!form.category_id
 							}
 							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
 						>
-							{createEvent.isPending ? (
+							{isPending ? (
 								<>
 									<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
 									Menyimpan...
 								</>
+							) : mode === "edit" ? (
+								"Update Event"
 							) : (
 								"Simpan Event"
 							)}
@@ -455,7 +586,9 @@ function BroadcastModal({
 													onClick={() => removeManualNumber(index)}
 													aria-label={`Hapus nomor ${index + 1}`}
 													className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-100 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-													disabled={manualNumbers.length === 1 && !number.trim()}
+													disabled={
+														manualNumbers.length === 1 && !number.trim()
+													}
 												>
 													<Trash2 className="h-4 w-4" />
 												</button>
@@ -509,14 +642,16 @@ function BroadcastModal({
 								</span>
 							</div>
 							<div className="min-h-[320px] text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm">
-								{target === "custom" &&
-								parsedNumbers.validNumbers.length === 0
+								{target === "custom" && parsedNumbers.validNumbers.length === 0
 									? "Masukkan nomor manual untuk menghitung target custom."
 									: preview.isLoading
-									? "Memuat preview..."
-									: preview.isError
-										? getApiErrorMessage(preview.error, "Gagal memuat preview")
-										: previewMessage || "Preview belum tersedia"}
+										? "Memuat preview..."
+										: preview.isError
+											? getApiErrorMessage(
+													preview.error,
+													"Gagal memuat preview",
+												)
+											: previewMessage || "Preview belum tersedia"}
 							</div>
 						</div>
 					</div>
@@ -610,14 +745,17 @@ function BroadcastModal({
 // ─── Event Card (Mendatang) ───────────────────────────────────────────────────
 function EventCardUpcoming({
 	event,
+	onEdit,
 	onDelete,
 	onBroadcast,
 }: {
 	event: Event;
+	onEdit: (event: Event) => void;
 	onDelete: (id: number) => void;
 	onBroadcast: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
+
 	return (
 		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
 			<div className="flex items-start justify-between mb-3">
@@ -648,7 +786,10 @@ function EventCardUpcoming({
 			</div>
 
 			<div className="flex gap-2 mt-4">
-				<button className="flex-1 text-xs border border-teal-200 text-teal-600 hover:bg-teal-50 py-1.5 rounded-lg transition-colors">
+				<button
+					onClick={() => onEdit(event)}
+					className="flex-1 text-xs border border-teal-200 text-teal-600 hover:bg-teal-50 py-1.5 rounded-lg transition-colors"
+				>
 					Edit
 				</button>
 
@@ -673,10 +814,12 @@ function EventCardUpcoming({
 // ─── Event Card (Selesai) ─────────────────────────────────────────────────────
 function EventCardDone({
 	event,
+	onEdit,
 	onDelete,
 	onBroadcast,
 }: {
 	event: Event;
+	onEdit: (event: Event) => void;
 	onDelete: (id: number) => void;
 	onBroadcast: (event: Event) => void;
 }) {
@@ -737,7 +880,10 @@ function EventCardDone({
 			)}
 
 			<div className="flex gap-2 mt-4">
-				<button className="flex-1 text-xs border border-teal-200 text-teal-600 hover:bg-teal-50 py-1.5 rounded-lg transition-colors">
+				<button
+					onClick={() => onEdit(event)}
+					className="flex-1 text-xs border border-teal-200 text-teal-600 hover:bg-teal-50 py-1.5 rounded-lg transition-colors"
+				>
 					Edit
 				</button>
 
@@ -762,7 +908,9 @@ function EventCardDone({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function KelolEventPage() {
 	const [search, setSearch] = useState("");
-	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+	const [eventModalMode, setEventModalMode] = useState<EventFormMode>("create");
+	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
 
 	const {
@@ -773,6 +921,23 @@ export default function KelolEventPage() {
 	} = useEvents(search, 10);
 
 	const deleteEvent = useDeleteEvent();
+
+	const handleCreate = () => {
+		setEventModalMode("create");
+		setSelectedEvent(null);
+		setIsEventModalOpen(true);
+	};
+
+	const handleEdit = (event: Event) => {
+		setEventModalMode("edit");
+		setSelectedEvent(event);
+		setIsEventModalOpen(true);
+	};
+
+	const handleCloseEventModal = () => {
+		setIsEventModalOpen(false);
+		setSelectedEvent(null);
+	};
 
 	const handleDelete = (id: number) => {
 		if (confirm("Yakin ingin menghapus event ini?")) {
@@ -847,7 +1012,7 @@ export default function KelolEventPage() {
 							</div>
 
 							<button
-								onClick={() => setIsCreateModalOpen(true)}
+								onClick={handleCreate}
 								className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm"
 							>
 								<span className="text-lg leading-none">+</span>
@@ -907,6 +1072,7 @@ export default function KelolEventPage() {
 												<EventCardUpcoming
 													key={e.id}
 													event={e}
+													onEdit={handleEdit}
 													onDelete={handleDelete}
 													onBroadcast={handleOpenBroadcast}
 												/>
@@ -929,6 +1095,7 @@ export default function KelolEventPage() {
 												<EventCardDone
 													key={e.id}
 													event={e}
+													onEdit={handleEdit}
 													onDelete={handleDelete}
 													onBroadcast={handleOpenBroadcast}
 												/>
@@ -953,9 +1120,11 @@ export default function KelolEventPage() {
 				</main>
 			</div>
 
-			<CreateEventModal
-				isOpen={isCreateModalOpen}
-				onClose={() => setIsCreateModalOpen(false)}
+			<EventFormModal
+				isOpen={isEventModalOpen}
+				mode={eventModalMode}
+				event={selectedEvent}
+				onClose={handleCloseEventModal}
 			/>
 
 			{broadcastEvent && (

@@ -8,6 +8,7 @@ import {
   useMyRecommendations,
   useMyNotifications,
 } from "@/hooks/alumni/useAlumniHooks";
+import type { AlumniNotification } from "@/hooks/alumni/useAlumniHooks";
 import { Icon } from "@/app/components/alumni/Icon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,13 +29,6 @@ interface Presence {
     event_title: string;
     event_datetime: string;
   };
-}
-
-interface Notification {
-  id: number;
-  title: string;
-  body: string;
-  is_read: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,7 +109,7 @@ export default function AlumniDashboard() {
   const recentPresences = presences.slice(0, 3);
 
   const unreadNotification = notifications.filter(
-    (notification: Notification) => !notification.is_read
+    (notification: AlumniNotification) => notification.is_read !== true
   )[0];
 
   return (
@@ -142,7 +136,7 @@ export default function AlumniDashboard() {
           style={{
             background: "linear-gradient(135deg, #3ecf8e 0%, #20b070 100%)",
           }}
-          onClick={() => router.push("/alumni/notifikasi")}
+          onClick={() => router.push("/alumni/main/notifikasi")}
         >
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-white">
             <svg
@@ -165,7 +159,7 @@ export default function AlumniDashboard() {
               {unreadNotification.title}
             </p>
             <p className="text-green-100 text-xs mt-1 leading-relaxed line-clamp-2">
-              {unreadNotification.body}
+              {unreadNotification.message ?? unreadNotification.body}
             </p>
           </div>
         </div>

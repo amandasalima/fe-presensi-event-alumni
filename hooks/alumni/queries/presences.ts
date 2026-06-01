@@ -10,23 +10,8 @@ export function useMyPresences() {
 				const res = await fetchAPI("/presensi/history");
 				return res?.data?.history || [];
 			} catch (error) {
-				console.warn("Failed to fetch presences, using mock history:", error);
-
-				return [
-					{
-						id: 8881,
-						event_id: 9992,
-						scanned_at: new Date(
-							Date.now() - 2 * 24 * 60 * 60 * 1000,
-						).toISOString(),
-						event: {
-							event_title: "Kajian Bulanan & Doa Bersama",
-							event_datetime: new Date(
-								Date.now() - 2 * 24 * 60 * 60 * 1000,
-							).toISOString(),
-						},
-					},
-				];
+				console.warn("Failed to fetch presences:", error);
+				return [];
 			}
 		},
 	});

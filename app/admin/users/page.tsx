@@ -52,9 +52,9 @@ function EditUserModal({
 		role: initial.role ?? "user",
 		status: initial.status ?? "active",
 	});
-	const roleOptions = Array.from(new Set([...ROLE_OPTIONS, initial.role])).filter(
-		Boolean,
-	);
+	const roleOptions = Array.from(
+		new Set([...ROLE_OPTIONS, initial.role]),
+	).filter(Boolean);
 	const statusOptions = Array.from(
 		new Set([...STATUS_OPTIONS, initial.status]),
 	).filter(Boolean);
@@ -221,7 +221,9 @@ export default function UsersPage() {
 					<div className="bg-white rounded-3xl shadow-sm overflow-hidden">
 						<div className="p-8 bg-teal-50 flex items-center justify-between">
 							<div>
-								<h2 className="text-4xl font-bold">Manajemen User</h2>
+								<h2 className="text-gray-800 text-4xl font-bold">
+									Manajemen User
+								</h2>
 								<p className="text-gray-500 mt-2">
 									Kelola data user aplikasi presensi event
 								</p>

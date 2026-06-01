@@ -13,10 +13,11 @@ export type RecommendationItem = {
 };
 
 function withEventDateTime(item: RecommendationItem) {
+	const datePart = item.event_date ? item.event_date.split("T")[0] : "";
 	return {
 		...item,
 		event_datetime:
-			item.event_datetime || `${item.event_date}T${item.start_time || "00:00:00"}`,
+			item.event_datetime || (datePart && item.start_time ? `${datePart}T${item.start_time}` : item.event_date),
 	};
 }
 
@@ -30,24 +31,10 @@ export function useMyRecommendations() {
 					return res.data.map(withEventDateTime);
 				}
 			} catch (error) {
-				console.warn(
-					"Failed to fetch recommendations, falling back to dummy recommendation:",
-					error,
-				);
+				console.warn("Failed to fetch recommendations:", error);
 			}
 
-			const futureDate1 = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-				.toISOString()
-				.split("T")[0];
-
-			return [
-				{
-					id: 9991,
-					event_title: "Reuni Akbar Pondok Pesantren 2026",
-					event_datetime: `${futureDate1}T08:00:00`,
-					location: "Aula Utama Pondok Pesantren",
-				},
-			];
+			return [];
 		},
 	});
 }

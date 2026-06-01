@@ -27,6 +27,7 @@ import {
 } from "@/hooks/alumni/useProfile";
 
 import type { UpdateProfilePayload } from "@/types/profile";
+import { clearAuthStorage } from "@/lib/api";
 
 /* ─── Skeleton loader ─────────────────────────────────────── */
 function ProfileSkeleton() {
@@ -293,11 +294,8 @@ export default function AlumniProfilePage() {
   }
 
   function handleLogout() {
-    localStorage.removeItem("alumni_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-
-    router.push("/alumni/login");
+    clearAuthStorage();
+    window.location.href = "/alumni/login";
   }
 
   function formatDate(dateStr?: string | null) {

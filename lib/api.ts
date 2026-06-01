@@ -6,15 +6,23 @@ const API_BASE_URL =
 function getAuthToken() {
 	if (typeof window === "undefined") return null;
 
+	const pathname = window.location.pathname;
+	if (pathname.startsWith("/admin")) {
+		return localStorage.getItem("access_token") || localStorage.getItem("token");
+	} else if (pathname.startsWith("/alumni")) {
+		return localStorage.getItem("alumni_token") || sessionStorage.getItem("alumni_token");
+	}
+
 	return (
-		localStorage.getItem("access_token") ||
-		localStorage.getItem("admin_token") ||
 		localStorage.getItem("alumni_token") ||
+		sessionStorage.getItem("alumni_token") ||
+		localStorage.getItem("access_token") ||
 		localStorage.getItem("token")
 	);
 }
 
-function clearAuthStorage() {
+export function clearAuthStorage() {
+	if (typeof window === "undefined") return;
 	localStorage.removeItem("access_token");
 	localStorage.removeItem("admin_token");
 	localStorage.removeItem("alumni_token");
@@ -22,6 +30,8 @@ function clearAuthStorage() {
 	localStorage.removeItem("token_type");
 	localStorage.removeItem("user");
 	localStorage.removeItem("role");
+	localStorage.removeItem("dummy_profile");
+	sessionStorage.removeItem("alumni_token");
 }
 
 const api = axios.create({

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAPI } from "@/lib/api";
-import { getDummyEvents, getDummyRegistered } from "./dummyEvents";
 import { alumniQueryKeys } from "./queryKeys";
 
 export interface AlumniEventQuery {
@@ -24,9 +23,10 @@ export interface AlumniEventQuery {
 }
 
 function withEventDateTime(event: AlumniEventQuery) {
+	const datePart = event.event_date ? event.event_date.split("T")[0] : "";
 	return {
 		...event,
-		event_datetime: `${event.event_date}T${event.start_time || "00:00:00"}`,
+		event_datetime: datePart && event.start_time ? `${datePart}T${event.start_time}` : event.event_date,
 	};
 }
 
@@ -41,12 +41,12 @@ export function useAlumniEvents() {
 				backendEvents = (res?.data?.events || []) as AlumniEventQuery[];
 			} catch (error) {
 				console.error(
-					"Failed to fetch events from backend, showing dummies only:",
+					"Failed to fetch events from backend:",
 					error,
 				);
 			}
 
-			return [...backendEvents.map(withEventDateTime), ...getDummyEvents()];
+			return backendEvents.map(withEventDateTime);
 		},
 	});
 }
@@ -55,26 +55,6 @@ export function useAlumniEventDetail(id: number) {
 	return useQuery({
 		queryKey: alumniQueryKeys.eventDetail(id),
 		queryFn: async () => {
-			const dummy = getDummyEvents().find((event) => event.id === id);
-			if (dummy) {
-				const isRegistered = getDummyRegistered(id, dummy.is_registered);
-
-				return {
-					event: {
-						...dummy,
-						is_registered: isRegistered,
-					},
-					remaining_quota: dummy.remaining_quota,
-					is_registered: isRegistered,
-					registration: isRegistered
-						? {
-								status: "registered",
-								registered_at: new Date().toISOString(),
-							}
-						: null,
-				};
-			}
-
 			try {
 				const res = await fetchAPI(`/events/${id}`);
 				if (res?.data?.event) {
@@ -96,18 +76,6 @@ export function useRegisterEvent() {
 
 	return useMutation({
 		mutationFn: async (id: number) => {
-			if (id >= 9990) {
-				await new Promise((resolve) => setTimeout(resolve, 800));
-				if (typeof window !== "undefined") {
-					localStorage.setItem(`dummy_reg_${id}`, "true");
-				}
-
-				return {
-					success: true,
-					message: "Pendaftaran berhasil! Sampai jumpa di event 🎉",
-				};
-			}
-
 			return fetchAPI(`/events/${id}/register`, {
 				method: "POST",
 			});
@@ -127,18 +95,6 @@ export function useCancelRegistration() {
 
 	return useMutation({
 		mutationFn: async (id: number) => {
-			if (id >= 9990) {
-				await new Promise((resolve) => setTimeout(resolve, 800));
-				if (typeof window !== "undefined") {
-					localStorage.setItem(`dummy_reg_${id}`, "false");
-				}
-
-				return {
-					success: true,
-					message: "Pendaftaran berhasil dibatalkan",
-				};
-			}
-
 			return fetchAPI(`/events/${id}/register`, {
 				method: "DELETE",
 			});

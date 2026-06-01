@@ -1,10 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-	createEvent,
-	deleteEvent,
-	generateEventQr,
-	updateEvent,
-} from "./api";
+import { createEvent, deleteEvent, generateEventQr, updateEvent } from "./api";
 import { adminEventQueryKeys } from "./queryKeys";
 import type { EventPayload, GenerateQrPayload } from "./types";
 
@@ -23,13 +18,8 @@ export function useUpdateEvent() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({
-			id,
-			data,
-		}: {
-			id: number;
-			data: Partial<EventPayload>;
-		}) => updateEvent(id, data),
+		mutationFn: ({ id, data }: { id: number; data: Partial<EventPayload> }) =>
+			updateEvent(id, data),
 		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: adminEventQueryKeys.lists });
 			queryClient.invalidateQueries({

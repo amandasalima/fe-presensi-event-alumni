@@ -6,6 +6,7 @@ import { Eye, EyeOff, Phone } from "lucide-react";
 import { useLogin } from "@/hooks/alumni/useLogin";
 import { useRegister } from "@/hooks/alumni/useRegister";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
+import { FormInput, FormSelect } from "@/app/components/FormControl";
 import SuccessModal from "./SuccessModal";
 
 type Tab = "masuk" | "daftar";
@@ -38,7 +39,7 @@ function Input({
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <input
+    <FormInput
       className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 ${className}`}
       {...props}
     />
@@ -210,7 +211,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         </div>
 
         <Field label="Jenis Kelamin" error={fieldErrors.gender?.[0]}>
-          <select
+          <FormSelect
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
@@ -218,7 +219,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           >
             <option value="Laki-laki">Laki-laki</option>
             <option value="Perempuan">Perempuan</option>
-          </select>
+          </FormSelect>
         </Field>
 
         <Field label="Email" error={fieldErrors.email?.[0]}>
@@ -249,7 +250,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         </Field>
 
         <Field label="Angkatan (Tahun Lulus)" error={fieldErrors.graduation_year?.[0]}>
-          <select
+          <FormSelect
             value={form.graduation_year}
             onChange={(e) => setForm({ ...form, graduation_year: e.target.value })}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
@@ -264,7 +265,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
                 </option>
               );
             })}
-          </select>
+          </FormSelect>
         </Field>
 
         <Field label="Tanggal Lahir" error={fieldErrors.birth_date?.[0]}>

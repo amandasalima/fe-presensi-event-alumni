@@ -18,7 +18,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Developer Notes
 
-- Struktur query hooks dijelaskan di [docs/QUERY_HOOK_STRUCTURE.md](docs/QUERY_HOOK_STRUCTURE.md).
+- Struktur hooks, query, mutation, dan helper reusable dijelaskan di [docs/QUERY_HOOK_STRUCTURE.md](docs/QUERY_HOOK_STRUCTURE.md).
+- Untuk page admin yang logic-nya panjang, gunakan pola `page.tsx` untuk render, `_hooks/use*Page.ts` untuk state/handler, dan `_utils/*` untuk formatter, validator, exporter, atau kalkulasi reusable.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

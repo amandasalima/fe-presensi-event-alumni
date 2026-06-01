@@ -1,6 +1,7 @@
 "use client";
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { FormInput } from "./FormControl";
 
 interface SearchInputProps
   extends Omit<ComponentPropsWithoutRef<"input">, "onChange" | "value"> {
@@ -20,7 +21,7 @@ export default function SearchInput({
   ...props
 }: SearchInputProps) {
   const input = (
-    <input
+    <FormInput
       {...props}
       type={type}
       value={value}

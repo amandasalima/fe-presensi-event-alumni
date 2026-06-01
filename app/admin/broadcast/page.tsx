@@ -1,338 +1,544 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Info, Plus, Trash2 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
-import { useEvents } from "@/hooks/admin/useEvents";
-import { useBroadcast, useCreateBroadcast, useDeleteBroadcast } from "@/hooks/admin/useBroadcast";
+import { FormInput, FormSelect, FormTextarea } from "@/app/components/FormControl";
+import { ApiError, getApiErrorMessage } from "@/lib/api";
+import {
+	type EventBroadcastTarget,
+	useEventBroadcastPreview,
+	useSendEventBroadcast,
+} from "@/hooks/admin/useBroadcast";
+import { useEvents, type Event } from "@/hooks/admin/useEvents";
+import {
+	parseWhatsappNumbers,
+	sanitizeBroadcastMessage,
+} from "../events/_utils/eventFormatters";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface BroadcastItem {
-  id: number;
-  title: string;
-  event_title?: string;
-  created_at: string;
-  recipient_count: number;
-  status: "Terkirim" | "Pending" | "Gagal";
-  message?: string;
+function StatCard({
+	label,
+	value,
+	sub,
+}: {
+	label: string;
+	value: string | number;
+	sub: string;
+}) {
+	return (
+		<div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+			<p className="text-sm text-gray-500">{label}</p>
+			<p className="mt-2 text-3xl font-bold text-gray-800">{value}</p>
+			<p className="mt-1 text-xs text-gray-400">{sub}</p>
+		</div>
+	);
 }
 
-interface Event {
-  id: number;
-  event_title: string;
-  event_datetime: string;
-  location: string;
+function formatEventDate(event: Event | null) {
+	const dateSource = event?.event_date || event?.event_datetime;
+
+	if (!dateSource) return "-";
+
+	const date = new Date(dateSource);
+
+	if (Number.isNaN(date.getTime())) return "-";
+
+	return date.toLocaleDateString("id-ID", {
+		day: "2-digit",
+		month: "long",
+		year: "numeric",
+	});
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-function TableSkeleton() {
-  return (
-    <>
-      {[1, 2, 3].map((i) => (
-        <tr key={i} className="border-b animate-pulse">
-          {[1, 2, 3, 4, 5, 6, 7].map((j) => (
-            <td key={j} className="p-5">
-              <div className="h-4 bg-gray-100 rounded w-3/4" />
-            </td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
+type BroadcastDebugDetail = {
+	totalSent?: number;
+	fonnte?: unknown;
+	senderStatus?: unknown;
+	blockedReason?: unknown;
+};
+
+function getBroadcastDebugDetail(source: unknown): BroadcastDebugDetail | null {
+	const payload =
+		source instanceof ApiError
+			? (source.data as Record<string, unknown> | null)
+			: (source as Record<string, unknown> | null);
+
+	if (!payload || typeof payload !== "object") return null;
+
+	const data =
+		payload.data && typeof payload.data === "object"
+			? (payload.data as Record<string, unknown>)
+			: {};
+	const detail = {
+		fonnte: data.fonnte ?? payload.fonnte,
+		senderStatus: data.sender_status ?? payload.sender_status,
+		blockedReason: data.blocked_reason ?? payload.blocked_reason,
+	};
+
+	if (
+		detail.fonnte === undefined &&
+		detail.senderStatus === undefined &&
+		detail.blockedReason === undefined
+	) {
+		return null;
+	}
+
+	return detail;
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+const targetDescriptions: Record<
+	EventBroadcastTarget,
+	{ label: string; description: string }
+> = {
+	all: {
+		label: "Semua alumni",
+		description:
+			"Broadcast akan dikirim ke seluruh alumni yang memiliki nomor HP valid.",
+	},
+	registered: {
+		label: "Terdaftar event",
+		description:
+			"Broadcast hanya dikirim ke alumni yang sudah terdaftar pada event yang dipilih.",
+	},
+	custom: {
+		label: "Nomor manual",
+		description:
+			"Broadcast hanya dikirim ke daftar nomor yang Anda input satu per satu.",
+	},
+};
+
 export default function BroadcastPage() {
-  const [title, setTitle] = useState("");
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const [message, setMessage] = useState("");
+	const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+	const [target, setTarget] = useState<EventBroadcastTarget>("all");
+	const [manualNumbers, setManualNumbers] = useState([""]);
+	const [customMessage, setCustomMessage] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
+	const [errorMessage, setErrorMessage] = useState("");
+	const [sendDetail, setSendDetail] = useState<{
+		totalSent: number;
+		fonnte?: unknown;
+		senderStatus?: unknown;
+		blockedReason?: unknown;
+	} | null>(null);
 
-  // ── TanStack Query ──
-  const { data: events = [], isLoading: loadingEvents } = useEvents();
-  const { data: broadcasts = [], isLoading: loadingBroadcast } = useBroadcast();
-  const createBroadcast = useCreateBroadcast();
-  const deleteBroadcast = useDeleteBroadcast();
+	const { data: events = [], isLoading: loadingEvents } = useEvents();
+	const sendBroadcast = useSendEventBroadcast();
+	const selectedEvent =
+		events.find((event: Event) => event.id === selectedEventId) ?? null;
+	const numbersInput = useMemo(() => manualNumbers.join("\n"), [manualNumbers]);
+	const parsedNumbers = useMemo(
+		() => parseWhatsappNumbers(numbersInput),
+		[numbersInput],
+	);
+	const previewParams = useMemo(
+		() => ({
+			target,
+			...(target === "custom"
+				? { numbers: parsedNumbers.validNumbers }
+				: {}),
+			custom_message: customMessage.trim() || null,
+		}),
+		[target, parsedNumbers.validNumbers, customMessage],
+	);
+	const preview = useEventBroadcastPreview(selectedEventId, previewParams);
+	const previewData = preview.data;
+	const previewMessage = sanitizeBroadcastMessage(previewData?.message) || "";
+	const estimatedTargets =
+		target === "custom"
+			? parsedNumbers.validNumbers.length
+			: (previewData?.total_targets ?? 0);
+	const isMessageTooLong = customMessage.length > 1000;
+	const isSubmitDisabled =
+		!selectedEventId ||
+		sendBroadcast.isPending ||
+		isMessageTooLong ||
+		(target === "custom" && parsedNumbers.validNumbers.length === 0);
 
-  // ── Selected event detail ──
-  const selectedEvent = events.find((e: Event) => e.id === selectedEventId) ?? null;
+	const resetResult = () => {
+		setSuccessMessage("");
+		setErrorMessage("");
+		setSendDetail(null);
+	};
 
-  // ── Auto fill preview message when event selected ──
-  const previewMessage = selectedEvent
-    ? `Assalamualaikum Alumni 👋\n\nKami mengundang Anda untuk menghadiri kegiatan *${selectedEvent.event_title}*\n\n📅 ${new Date(selectedEvent.event_datetime).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}\n🕗 ${new Date(selectedEvent.event_datetime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB\n📍 ${selectedEvent.location}\n\nSilakan lakukan presensi menggunakan QR Code saat acara berlangsung.`
-    : message;
+	const updateManualNumber = (index: number, value: string) => {
+		resetResult();
+		setManualNumbers((current) =>
+			current.map((number, itemIndex) =>
+				itemIndex === index ? value.replace(/[^\d+\s-]/g, "") : number,
+			),
+		);
+	};
 
-  // ── Stats ──
-  const totalBroadcast = broadcasts.length;
-  const totalTerkirim = broadcasts.reduce(
-    (sum: number, b: BroadcastItem) => sum + (b.recipient_count ?? 0), 0
-  );
+	const addManualNumber = () => {
+		setManualNumbers((current) => [...current, ""]);
+	};
 
-  const handleSend = () => {
-    if (!title || !message) return;
-    createBroadcast.mutate(
-      {
-        title,
-        event_id: selectedEventId,
-        message,
-      },
-      {
-        onSuccess: () => {
-          setTitle("");
-          setSelectedEventId(null);
-          setMessage("");
-        },
-      }
-    );
-  };
+	const removeManualNumber = (index: number) => {
+		resetResult();
+		setManualNumbers((current) => {
+			const next = current.filter((_, itemIndex) => itemIndex !== index);
+			return next.length > 0 ? next : [""];
+		});
+	};
 
-  const handleDelete = (id: number) => {
-    if (confirm("Yakin ingin menghapus riwayat broadcast ini?")) {
-      deleteBroadcast.mutate(id);
-    }
-  };
+	const handleSubmit = () => {
+		resetResult();
 
-  return (
-    <div className="h-screen bg-gray-100 flex overflow-hidden">
-      <AdminSidebar />
+		if (!selectedEventId || isSubmitDisabled) return;
 
-      <div className="flex-1 ml-72 flex flex-col h-screen">
-        <AdminHeader title="Broadcast WhatsApp" />
+		const confirmed = confirm(
+			`Kirim broadcast WhatsApp?\n\nTarget: ${targetDescriptions[target].label}\nJumlah penerima: ${estimatedTargets}\nEvent: ${
+				selectedEvent?.event_title ?? "-"
+			}`,
+		);
 
-        <main className="flex-1 overflow-y-auto p-8">
+		if (!confirmed) return;
 
-          {/* ── Stat Cards ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-3xl p-7 border-2 border-cyan-400">
-              <p className="text-gray-500 text-lg">Total Broadcast</p>
-              <h2 className="text-5xl font-bold mt-3 text-gray-800">
-                {loadingBroadcast ? "..." : totalBroadcast}
-              </h2>
-              <p className="text-teal-500 mt-2 text-sm">Total pesan yang pernah dikirim</p>
-            </div>
+		sendBroadcast.mutate(
+			{
+				eventId: selectedEventId,
+				payload: {
+					target,
+					...(target === "custom"
+						? { numbers: parsedNumbers.validNumbers }
+						: {}),
+					custom_message: customMessage.trim() || previewMessage || null,
+				},
+			},
+			{
+				onSuccess: (response) => {
+					const totalSent = response.data?.total_sent ?? 0;
+					setSuccessMessage(
+						`${response.message || "Broadcast berhasil dikirim"} Total terkirim: ${totalSent}.`,
+					);
+					setSendDetail({
+						totalSent,
+						fonnte: response.data?.fonnte ?? response.fonnte,
+						senderStatus:
+							response.data?.sender_status ?? response.sender_status,
+						blockedReason:
+							response.data?.blocked_reason ?? response.blocked_reason,
+					});
+				},
+				onError: (error) => {
+					setErrorMessage(getApiErrorMessage(error, "Gagal mengirim broadcast"));
+					const detail = getBroadcastDebugDetail(error);
+					if (detail) {
+						setSendDetail({
+							totalSent: 0,
+							...detail,
+						});
+					}
+				},
+			},
+		);
+	};
 
-            <div className="bg-white rounded-3xl p-7 border-2 border-green-400">
-              <p className="text-gray-500 text-lg">Pesan Terkirim</p>
-              <h2 className="text-5xl font-bold mt-3 text-gray-800">
-                {loadingBroadcast ? "..." : totalTerkirim.toLocaleString("id-ID")}
-              </h2>
-              <p className="text-green-500 mt-2 text-sm">WhatsApp berhasil dikirim</p>
-            </div>
+	return (
+		<div className="flex min-h-screen bg-gray-50">
+			<AdminSidebar />
 
-            <div className="bg-white rounded-3xl p-7 border-2 border-purple-400">
-              <p className="text-gray-500 text-lg">Status API</p>
-              <h2 className="text-3xl font-bold mt-3 text-green-600 flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-500 rounded-full inline-block animate-pulse" />
-                Connected
-              </h2>
-              <p className="text-gray-400 mt-2 text-sm">WhatsApp API aktif</p>
-            </div>
-          </div>
+			<div className="ml-72 flex min-h-screen flex-1 flex-col">
+				<AdminHeader title="Broadcast WhatsApp" />
 
-          {/* ── Form Broadcast ── */}
-          <div className="bg-white rounded-3xl shadow-sm overflow-hidden mb-8">
-            {/* Header */}
-            <div className="p-8 bg-cyan-50 flex items-center justify-between">
-              <div>
-                <h2 className="text-4xl font-bold">Kirim Broadcast</h2>
-                <p className="text-gray-500 mt-2">Kirim informasi event kepada alumni</p>
-              </div>
-              <button
-                onClick={handleSend}
-                disabled={createBroadcast.isPending || !title || !message}
-                className="px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {createBroadcast.isPending ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Mengirim...
-                  </>
-                ) : (
-                  "📤 Kirim Sekarang"
-                )}
-              </button>
-            </div>
+				<main className="flex-1 space-y-6 p-8">
+					<div className="grid grid-cols-1 gap-5 md:grid-cols-4">
+						<StatCard
+							label="Alumni Ber-HP"
+							value={
+								preview.isLoading
+									? "..."
+									: (previewData?.breakdown.total_all ?? 0)
+							}
+							sub="Total dari backend"
+						/>
+						<StatCard
+							label="Terdaftar Event"
+							value={
+								preview.isLoading
+									? "..."
+									: (previewData?.breakdown.total_registered ?? 0)
+							}
+							sub="Alumni yang sudah daftar"
+						/>
+						<StatCard
+							label="Nomor Manual"
+							value={parsedNumbers.validNumbers.length}
+							sub={
+								parsedNumbers.invalidCount > 0
+									? `${parsedNumbers.invalidCount} tidak valid`
+									: "Target custom"
+							}
+						/>
+						<StatCard
+							label="Estimasi Penerima"
+							value={preview.isLoading ? "..." : estimatedTargets}
+							sub="Target broadcast saat ini"
+						/>
+					</div>
 
-            {/* Error */}
-            {createBroadcast.isError && (
-              <div className="mx-8 mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm flex items-center gap-2">
-                <span>⚠️</span>
-                {(createBroadcast.error as Error)?.message || "Gagal mengirim broadcast"}
-              </div>
-            )}
+					<div className="rounded-xl border border-gray-100 bg-white shadow-sm">
+						<div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+							<div>
+								<h2 className="text-xl font-semibold text-gray-800">
+									Kirim Broadcast Event
+								</h2>
+								<p className="text-sm text-gray-400">
+									Preview dan pengiriman memakai endpoint admin event.
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={handleSubmit}
+								disabled={isSubmitDisabled}
+								className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+							>
+								{sendBroadcast.isPending ? (
+									<>
+										<span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+										Mengirim...
+									</>
+								) : (
+									"Kirim Broadcast"
+								)}
+							</button>
+						</div>
 
-            {/* Success */}
-            {createBroadcast.isSuccess && (
-              <div className="mx-8 mt-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-xl text-sm flex items-center gap-2">
-                <span>✅</span>
-                Broadcast berhasil dikirim!
-              </div>
-            )}
+						<div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-2">
+							<div className="space-y-5">
+								<div>
+									<label className="mb-2 block text-sm font-medium text-gray-700">
+										Event
+									</label>
+									<FormSelect
+										value={selectedEventId ?? ""}
+										onChange={(event) => {
+											resetResult();
+											setSelectedEventId(Number(event.target.value) || null);
+										}}
+										disabled={loadingEvents}
+										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:cursor-not-allowed disabled:bg-gray-100"
+									>
+										<option value="">
+											{loadingEvents ? "Memuat event..." : "Pilih event"}
+										</option>
+										{events.map((event: Event) => (
+											<option key={event.id} value={event.id}>
+												{event.event_title}
+											</option>
+										))}
+									</FormSelect>
+									<p className="mt-1 text-xs text-gray-400">
+										{selectedEvent
+											? `${formatEventDate(selectedEvent)} - ${selectedEvent.location}`
+											: "Broadcast wajib dikaitkan dengan event."}
+									</p>
+								</div>
 
-            {/* Form */}
-            <div className="p-8 grid grid-cols-1 xl:grid-cols-2 gap-8">
+								<div>
+									<label className="mb-2 block text-sm font-medium text-gray-700">
+										Target Penerima
+									</label>
+									<FormSelect
+										value={target}
+										onChange={(event) => {
+											resetResult();
+											setTarget(event.target.value as EventBroadcastTarget);
+										}}
+										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+									>
+										<option value="all">Semua alumni yang punya nomor HP</option>
+										<option value="registered">
+											Alumni yang sudah daftar event
+										</option>
+										<option value="custom">Nomor manual</option>
+									</FormSelect>
+									<div className="mt-3 flex gap-3 rounded-xl border border-teal-100 bg-teal-50 p-3 text-sm text-teal-800">
+										<Info className="mt-0.5 h-4 w-4 shrink-0" />
+										<div>
+											<p className="font-medium">
+												{targetDescriptions[target].label}
+											</p>
+											<p className="mt-0.5 text-xs text-teal-700">
+												{targetDescriptions[target].description}
+											</p>
+										</div>
+									</div>
+								</div>
 
-              {/* Left: Form input */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Judul Broadcast</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Masukkan judul pesan"
-                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm"
-                  />
-                </div>
+								{target === "custom" && (
+									<div>
+										<div className="mb-2 flex items-center justify-between gap-3">
+											<label className="block text-sm font-medium text-gray-700">
+												Nomor HP Tujuan
+											</label>
+											<button
+												type="button"
+												onClick={addManualNumber}
+												className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-100"
+											>
+												<Plus className="h-3.5 w-3.5" />
+												Tambah
+											</button>
+										</div>
+										<div className="space-y-2">
+											{manualNumbers.map((number, index) => (
+												<div
+													key={`manual-number-${index}`}
+													className="flex items-center gap-2"
+												>
+													<FormInput
+														type="tel"
+														value={number}
+														onChange={(event) =>
+															updateManualNumber(index, event.target.value)
+														}
+														placeholder={`Nomor ${index + 1}, contoh: 081234567890`}
+														className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+													/>
+													<button
+														type="button"
+														onClick={() => removeManualNumber(index)}
+														aria-label={`Hapus nomor ${index + 1}`}
+														className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-100 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+														disabled={manualNumbers.length === 1 && !number.trim()}
+													>
+														<Trash2 className="h-4 w-4" />
+													</button>
+												</div>
+											))}
+										</div>
+										<p className="mt-1 text-xs text-gray-400">
+											Nomor valid: {parsedNumbers.validNumbers.length}
+											{parsedNumbers.invalidCount > 0
+												? `, tidak valid: ${parsedNumbers.invalidCount}`
+												: ""}
+										</p>
+									</div>
+								)}
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Pilih Event <span className="text-gray-400 font-normal">(Opsional)</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={selectedEventId ?? ""}
-                      onChange={(e) => setSelectedEventId(Number(e.target.value) || null)}
-                      disabled={loadingEvents}
-                      className="w-full appearance-none px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm bg-white cursor-pointer disabled:bg-gray-50"
-                    >
-                      <option value="">-- Pilih event untuk isi otomatis --</option>
-                      {events.map((e: Event) => (
-                        <option key={e.id} value={e.id}>{e.event_title}</option>
-                      ))}
-                    </select>
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▾</span>
-                  </div>
-                </div>
+								<div>
+									<div className="mb-2 flex items-center justify-between">
+										<label className="block text-sm font-medium text-gray-700">
+											Custom Message
+										</label>
+										<span
+											className={`text-xs ${
+												isMessageTooLong ? "text-red-500" : "text-gray-400"
+											}`}
+										>
+											{customMessage.length}/1000
+										</span>
+									</div>
+									<FormTextarea
+										value={customMessage}
+										onChange={(event) => {
+											resetResult();
+											setCustomMessage(event.target.value);
+										}}
+										placeholder="Kosongkan jika ingin memakai template default backend"
+										rows={7}
+										className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+									/>
+									{isMessageTooLong && (
+										<p className="mt-1 text-xs text-red-500">
+											Custom message maksimal 1000 karakter.
+										</p>
+									)}
+								</div>
+							</div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Isi Pesan</label>
-                  <textarea
-                    rows={10}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Tulis pesan WhatsApp..."
-                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none resize-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Variabel tersedia: {"{nama}"}, {"{event_title}"}, {"{event_date}"}, {"{event_time}"}, {"{event_location}"}
-                  </p>
-                </div>
-              </div>
+							<div className="space-y-4">
+								<div>
+									<div className="mb-2 flex items-center justify-between">
+										<label className="block text-sm font-medium text-gray-700">
+											Preview Pesan
+										</label>
+										<span className="rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-600">
+											{target}
+										</span>
+									</div>
+									<div className="min-h-[360px] whitespace-pre-wrap rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+										{!selectedEventId
+											? "Pilih event untuk melihat preview."
+											: target === "custom" &&
+													parsedNumbers.validNumbers.length === 0
+												? "Masukkan nomor manual untuk menghitung target custom."
+												: preview.isLoading
+													? "Memuat preview..."
+													: preview.isError
+														? getApiErrorMessage(
+																preview.error,
+																"Gagal memuat preview",
+															)
+														: previewMessage || "Preview belum tersedia"}
+									</div>
+								</div>
 
-              {/* Right: Preview */}
-              <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-3xl p-8 text-white flex flex-col justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold mb-1">Preview Pesan</h2>
-                  <p className="text-cyan-100 text-sm mb-6">Tampilan pesan WhatsApp</p>
+								{successMessage && (
+									<div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+										<p>{successMessage}</p>
+										<p className="text-xs">
+											Total sent: {sendDetail?.totalSent ?? 0}
+										</p>
+										{sendDetail?.fonnte !== undefined && (
+											<details className="text-xs">
+												<summary className="cursor-pointer font-medium">
+													Detail teknis Fonnte
+												</summary>
+												<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
+													{JSON.stringify(sendDetail.fonnte, null, 2)}
+												</pre>
+											</details>
+										)}
+										{sendDetail?.senderStatus !== undefined && (
+											<p className="text-xs">
+												Sender status: {String(sendDetail.senderStatus)}
+											</p>
+										)}
+										{sendDetail?.blockedReason !== undefined && (
+											<p className="text-xs">
+												Blocked reason: {String(sendDetail.blockedReason)}
+											</p>
+										)}
+									</div>
+								)}
 
-                  {/* WA bubble */}
-                  <div className="bg-white text-gray-700 rounded-3xl p-6 shadow-lg">
-                    {selectedEvent ? (
-                      <>
-                        <p className="font-bold text-lg mb-3">Assalamualaikum Alumni 👋</p>
-                        <p className="mb-3 text-sm">
-                          Kami mengundang Anda untuk menghadiri kegiatan{" "}
-                          <span className="font-semibold text-cyan-600">{selectedEvent.event_title}</span>
-                        </p>
-                        <div className="space-y-1.5 text-sm mb-3 text-gray-600">
-                          <p>📅 {new Date(selectedEvent.event_datetime).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</p>
-                          <p>🕗 {new Date(selectedEvent.event_datetime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB</p>
-                          <p>📍 {selectedEvent.location}</p>
-                        </div>
-                        <p className="text-sm">Silakan lakukan presensi menggunakan QR Code saat acara berlangsung.</p>
-                      </>
-                    ) : message ? (
-                      <p className="text-sm whitespace-pre-line">{message}</p>
-                    ) : (
-                      <p className="text-gray-400 text-sm italic">Tulis pesan atau pilih event untuk melihat preview...</p>
-                    )}
-                  </div>
-                </div>
+								{errorMessage && (
+									<div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+										<p>{errorMessage}</p>
+										{sendDetail?.senderStatus !== undefined && (
+											<p className="text-xs">
+												Sender status: {String(sendDetail.senderStatus)}
+											</p>
+										)}
+										{sendDetail?.blockedReason !== undefined && (
+											<p className="text-xs">
+												Blocked reason: {String(sendDetail.blockedReason)}
+											</p>
+										)}
+										{sendDetail?.fonnte !== undefined && (
+											<details className="text-xs">
+												<summary className="cursor-pointer font-medium">
+													Detail teknis Fonnte
+												</summary>
+												<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
+													{JSON.stringify(sendDetail.fonnte, null, 2)}
+												</pre>
+											</details>
+										)}
+									</div>
+								)}
+							</div>
+						</div>
+					</div>
 
-                <div className="mt-6 p-4 bg-white/10 rounded-2xl">
-                  <p className="text-xs text-cyan-100">
-                    Broadcast terhubung langsung dengan WhatsApp API secara real-time.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Riwayat Broadcast ── */}
-          <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-            <div className="p-8 bg-cyan-50">
-              <h2 className="text-4xl font-bold">Riwayat Broadcast</h2>
-              <p className="text-gray-500 mt-2">Daftar pesan yang pernah dikirim</p>
-            </div>
-
-            <div className="p-8 overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-cyan-100">
-                  <tr>
-                    {["No", "Judul", "Event", "Tanggal", "Penerima", "Status", "Aksi"].map((h) => (
-                      <th key={h} className="text-left p-5 text-sm font-semibold text-gray-700">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {loadingBroadcast ? (
-                    <TableSkeleton />
-                  ) : broadcasts.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="text-center py-12 text-gray-400">
-                        <p className="text-3xl mb-2">💬</p>
-                        <p className="text-sm">Belum ada riwayat broadcast</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    broadcasts.map((item: BroadcastItem, index: number) => (
-                      <tr key={item.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="p-5 text-gray-500 text-sm">{index + 1}</td>
-                        <td className="p-5 font-semibold text-gray-800">{item.title}</td>
-                        <td className="p-5 text-gray-500 text-sm">{item.event_title ?? "-"}</td>
-                        <td className="p-5 text-gray-500 text-sm">
-                          {new Date(item.created_at).toLocaleDateString("id-ID", {
-                            day: "2-digit", month: "long", year: "numeric",
-                          })}
-                        </td>
-                        <td className="p-5 text-gray-500 text-sm">{item.recipient_count} Alumni</td>
-                        <td className="p-5">
-                          <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold ${
-                            item.status === "Terkirim"
-                              ? "bg-green-100 text-green-700"
-                              : item.status === "Gagal"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}>
-                            {item.status}
-                          </span>
-                        </td>
-                        <td className="p-5">
-                          <div className="flex gap-3 text-lg">
-                            <button className="hover:opacity-70 transition-opacity" title="Lihat detail">👁️</button>
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              disabled={deleteBroadcast.isPending}
-                              className="hover:opacity-70 transition-opacity disabled:opacity-30"
-                              title="Hapus"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <footer className="mt-10 text-center text-gray-400 text-xs pb-4">
-            © 2026 QR Event Attendance System - Pesantren
-          </footer>
-        </main>
-      </div>
-    </div>
-  );
+					<p className="pb-4 text-center text-xs text-gray-400">
+						© 2026 QR Event Attendance System - Pesantren
+					</p>
+				</main>
+			</div>
+		</div>
+	);
 }

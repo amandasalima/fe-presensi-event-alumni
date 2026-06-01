@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FormInput } from "@/app/components/FormControl";
 
 type LoginResponse = {
 	success: boolean;
@@ -212,7 +213,7 @@ const AdminLogin = () => {
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
 									✉️
 								</span>
-								<input
+								<FormInput
 									type="email"
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
@@ -232,7 +233,7 @@ const AdminLogin = () => {
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
 									🔒
 								</span>
-								<input
+								<FormInput
 									type={showPassword ? "text" : "password"}
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import { FormInput, FormSelect } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
 import {
 	useEvents,
@@ -457,7 +458,7 @@ export default function GenerateQRPage() {
 								</label>
 
 									<div className="relative">
-										<select
+										<FormSelect
 											value={selectedId ?? ""}
 											onChange={(e) => {
 												setSelectedId(Number(e.target.value) || null);
@@ -473,7 +474,7 @@ export default function GenerateQRPage() {
 												{event.event_title}
 											</option>
 										))}
-									</select>
+									</FormSelect>
 
 									<span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
 										▾
@@ -511,7 +512,7 @@ export default function GenerateQRPage() {
 										Mulai Berlaku
 									</label>
 
-									<input
+									<FormInput
 										type="datetime-local"
 										value={validFrom}
 										onChange={(e) => setValidFrom(e.target.value)}
@@ -530,7 +531,7 @@ export default function GenerateQRPage() {
 									</label>
 
 									<div className="flex items-center gap-3">
-										<input
+										<FormInput
 											type="number"
 											min={1}
 											max={1440}

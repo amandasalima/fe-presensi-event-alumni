@@ -1,5 +1,7 @@
 "use client";
 
+import { FormInput } from "./FormControl";
+
 export default function AdminHeader({
   title,
 }: {
@@ -14,7 +16,7 @@ export default function AdminHeader({
       <div className="flex items-center gap-6">
         {/* Search */}
         <div className="hidden md:flex items-center bg-gray-100 rounded-2xl px-5 py-3 w-96">
-          <input
+          <FormInput
             type="text"
             placeholder="Search Here..."
             className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-400"

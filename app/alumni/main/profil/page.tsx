@@ -18,6 +18,7 @@ import {
   LogOut,
   ChevronRight,
 } from "lucide-react";
+import { FormInput, FormSelect } from "@/app/components/FormControl";
 
 import {
   useProfile,
@@ -111,7 +112,7 @@ function AvatarSection({
           )}
         </button>
 
-        <input
+        <FormInput
           ref={fileRef}
           type="file"
           accept="image/*"
@@ -180,7 +181,7 @@ function EditInput({
   placeholder?: string;
 }) {
   return (
-    <input
+    <FormInput
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -475,7 +476,7 @@ export default function AlumniProfilePage() {
           value={profile.gender || ""}
           editing={isEditing}
         >
-          <select
+          <FormSelect
             value={draft.gender ?? ""}
             onChange={(e) =>
               setDraft({
@@ -488,7 +489,7 @@ export default function AlumniProfilePage() {
             <option value="">Pilih jenis kelamin</option>
             <option value="Laki-laki">Laki-laki</option>
             <option value="Perempuan">Perempuan</option>
-          </select>
+          </FormSelect>
         </InfoRow>
 
         <InfoRow
@@ -499,7 +500,7 @@ export default function AlumniProfilePage() {
           }
           editing={isEditing}
         >
-          <select
+          <FormSelect
             value={draft.graduation_year ?? ""}
             onChange={(e) =>
               setDraft({ ...draft, graduation_year: e.target.value })
@@ -516,7 +517,7 @@ export default function AlumniProfilePage() {
                 </option>
               );
             })}
-          </select>
+          </FormSelect>
         </InfoRow>
 
         <InfoRow

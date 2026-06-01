@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import {
+	CheckCircle2,
+	Edit3,
+	Eye,
+	EyeOff,
+	PlugZap,
+	Save,
+	ShieldAlert,
+} from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
-import {
-	useAdminProfile,
-	useUpdateAdminProfile,
-	useUpdatePassword,
-	useWAConfig,
-	useUpdateWAConfig,
-	useSystemStatus,
-	type AdminProfile,
-	type SystemStatus,
-	type WAConfig,
-} from "@/hooks/admin/useSetting";
+import { FormInput } from "@/app/components/FormControl";
+import { getApiErrorMessage } from "@/lib/api";
+import { useSettingsPage } from "./_hooks/useSettingsPage";
+import { DEFAULT_FONNTE_API_URL } from "./_utils/waConfig";
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -55,121 +56,57 @@ function SectionCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
-	// ── Profile state ──
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
-
-	// ── Password state ──
-	const [oldPassword, setOldPassword] = useState("");
-	const [newPassword, setNewPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [passwordError, setPasswordError] = useState("");
-
-	// ── WA Config state ──
-	const [apiUrl, setApiUrl] = useState("");
-	const [apiToken, setApiToken] = useState("");
-	const [senderNumber, setSenderNumber] = useState("");
-	const [showToken, setShowToken] = useState(false);
-	const [testResult, setTestResult] = useState<"success" | "error" | null>(
-		null,
-	);
-
-	// ── TanStack Query ──
-	const { data: profile, isLoading: loadingProfile } = useAdminProfile({
-		onSuccess: (data: AdminProfile) => {
-			setName(data.name);
-			setEmail(data.email);
-		},
-	});
-
-	const { data: status, isLoading: loadingStatus } = useSystemStatus();
-	const { data: waConfig, isLoading: loadingWA } = useWAConfig({
-		onSuccess: (data: WAConfig) => {
-			setApiUrl(data.api_url);
-			setApiToken(data.api_token);
-			setSenderNumber(data.sender_number);
-		},
-	});
-
-	const updateProfile = useUpdateAdminProfile();
-	const updatePassword = useUpdatePassword();
-	const saveWAConfig = useUpdateWAConfig();
-
-	// ── Handlers ──
-	const handleSaveProfile = () => {
-		updateProfile.mutate({ name, email });
-	};
-
-	const handleUpdatePassword = () => {
-		setPasswordError("");
-
-		if (!oldPassword.trim()) {
-			setPasswordError("Password lama wajib diisi");
-			return;
-		}
-
-		if (!newPassword.trim()) {
-			setPasswordError("Password baru wajib diisi");
-			return;
-		}
-
-		if (newPassword.length < 8) {
-			setPasswordError("Password baru minimal 8 karakter");
-			return;
-		}
-
-		if (newPassword !== confirmPassword) {
-			setPasswordError("Password baru dan konfirmasi tidak cocok");
-			return;
-		}
-
-		if (oldPassword === newPassword) {
-			setPasswordError("Password baru tidak boleh sama dengan password lama");
-			return;
-		}
-
-		updatePassword.mutate(
-			{
-				current_password: oldPassword,
-				new_password: newPassword,
-				new_password_confirmation: confirmPassword,
-			},
-			{
-				onSuccess: () => {
-					setOldPassword("");
-					setNewPassword("");
-					setConfirmPassword("");
-				},
-			},
-		);
-	};
-
-	const handleSaveWAConfig = () => {
-		saveWAConfig.mutate({
-			api_url: apiUrl,
-			api_token: apiToken,
-			sender_number: senderNumber,
-		});
-	};
-
-	const handleTestWA = async () => {
-		try {
-			const res = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/settings/whatsapp/test`,
-				{
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("token")}`,
-						"Content-Type": "application/json",
-					},
-				},
-			);
-			setTestResult(res.ok ? "success" : "error");
-		} catch {
-			setTestResult("error");
-		}
-		setTimeout(() => setTestResult(null), 3000);
-	};
+	const {
+		canEditWA,
+		confirmPassword,
+		effectiveApiToken,
+		effectiveApiUrl,
+		effectiveEmail,
+		effectiveName,
+		effectiveSenderNumber,
+		editingWA,
+		handleCancelEditWA,
+		handleSaveProfile,
+		handleSaveWAConfig,
+		handleStartEditWA,
+		handleTestWA,
+		handleUpdatePassword,
+		isWABlocked,
+		isWAConfigError,
+		isWAConfigured,
+		isWATestSuccess,
+		loadingProfile,
+		loadingStatus,
+		loadingWA,
+		newPassword,
+		oldPassword,
+		passwordError,
+		profile,
+		readOnlyConnected,
+		saveWAConfig,
+		savingWA,
+		setApiToken,
+		setConfirmPassword,
+		setEmail,
+		setName,
+		setNewPassword,
+		setOldPassword,
+		setSenderNumber,
+		setShowToken,
+		setWAFormError,
+		showToken,
+		status,
+		testError,
+		testResult,
+		testingWA,
+		updatePassword,
+		updateProfile,
+		waConfig,
+		waConfigError,
+		waError,
+		waFormError,
+		waSuccess,
+	} = useSettingsPage();
 
 	return (
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
@@ -239,10 +176,10 @@ export default function SettingsPage() {
 										<label className="block text-sm font-semibold text-gray-700 mb-2">
 											Nama Administrator
 										</label>
-										<input
-											type="text"
-											value={name}
-											onChange={(e) => setName(e.target.value)}
+											<FormInput
+												type="text"
+												value={effectiveName}
+												onChange={(e) => setName(e.target.value)}
 											placeholder={
 												loadingProfile ? "Memuat..." : "Nama administrator"
 											}
@@ -254,10 +191,10 @@ export default function SettingsPage() {
 										<label className="block text-sm font-semibold text-gray-700 mb-2">
 											Email Administrator
 										</label>
-										<input
-											type="email"
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
+											<FormInput
+												type="email"
+												value={effectiveEmail}
+												onChange={(e) => setEmail(e.target.value)}
 											placeholder={
 												loadingProfile ? "Memuat..." : "email@pesantren.ac.id"
 											}
@@ -320,7 +257,7 @@ export default function SettingsPage() {
 											<label className="block text-sm font-semibold text-gray-700 mb-2">
 												{field.label}
 											</label>
-											<input
+											<FormInput
 												type="password"
 												value={field.value}
 												onChange={(e) => field.set(e.target.value)}
@@ -361,102 +298,294 @@ export default function SettingsPage() {
 
 							{/* Konfigurasi WhatsApp API */}
 							<SectionCard
-								title="Konfigurasi WhatsApp API"
-								desc="Atur koneksi ke WhatsApp gateway"
+								title="Konfigurasi WhatsApp Broadcast"
+								desc="Atur koneksi Fonnte untuk broadcast WhatsApp"
 							>
-								<div className="space-y-5">
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											URL API Gateway
-										</label>
-										<input
-											type="text"
-											value={apiUrl}
-											onChange={(e) => setApiUrl(e.target.value)}
-											placeholder="https://api.fonnte.com/send"
-											disabled={loadingWA}
-											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											API Token
-										</label>
-										<div className="relative">
-											<input
-												type={showToken ? "text" : "password"}
-												value={apiToken}
-												onChange={(e) => setApiToken(e.target.value)}
-												placeholder="Masukkan API token"
-												disabled={loadingWA}
-												className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
-											/>
-											<button
-												type="button"
-												onClick={() => setShowToken(!showToken)}
-												className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-											>
-												{showToken ? "🙈" : "👁️"}
-											</button>
+									<div className="space-y-5">
+										<div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl flex items-start gap-3">
+											<CheckCircle2 className="w-5 h-5 text-teal-600 mt-0.5" />
+											<div>
+												<p className="text-sm font-semibold text-gray-800">
+													Provider aktif: Fonnte
+												</p>
+												<p className="text-xs text-gray-500 mt-1">
+													Pengaturan ini dipakai untuk broadcast WA dan test koneksi
+													sebelum pengiriman massal.
+												</p>
+											</div>
 										</div>
-										<p className="text-xs text-gray-400 mt-1">
-											Token tersimpan terenkripsi di server
-										</p>
-									</div>
 
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											Nomor Pengirim (Sender)
-										</label>
-										<input
-											type="text"
-											value={senderNumber}
-											onChange={(e) => setSenderNumber(e.target.value)}
-											placeholder="628123456789"
-											disabled={loadingWA}
-											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
-										/>
-										<p className="text-xs text-gray-400 mt-1">
-											Format: 62 + nomor tanpa tanda hubung
-										</p>
-									</div>
+										{loadingWA ? (
+											<div className="p-5 border border-gray-100 rounded-2xl bg-gray-50 text-sm text-gray-500">
+												Memuat konfigurasi WhatsApp...
+											</div>
+										) : isWAConfigError ? (
+											<div className="p-5 border border-red-100 rounded-2xl bg-red-50 text-sm text-red-500">
+												{getApiErrorMessage(
+													waConfigError,
+													"Gagal memuat konfigurasi WhatsApp",
+												)}
+											</div>
+										) : readOnlyConnected ? (
+											<div className="space-y-4">
+												<div className="p-5 bg-green-50 border border-green-200 rounded-2xl">
+													<div className="flex items-start justify-between gap-4">
+														<div>
+															<p className="text-sm font-semibold text-green-700">
+																Status connected
+															</p>
+															<p className="text-xs text-green-600 mt-1">
+																Konfigurasi tersimpan siap dipakai untuk broadcast.
+															</p>
+														</div>
+														<span className="px-3 py-1 rounded-full bg-white text-green-700 border border-green-200 text-xs font-semibold">
+															{waConfig?.sender_status ?? "active"}
+														</span>
+													</div>
+												</div>
+
+												<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+													{[
+														{ label: "Provider", value: waConfig?.provider ?? "fonnte" },
+														{ label: "URL API", value: DEFAULT_FONNTE_API_URL },
+														{ label: "Nomor Pengirim", value: waConfig?.sender_number ?? "-" },
+														{ label: "Token", value: waConfig?.api_token || "Token tersimpan" },
+														{
+															label: "Koneksi",
+															value: waConfig?.connected ? "connected" : "disconnected",
+														},
+														{
+															label: "Terakhir dites",
+															value: waConfig?.last_tested_at ?? "-",
+														},
+													].map((item) => (
+														<div
+															key={item.label}
+															className="p-4 border border-gray-100 rounded-2xl bg-gray-50"
+														>
+															<p className="text-xs font-semibold text-gray-400 uppercase">
+																{item.label}
+															</p>
+															<p className="text-sm font-semibold text-gray-800 mt-1 break-words">
+																{item.value}
+															</p>
+														</div>
+													))}
+												</div>
+											</div>
+										) : (
+											<div className="space-y-5">
+												<div>
+													<label className="block text-sm font-semibold text-gray-700 mb-2">
+														Provider
+													</label>
+													<FormInput
+														type="text"
+														value="fonnte"
+														disabled
+														className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none text-sm bg-gray-50 text-gray-500"
+													/>
+												</div>
+
+												<div>
+													<label className="block text-sm font-semibold text-gray-700 mb-2">
+														URL API Fonnte
+													</label>
+													<FormInput
+														type="text"
+														value={effectiveApiUrl}
+														readOnly
+														disabled
+														className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none text-sm bg-gray-50 text-gray-500"
+													/>
+												</div>
+
+												<div>
+													<label className="block text-sm font-semibold text-gray-700 mb-2">
+														API Token
+													</label>
+													<div className="relative">
+														<FormInput
+															type={showToken ? "text" : "password"}
+															value={effectiveApiToken}
+															onChange={(e) => {
+																setApiToken(e.target.value);
+																setWAFormError("");
+															}}
+															placeholder={
+																isWAConfigured
+																	? "Biarkan token masked jika tidak diganti"
+																	: "Masukkan API token"
+															}
+															disabled={loadingWA || savingWA}
+															className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
+														/>
+														<button
+															type="button"
+															onClick={() => setShowToken(!showToken)}
+															className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+															aria-label={
+																showToken
+																	? "Sembunyikan token"
+																	: "Tampilkan token"
+															}
+														>
+															{showToken ? (
+																<EyeOff className="w-5 h-5" />
+															) : (
+																<Eye className="w-5 h-5" />
+															)}
+														</button>
+													</div>
+													<p className="text-xs text-gray-400 mt-1">
+														{isWAConfigured
+															? "Token tersimpan ditampilkan dalam bentuk masked dari backend."
+															: "Token wajib diisi untuk konfigurasi baru."}
+													</p>
+												</div>
+
+												<div>
+													<label className="block text-sm font-semibold text-gray-700 mb-2">
+														Nomor Pengirim (Sender)
+													</label>
+													<FormInput
+														type="text"
+														value={effectiveSenderNumber}
+														onChange={(e) => {
+															setSenderNumber(e.target.value.replace(/\D/g, ""));
+															setWAFormError("");
+														}}
+														placeholder="628123456789"
+														disabled={loadingWA || savingWA}
+														className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
+													/>
+													<p className="text-xs text-gray-400 mt-1">
+														Format: angka saja, diawali 62.
+													</p>
+												</div>
+											</div>
+										)}
 
 									{/* Test result */}
-									{testResult === "success" && (
-										<div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
-											<span>✅</span> Koneksi WhatsApp API berhasil
+									{isWATestSuccess && (
+										<div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-start gap-2">
+											<CheckCircle2 className="w-5 h-5 mt-0.5" />
+											<div>
+												<p className="font-semibold">
+													Koneksi Fonnte berhasil
+												</p>
+												<p className="text-green-600 mt-1">
+													{testResult?.message ??
+														"Nomor pengirim siap dipakai untuk broadcast WA."}
+												</p>
+											</div>
 										</div>
 									)}
-									{testResult === "error" && (
-										<div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-500 text-sm flex items-center gap-2">
-											<span>⚠️</span> Koneksi gagal, periksa token dan URL API
+									{isWABlocked && (
+										<div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex items-start gap-2">
+											<ShieldAlert className="w-5 h-5 mt-0.5" />
+											<div>
+												<p className="font-semibold">
+													Nomor WhatsApp terindikasi terblokir
+												</p>
+												<p className="text-red-500 mt-1">
+													{testResult?.blocked_reason ??
+														testResult?.message ??
+														"Jangan lanjutkan broadcast sampai nomor sender aktif kembali di Fonnte."}
+												</p>
+											</div>
+										</div>
+									)}
+									{testError && (
+										<div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-500 text-sm flex items-start gap-2">
+											<ShieldAlert className="w-5 h-5 mt-0.5" />
+											<div>
+												<p className="font-semibold">Test koneksi gagal</p>
+												<p className="mt-1">{testError}</p>
+											</div>
+										</div>
+									)}
+									{waFormError && (
+										<div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-500 text-sm flex items-start gap-2">
+											<ShieldAlert className="w-5 h-5 mt-0.5" />
+											<div>
+												<p className="font-semibold">Form belum valid</p>
+												<p className="mt-1">{waFormError}</p>
+											</div>
 										</div>
 									)}
 
 									{saveWAConfig.isSuccess && (
 										<p className="text-sm text-green-600 flex items-center gap-2">
-											<span>✅</span> Konfigurasi WA API berhasil disimpan
+											<CheckCircle2 className="w-4 h-4" /> Konfigurasi WA API
+											berhasil disimpan
+										</p>
+									)}
+									{saveWAConfig.isError && (
+										<p className="text-sm text-red-500 flex items-center gap-2">
+											<ShieldAlert className="w-4 h-4" />{" "}
+											{getApiErrorMessage(
+												saveWAConfig.error,
+												"Gagal menyimpan konfigurasi WA",
+											)}
 										</p>
 									)}
 
-									<div className="flex gap-3">
+									<div className="flex flex-wrap gap-3">
 										<button
 											onClick={handleTestWA}
-											className="px-6 py-4 border-2 border-teal-500 text-teal-600 rounded-2xl font-semibold hover:bg-teal-50 transition-colors"
+											disabled={loadingWA || testingWA}
+											className="px-6 py-4 border-2 border-teal-500 text-teal-600 rounded-2xl font-semibold hover:bg-teal-50 transition-colors disabled:opacity-50 flex items-center gap-2"
 										>
-											🔌 Test Koneksi
-										</button>
-										<button
-											onClick={handleSaveWAConfig}
-											disabled={saveWAConfig.isPending}
-											className="flex-1 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-										>
-											{saveWAConfig.isPending && (
-												<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+											{testingWA ? (
+												<span className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+											) : (
+												<PlugZap className="w-5 h-5" />
 											)}
-											Simpan Konfigurasi
+											Test Koneksi
 										</button>
+										{readOnlyConnected ? (
+											<button
+												onClick={handleStartEditWA}
+												disabled={!canEditWA}
+												className="flex-1 min-w-48 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+											>
+												<Edit3 className="w-5 h-5" />
+												Edit
+											</button>
+										) : (
+											<>
+												{isWAConfigured && (
+													<button
+														onClick={handleCancelEditWA}
+														disabled={savingWA}
+														className="px-6 py-4 border-2 border-gray-200 text-gray-600 rounded-2xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+													>
+														Batal
+													</button>
+												)}
+												<button
+													onClick={handleSaveWAConfig}
+													disabled={savingWA || loadingWA}
+													className="flex-1 min-w-48 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+												>
+													{savingWA && (
+														<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+													)}
+													{!savingWA && <Save className="w-5 h-5" />}
+													Simpan Konfigurasi
+												</button>
+											</>
+											)}
+									</div>
+									<div className="sr-only" aria-live="polite">
+										{loadingWA ? "loading" : ""}
+										{readOnlyConnected ? "readOnlyConnected" : ""}
+										{editingWA ? "editing" : ""}
+										{savingWA ? "saving" : ""}
+										{testingWA ? "testing" : ""}
+										{waError ? "error" : ""}
+										{waSuccess ? "success" : ""}
 									</div>
 								</div>
 							</SectionCard>

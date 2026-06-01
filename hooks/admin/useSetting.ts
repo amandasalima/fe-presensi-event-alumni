@@ -15,10 +15,29 @@ export interface SystemStatus {
 	system: "Online" | "Offline";
 }
 
+export type WAProvider = "fonnte";
+
 export interface WAConfig {
+	provider: WAProvider;
 	api_url: string;
 	api_token: string;
 	sender_number: string;
+	sender_status?: "active" | "blocked" | "unknown";
+	blocked_reason?: string | null;
+	is_configured?: boolean;
+	connected?: boolean;
+	can_edit?: boolean;
+	last_tested_at?: string | null;
+}
+
+export interface WATestResponse {
+	success?: boolean;
+	status?: "connected" | "disconnected" | "blocked" | "error";
+	message?: string;
+	sender_number?: string;
+	sender_status?: "active" | "blocked" | "unknown";
+	blocked_reason?: string;
+	fonnte?: unknown;
 }
 
 export interface UpdateProfilePayload {
@@ -34,13 +53,10 @@ export interface UpdatePasswordPayload {
 // ─── Admin Profile ────────────────────────────────────────────────────────────
 
 // GET profil admin
-export function useAdminProfile(options?: {
-	onSuccess?: (data: AdminProfile) => void;
-}) {
+export function useAdminProfile() {
 	return useQuery<AdminProfile>({
 		queryKey: ["admin-profile"],
 		queryFn: () => fetchAPI("/admin/profile"),
-		...options,
 	});
 }
 
@@ -79,13 +95,10 @@ export function useUpdatePassword() {
 // ─── WhatsApp API Config ──────────────────────────────────────────────────────
 
 // GET konfigurasi WA API
-export function useWAConfig(options?: {
-	onSuccess?: (data: WAConfig) => void;
-}) {
+export function useWAConfig() {
 	return useQuery<WAConfig>({
 		queryKey: ["wa-config"],
 		queryFn: () => fetchAPI("/settings/whatsapp"),
-		...options,
 	});
 }
 
@@ -109,8 +122,12 @@ export function useUpdateWAConfig(options?: {
 
 // POST test koneksi WA API
 export function useTestWAConnection() {
-	return useMutation<void, Error, void>({
-		mutationFn: () => fetchAPI("/settings/whatsapp/test", { method: "POST" }),
+	return useMutation<WATestResponse, Error, Partial<WAConfig> | void>({
+		mutationFn: (data) =>
+			fetchAPI("/settings/whatsapp/test", {
+				method: "POST",
+				body: data ? JSON.stringify(data) : undefined,
+			}),
 	});
 }
 

@@ -76,6 +76,50 @@ api.interceptors.response.use(
 
 export default api;
 
+export class ApiError extends Error {
+	status: number;
+	data: unknown;
+
+	constructor(message: string, status: number, data: unknown) {
+		super(message);
+		this.name = "ApiError";
+		this.status = status;
+		this.data = data;
+	}
+}
+
+function formatValidationErrors(errors: unknown) {
+	if (!errors || typeof errors !== "object") return "";
+
+	return Object.values(errors)
+		.flatMap((value) => (Array.isArray(value) ? value : [value]))
+		.filter((value): value is string => typeof value === "string")
+		.join(" ");
+}
+
+export function getApiErrorMessage(error: unknown, fallback = "Request failed") {
+	if (!(error instanceof Error)) return fallback;
+
+	if (error instanceof ApiError) {
+		const data = error.data as {
+			message?: unknown;
+			error?: unknown;
+			errors?: unknown;
+		} | null;
+		const message =
+			typeof data?.message === "string"
+				? data.message
+				: typeof data?.error === "string"
+					? data.error
+					: "";
+		const validation = formatValidationErrors(data?.errors);
+
+		return [message, validation].filter(Boolean).join(" ") || error.message;
+	}
+
+	return error.message || fallback;
+}
+
 // Helper function untuk fetch-style API calls
 export async function fetchAPI(endpoint: string, options?: RequestInit) {
 	const token = getAuthToken();
@@ -93,7 +137,11 @@ export async function fetchAPI(endpoint: string, options?: RequestInit) {
 	const data = await response.json().catch(() => null);
 
 	if (!response.ok) {
-		throw new Error(data?.message || "Request failed");
+		throw new ApiError(
+			getApiErrorMessage(new ApiError("Request failed", response.status, data)),
+			response.status,
+			data,
+		);
 	}
 
 	return data;

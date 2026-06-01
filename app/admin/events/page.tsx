@@ -1,73 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { Info, Plus, Trash2 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import { FormInput, FormSelect, FormTextarea } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
+import { getApiErrorMessage } from "@/lib/api";
 import {
 	useEvents,
-	useCreateEvent,
 	useDeleteEvent,
-	useEventCategories,
 	type Event,
 } from "@/hooks/admin/useEvents";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function parseEventDate(event: Event) {
-	const monthNames = [
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"Mei",
-		"Jun",
-		"Jul",
-		"Agu",
-		"Sep",
-		"Okt",
-		"Nov",
-		"Des",
-	];
-
-	const formatDate = (dateValue: string) => {
-		const d = new Date(dateValue);
-
-		if (Number.isNaN(d.getTime())) {
-			return "-";
-		}
-
-		const day = String(d.getDate()).padStart(2, "0");
-		const month = monthNames[d.getMonth()];
-		const year = d.getFullYear();
-
-		return `${day} - ${month} - ${year}`;
-	};
-
-	const formatTime = (timeValue?: string) => {
-		if (!timeValue) return "-";
-
-		return timeValue.slice(0, 5);
-	};
-
-	if (event.event_date) {
-		return {
-			date: formatDate(event.event_date),
-			time: formatTime(event.start_time),
-		};
-	}
-
-	if (event.event_datetime) {
-		return {
-			date: formatDate(event.event_datetime),
-			time: formatTime(event.start_time),
-		};
-	}
-
-	return {
-		date: "-",
-		time: "-",
-	};
-}
+import type { EventBroadcastTarget } from "@/hooks/admin/useBroadcast";
+import { useCreateEventForm } from "./_hooks/useCreateEventForm";
+import { useEventBroadcastForm } from "./_hooks/useEventBroadcastForm";
+import {
+	parseEventDate,
+	sanitizeBroadcastMessage,
+} from "./_utils/eventFormatters";
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 function CardSkeleton() {
@@ -110,6 +61,27 @@ function StatCard({
 	);
 }
 
+const broadcastTargetDescriptions: Record<
+	EventBroadcastTarget,
+	{ label: string; description: string }
+> = {
+	all: {
+		label: "Semua alumni",
+		description:
+			"Broadcast akan dikirim ke seluruh alumni yang memiliki nomor HP valid.",
+	},
+	registered: {
+		label: "Terdaftar event",
+		description:
+			"Broadcast hanya dikirim ke alumni yang sudah terdaftar pada event ini.",
+	},
+	custom: {
+		label: "Nomor manual",
+		description:
+			"Broadcast hanya dikirim ke daftar nomor yang Anda input satu per satu.",
+	},
+};
+
 // ─── Create Event Modal ───────────────────────────────────────────────────────
 function CreateEventModal({
 	isOpen,
@@ -118,72 +90,18 @@ function CreateEventModal({
 	isOpen: boolean;
 	onClose: () => void;
 }) {
-	const createEvent = useCreateEvent();
 	const {
-		data: categories = [],
-		isLoading: isCategoryLoading,
-		isError: isCategoryError,
-	} = useEventCategories();
-
-	const [form, setForm] = useState({
-		category_id: 0,
-		event_title: "",
-		description: "",
-		location: "",
-		event_date: "",
-		start_time: "",
-		end_time: "",
-	});
-
-	const selectedCategoryId = form.category_id || categories[0]?.id || 0;
+		form,
+		categories,
+		selectedCategoryId,
+		createEvent,
+		handleChange,
+		handleSubmit,
+		isCategoryLoading,
+		isCategoryError,
+	} = useCreateEventForm(onClose);
 
 	if (!isOpen) return null;
-
-	const handleChange = (
-		e: React.ChangeEvent<
-			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-		>,
-	) => {
-		const { name, value } = e.target;
-
-		setForm((prev) => ({
-			...prev,
-			[name]: name === "category_id" ? Number(value) : value,
-		}));
-	};
-
-	const resetForm = () => {
-		setForm({
-			category_id: categories[0]?.id ?? 0,
-			event_title: "",
-			description: "",
-			location: "",
-			event_date: "",
-			start_time: "",
-			end_time: "",
-		});
-	};
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-
-		if (!selectedCategoryId) {
-			return;
-		}
-
-		createEvent.mutate(
-			{
-				...form,
-				category_id: selectedCategoryId,
-			},
-			{
-				onSuccess: () => {
-					resetForm();
-					onClose();
-				},
-			},
-		);
-	};
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -211,7 +129,7 @@ function CreateEventModal({
 							Kategori
 						</label>
 
-						<select
+						<FormSelect
 							name="category_id"
 							value={selectedCategoryId}
 							onChange={handleChange}
@@ -233,7 +151,7 @@ function CreateEventModal({
 										{category.category_name}
 									</option>
 								))}
-						</select>
+						</FormSelect>
 
 						{isCategoryError && (
 							<p className="text-xs text-red-500 mt-1">
@@ -246,7 +164,7 @@ function CreateEventModal({
 						<label className="block text-sm font-medium text-gray-700 mb-1">
 							Judul Event
 						</label>
-						<input
+						<FormInput
 							type="text"
 							name="event_title"
 							value={form.event_title}
@@ -261,7 +179,7 @@ function CreateEventModal({
 						<label className="block text-sm font-medium text-gray-700 mb-1">
 							Deskripsi
 						</label>
-						<textarea
+						<FormTextarea
 							name="description"
 							value={form.description}
 							onChange={handleChange}
@@ -276,7 +194,7 @@ function CreateEventModal({
 						<label className="block text-sm font-medium text-gray-700 mb-1">
 							Lokasi
 						</label>
-						<input
+						<FormInput
 							type="text"
 							name="location"
 							value={form.location}
@@ -292,7 +210,7 @@ function CreateEventModal({
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Tanggal Event
 							</label>
-							<input
+							<FormInput
 								type="date"
 								name="event_date"
 								value={form.event_date}
@@ -306,7 +224,7 @@ function CreateEventModal({
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Jam Mulai
 							</label>
-							<input
+							<FormInput
 								type="time"
 								name="start_time"
 								value={form.start_time}
@@ -320,7 +238,7 @@ function CreateEventModal({
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Jam Selesai
 							</label>
-							<input
+							<FormInput
 								type="time"
 								name="end_time"
 								value={form.end_time}
@@ -348,16 +266,16 @@ function CreateEventModal({
 							Batal
 						</button>
 
-							<button
-								type="submit"
-								disabled={
-									createEvent.isPending ||
-									isCategoryLoading ||
-									categories.length === 0 ||
-									!selectedCategoryId
-								}
-								className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
-							>
+						<button
+							type="submit"
+							disabled={
+								createEvent.isPending ||
+								isCategoryLoading ||
+								categories.length === 0 ||
+								!selectedCategoryId
+							}
+							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
+						>
 							{createEvent.isPending ? (
 								<>
 									<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -374,13 +292,330 @@ function CreateEventModal({
 	);
 }
 
+function BroadcastModal({
+	event,
+	isOpen,
+	onClose,
+}: {
+	event: Event | null;
+	isOpen: boolean;
+	onClose: () => void;
+}) {
+	const {
+		target,
+		manualNumbers,
+		customMessage,
+		successMessage,
+		errorMessage,
+		sendDetail,
+		preview,
+		previewData,
+		sendEventBroadcast,
+		parsedNumbers,
+		estimatedTargets,
+		isMessageTooLong,
+		isSubmitDisabled,
+		updateManualNumber,
+		addManualNumber,
+		removeManualNumber,
+		setCustomMessage,
+		handleTargetChange,
+		handleSubmit,
+	} = useEventBroadcastForm(event);
+	const previewMessage = sanitizeBroadcastMessage(previewData?.message) || "";
+
+	if (!isOpen || !event) return null;
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+			<div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100">
+				<div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+					<div>
+						<h3 className="text-lg font-semibold text-gray-800">
+							WA Broadcast
+						</h3>
+						<p className="text-sm text-gray-400">{event.event_title}</p>
+					</div>
+
+					<button
+						type="button"
+						onClick={onClose}
+						className="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+					>
+						✕
+					</button>
+				</div>
+
+				<form onSubmit={handleSubmit} className="p-6 space-y-5">
+					<div className="grid grid-cols-3 gap-4">
+						<StatCard
+							label="Alumni Ber-HP"
+							value={
+								preview.isLoading
+									? "..."
+									: (previewData?.breakdown.total_all ?? 0)
+							}
+							sub="Total alumni dengan nomor"
+							accent="border-teal-400"
+						/>
+						<StatCard
+							label="Terdaftar Event"
+							value={
+								preview.isLoading
+									? "..."
+									: (previewData?.breakdown.total_registered ?? 0)
+							}
+							sub="Alumni yang sudah daftar"
+							accent="border-blue-400"
+						/>
+						<StatCard
+							label="Estimasi Penerima"
+							value={preview.isLoading ? "..." : estimatedTargets}
+							sub="Target broadcast saat ini"
+							accent="border-teal-400"
+						/>
+						{target === "custom" && (
+							<StatCard
+								label="Nomor Manual"
+								value={parsedNumbers.validNumbers.length}
+								sub={`Duplikat otomatis dihapus${
+									previewData?.breakdown.total_custom !== undefined
+										? ` • Preview: ${previewData.breakdown.total_custom}`
+										: ""
+								}`}
+								accent="border-green-400"
+							/>
+						)}
+					</div>
+
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+						<div className="space-y-5">
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									Target Penerima
+								</label>
+								<FormSelect
+									value={target}
+									onChange={(e) =>
+										handleTargetChange(e.target.value as EventBroadcastTarget)
+									}
+									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
+								>
+									<option value="all">Semua alumni yang punya nomor HP</option>
+									<option value="registered">
+										Alumni yang sudah daftar event
+									</option>
+									<option value="custom">Nomor manual</option>
+								</FormSelect>
+								<div className="mt-3 flex gap-3 rounded-xl border border-teal-100 bg-teal-50 p-3 text-sm text-teal-800">
+									<Info className="mt-0.5 h-4 w-4 shrink-0" />
+									<div>
+										<p className="font-medium">
+											{broadcastTargetDescriptions[target].label}
+										</p>
+										<p className="mt-0.5 text-xs text-teal-700">
+											{broadcastTargetDescriptions[target].description}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							{target === "custom" && (
+								<div>
+									<div className="mb-2 flex items-center justify-between gap-3">
+										<label className="block text-sm font-medium text-gray-700">
+											Nomor HP Tujuan
+										</label>
+										<button
+											type="button"
+											onClick={addManualNumber}
+											className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-100"
+										>
+											<Plus className="h-3.5 w-3.5" />
+											Tambah
+										</button>
+									</div>
+									<div className="space-y-2">
+										{manualNumbers.map((number, index) => (
+											<div
+												key={`event-manual-number-${index}`}
+												className="flex items-center gap-2"
+											>
+												<FormInput
+													type="tel"
+													value={number}
+													onChange={(e) =>
+														updateManualNumber(index, e.target.value)
+													}
+													placeholder={`Nomor ${index + 1}, contoh: 081234567890`}
+													className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
+												/>
+												<button
+													type="button"
+													onClick={() => removeManualNumber(index)}
+													aria-label={`Hapus nomor ${index + 1}`}
+													className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-100 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+													disabled={manualNumbers.length === 1 && !number.trim()}
+												>
+													<Trash2 className="h-4 w-4" />
+												</button>
+											</div>
+										))}
+									</div>
+									<p className="text-xs text-gray-400 mt-1">
+										Nomor valid: {parsedNumbers.validNumbers.length}
+										{parsedNumbers.invalidCount > 0
+											? ` • Tidak valid: ${parsedNumbers.invalidCount}`
+											: ""}
+									</p>
+								</div>
+							)}
+
+							<div>
+								<div className="flex items-center justify-between mb-2">
+									<label className="block text-sm font-medium text-gray-700">
+										Custom Message
+									</label>
+									<span
+										className={`text-xs ${
+											isMessageTooLong ? "text-red-500" : "text-gray-400"
+										}`}
+									>
+										{customMessage.length}/1000
+									</span>
+								</div>
+								<FormTextarea
+									value={customMessage}
+									onChange={(e) => setCustomMessage(e.target.value)}
+									placeholder="Kosongkan jika ingin memakai pesan default"
+									rows={6}
+									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 resize-none"
+								/>
+								{isMessageTooLong && (
+									<p className="text-xs text-red-500 mt-1">
+										Custom message maksimal 1000 karakter.
+									</p>
+								)}
+							</div>
+						</div>
+
+						<div>
+							<div className="flex items-center justify-between mb-2">
+								<label className="block text-sm font-medium text-gray-700">
+									Preview Pesan
+								</label>
+								<span className="text-xs bg-teal-50 text-teal-600 border border-teal-200 px-2 py-0.5 rounded-full font-medium">
+									{target}
+								</span>
+							</div>
+							<div className="min-h-[320px] text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm">
+								{target === "custom" &&
+								parsedNumbers.validNumbers.length === 0
+									? "Masukkan nomor manual untuk menghitung target custom."
+									: preview.isLoading
+									? "Memuat preview..."
+									: preview.isError
+										? getApiErrorMessage(preview.error, "Gagal memuat preview")
+										: previewMessage || "Preview belum tersedia"}
+							</div>
+						</div>
+					</div>
+
+					{successMessage && (
+						<div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm space-y-2">
+							<p>{successMessage}</p>
+							{sendDetail?.senderStatus !== undefined && (
+								<p className="text-xs">
+									Sender status: {String(sendDetail.senderStatus)}
+								</p>
+							)}
+							{sendDetail?.blockedReason !== undefined && (
+								<p className="text-xs">
+									Blocked reason: {String(sendDetail.blockedReason)}
+								</p>
+							)}
+							{sendDetail?.fonnte !== undefined && (
+								<details className="text-xs">
+									<summary className="cursor-pointer font-medium">
+										Detail teknis Fonnte
+									</summary>
+									<pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
+										{JSON.stringify(sendDetail.fonnte, null, 2)}
+									</pre>
+								</details>
+							)}
+						</div>
+					)}
+
+					{(errorMessage || sendEventBroadcast.isError) && (
+						<div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm space-y-2">
+							<p>
+								{errorMessage ||
+									(sendEventBroadcast.error instanceof Error
+										? sendEventBroadcast.error.message
+										: "Gagal mengirim broadcast")}
+							</p>
+							{sendDetail?.senderStatus !== undefined && (
+								<p className="text-xs">
+									Sender status: {String(sendDetail.senderStatus)}
+								</p>
+							)}
+							{sendDetail?.blockedReason !== undefined && (
+								<p className="text-xs">
+									Blocked reason: {String(sendDetail.blockedReason)}
+								</p>
+							)}
+							{sendDetail?.fonnte !== undefined && (
+								<details className="text-xs">
+									<summary className="cursor-pointer font-medium">
+										Detail teknis Fonnte
+									</summary>
+									<pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
+										{JSON.stringify(sendDetail.fonnte, null, 2)}
+									</pre>
+								</details>
+							)}
+						</div>
+					)}
+
+					<div className="flex justify-end gap-3 pt-2">
+						<button
+							type="button"
+							onClick={onClose}
+							className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+						>
+							Batal
+						</button>
+						<button
+							type="submit"
+							disabled={isSubmitDisabled}
+							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
+						>
+							{sendEventBroadcast.isPending ? (
+								<>
+									<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+									Mengirim...
+								</>
+							) : (
+								"Kirim Broadcast"
+							)}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
 // ─── Event Card (Mendatang) ───────────────────────────────────────────────────
 function EventCardUpcoming({
 	event,
 	onDelete,
+	onBroadcast,
 }: {
 	event: Event;
 	onDelete: (id: number) => void;
+	onBroadcast: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
 	return (
@@ -418,6 +653,13 @@ function EventCardUpcoming({
 				</button>
 
 				<button
+					onClick={() => onBroadcast(event)}
+					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors"
+				>
+					WA Broadcast
+				</button>
+
+				<button
 					onClick={() => onDelete(event.id)}
 					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors"
 				>
@@ -432,9 +674,11 @@ function EventCardUpcoming({
 function EventCardDone({
 	event,
 	onDelete,
+	onBroadcast,
 }: {
 	event: Event;
 	onDelete: (id: number) => void;
+	onBroadcast: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
 	const pct =
@@ -498,6 +742,13 @@ function EventCardDone({
 				</button>
 
 				<button
+					onClick={() => onBroadcast(event)}
+					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors"
+				>
+					WA Broadcast
+				</button>
+
+				<button
 					onClick={() => onDelete(event.id)}
 					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors"
 				>
@@ -512,6 +763,7 @@ function EventCardDone({
 export default function KelolEventPage() {
 	const [search, setSearch] = useState("");
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
 
 	const {
 		data: events = [],
@@ -526,6 +778,10 @@ export default function KelolEventPage() {
 		if (confirm("Yakin ingin menghapus event ini?")) {
 			deleteEvent.mutate(id);
 		}
+	};
+
+	const handleOpenBroadcast = (event: Event) => {
+		setBroadcastEvent(event);
 	};
 
 	const filtered = events;
@@ -652,6 +908,7 @@ export default function KelolEventPage() {
 													key={e.id}
 													event={e}
 													onDelete={handleDelete}
+													onBroadcast={handleOpenBroadcast}
 												/>
 											))}
 										</div>
@@ -673,6 +930,7 @@ export default function KelolEventPage() {
 													key={e.id}
 													event={e}
 													onDelete={handleDelete}
+													onBroadcast={handleOpenBroadcast}
 												/>
 											))}
 										</div>
@@ -699,6 +957,14 @@ export default function KelolEventPage() {
 				isOpen={isCreateModalOpen}
 				onClose={() => setIsCreateModalOpen(false)}
 			/>
+
+			{broadcastEvent && (
+				<BroadcastModal
+					event={broadcastEvent}
+					isOpen={!!broadcastEvent}
+					onClose={() => setBroadcastEvent(null)}
+				/>
+			)}
 		</div>
 	);
 }

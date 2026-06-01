@@ -1,80 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
-import { useEvents } from "@/hooks/admin/useEvents";
-import { usePresences } from "@/hooks/admin/usePresences";
+import { FormSelect } from "@/app/components/FormControl";
+import { useReportsPage } from "./_hooks/useReportsPage";
 import {
-	useEventAttendances,
-	type Attendance,
-} from "@/hooks/admin/useAttendances";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Event {
-	id: number;
-	event_title: string;
-	event_datetime: string;
-	status_event: "Mendatang" | "Selesai";
-	quota?: number;
-}
-
-interface Presence {
-	id: number;
-	event_id: number;
-	user_id: number;
-	scanned_at: string;
-	user?: {
-		id: number;
-		name: string;
-		email: string;
-		angkatan?: string;
-		phone?: string;
-		status?: string;
-		role?: string;
-	};
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatDate(dateValue?: string | null) {
-	if (!dateValue) return "-";
-
-	const d = new Date(dateValue);
-
-	if (Number.isNaN(d.getTime())) return "-";
-
-	return d.toLocaleDateString("id-ID", {
-		day: "2-digit",
-		month: "long",
-		year: "numeric",
-	});
-}
-
-function formatTime(dateValue?: string | null) {
-	if (!dateValue) return "-";
-
-	const d = new Date(dateValue);
-
-	if (Number.isNaN(d.getTime())) return "-";
-
-	return d.toLocaleTimeString("id-ID", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-}
-
-function formatEventTime(startTime?: string | null, endTime?: string | null) {
-	if (!startTime && !endTime) return "-";
-
-	const start = startTime ? startTime.slice(0, 5) : "-";
-	const end = endTime ? endTime.slice(0, 5) : "-";
-
-	return `${start} - ${end}`;
-}
-
-function getUserName(attendance: Attendance) {
-	return attendance.user?.name ?? `User #${attendance.user_id}`;
-}
+	formatDate,
+	formatTime,
+	type Presence,
+	type ReportEvent,
+} from "./_utils/reportFormatters";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function TableSkeleton({ cols }: { cols: number }) {
@@ -95,67 +30,24 @@ function TableSkeleton({ cols }: { cols: number }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
-	const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-
 	const {
-		data: attendanceData,
-		isLoading: loadingAttendances,
-		isError: isAttendanceError,
-		error: attendanceError,
-	} = useEventAttendances(selectedEventId, 10);
-
-	const selectedAttendanceEvent = attendanceData?.event ?? null;
-	const attendances = attendanceData?.attendances ?? [];
-	const totalAttendances = attendanceData?.total ?? 0;
-
-	const [selectedId, setSelectedId] = useState<number | null>(null);
-
-	// ── TanStack Query ──
-	const { data: events = [], isLoading: loadingEvents } = useEvents();
-	const { data: allPresences = [], isLoading: loadingPresences } =
-		usePresences();
-	const { data: detailPresences = [], isLoading: loadingDetail } = usePresences(
-		selectedId ?? undefined,
-	);
-
-	// ── Selected event ──
-	const selected = events.find((e: Event) => e.id === selectedId) ?? null;
-
-	// ── Stats ──
-	const selesai = events.filter(
-		(e: Event) => e.status_event === "Selesai",
-	).length;
-	const totalHadir = allPresences.length;
-	const avgRate =
-		events.length > 0
-			? Math.round(
-					events.reduce((sum: number, e: Event) => {
-						const hadir = allPresences.filter(
-							(p: Presence) => p.event_id === e.id,
-						).length;
-						const rate = e.quota ? (hadir / e.quota) * 100 : 0;
-						return sum + rate;
-					}, 0) / events.length,
-				)
-			: 0;
-
-	// ── Per event attendance count ──
-	const getHadir = (eventId: number) =>
-		allPresences.filter((p: Presence) => p.event_id === eventId).length;
-
-	const getRate = (eventId: number, quota?: number) => {
-		if (!quota) return 0;
-		return Math.round((getHadir(eventId) / quota) * 100);
-	};
-
-	// ── Download handler ──
-	const handleDownload = (format: "PDF" | "Excel" | "CSV") => {
-		if (!selectedId) return;
-		window.open(
-			`${process.env.NEXT_PUBLIC_API_URL}/Reports/${selectedId}/download?format=${format.toLowerCase()}`,
-			"_blank",
-		);
-	};
+		avgRate,
+		detailPresences,
+		events,
+		getHadir,
+		getRate,
+		handleDownload,
+		loadingDetail,
+		loadingEvents,
+		loadingPresences,
+		selectedAttendanceEvent,
+		selectedEventId,
+		setSelectedEventId,
+		setSelectedId,
+		selesai,
+		totalAttendances,
+		totalHadir,
+	} = useReportsPage();
 
 	return (
 		<div className="flex min-h-screen bg-gray-50">
@@ -238,7 +130,7 @@ export default function ReportsPage() {
 						</div>
 
 						<div className="relative">
-							<select
+							<FormSelect
 								value={selectedEventId ?? ""}
 								onChange={(e) =>
 									setSelectedEventId(Number(e.target.value) || null)
@@ -247,13 +139,13 @@ export default function ReportsPage() {
 							>
 								<option value="">Pilih event...</option>
 
-								{events.map((event) => (
+								{events.map((event: ReportEvent) => (
 									<option key={event.id} value={event.id}>
 										{event.event_title} —{" "}
 										{formatDate(event.event_date ?? event.event_datetime)}
 									</option>
 								))}
-							</select>
+							</FormSelect>
 							<span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
 								▾
 							</span>
@@ -407,7 +299,7 @@ export default function ReportsPage() {
 											</td>
 										</tr>
 									) : (
-										events.map((e: Event) => {
+										events.map((e: ReportEvent) => {
 											const hadir = getHadir(e.id);
 											const rate = getRate(e.id, e.quota);
 											return (

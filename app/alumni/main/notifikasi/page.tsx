@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlertTriangle,
   Bell,
@@ -7,6 +8,7 @@ import {
   Check,
   CheckCheck,
   Clock,
+  Filter,
   KeyRound,
   MapPin,
   RefreshCw,
@@ -20,6 +22,8 @@ import {
   useUnreadCount,
   type AlumniNotification,
 } from "@/hooks/alumni/useAlumniHooks";
+
+type FilterTab = "all" | "unread" | "read";
 
 function formatDateTime(value?: string) {
   if (!value) return "";
@@ -303,7 +307,14 @@ function NotificationSkeleton() {
   );
 }
 
+const FILTER_TABS: { key: FilterTab; label: string }[] = [
+  { key: "all", label: "Semua" },
+  { key: "unread", label: "Belum Dibaca" },
+  { key: "read", label: "Sudah Dibaca" },
+];
+
 export default function AlumniNotificationsPage() {
+  const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
   const {
     data: notifications = [],
     isLoading,
@@ -322,6 +333,27 @@ export default function AlumniNotificationsPage() {
   const localUnreadCount = notifications.length - readCount;
   const unreadCount = unreadCountData?.unread_count ?? localUnreadCount;
   const mutationError = markAsRead.error ?? markAllAsRead.error;
+
+  // Filter notifications based on active tab
+  const filteredNotifications = notifications.filter((notification) => {
+    if (activeFilter === "unread") return notification.is_read !== true;
+    if (activeFilter === "read") return notification.is_read === true;
+    return true;
+  });
+
+  const getEmptyMessage = () => {
+    if (activeFilter === "unread")
+      return "Tidak ada notifikasi yang belum dibaca.";
+    if (activeFilter === "read")
+      return "Tidak ada notifikasi yang sudah dibaca.";
+    return "Informasi akun dan event alumni akan muncul di sini.";
+  };
+
+  const getEmptyTitle = () => {
+    if (activeFilter === "unread") return "Semua sudah dibaca";
+    if (activeFilter === "read") return "Belum ada yang dibaca";
+    return "Belum ada notifikasi";
+  };
 
   return (
     <div className="space-y-5">
@@ -359,6 +391,50 @@ export default function AlumniNotificationsPage() {
           </button>
         </div>
       </div>
+
+      {/* Filter Tabs */}
+      {!isLoading && !isError && notifications.length > 0 && (
+        <div className="flex items-center gap-1 rounded-2xl bg-gray-100/80 p-1">
+          {FILTER_TABS.map((tab) => {
+            const isActive = activeFilter === tab.key;
+            const count =
+              tab.key === "all"
+                ? notifications.length
+                : tab.key === "unread"
+                ? unreadCount
+                : readCount;
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveFilter(tab.key)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                  isActive
+                    ? "bg-white text-teal-700 shadow-sm ring-1 ring-gray-200/60"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.key === "all" && <Filter className="h-3 w-3" />}
+                {tab.key === "unread" && <Bell className="h-3 w-3" />}
+                {tab.key === "read" && <Check className="h-3 w-3" />}
+                {tab.label}
+                <span
+                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+                    isActive
+                      ? tab.key === "unread" && count > 0
+                        ? "bg-teal-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                      : "bg-gray-200/80 text-gray-500"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {!isLoading && !isError && notifications.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
@@ -408,21 +484,27 @@ export default function AlumniNotificationsPage() {
             Coba lagi
           </button>
         </div>
-      ) : notifications.length === 0 ? (
+      ) : filteredNotifications.length === 0 ? (
         <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50 text-gray-300">
-            <Bell className="h-6 w-6" />
+            {activeFilter === "unread" ? (
+              <CheckCheck className="h-6 w-6" />
+            ) : activeFilter === "read" ? (
+              <Bell className="h-6 w-6" />
+            ) : (
+              <Bell className="h-6 w-6" />
+            )}
           </div>
           <h2 className="mt-3 text-base font-bold text-gray-900">
-            Belum ada notifikasi
+            {getEmptyTitle()}
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-gray-400">
-            Informasi akun dan event alumni akan muncul di sini.
+            {getEmptyMessage()}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {unreadCount > 0 && (
+          {unreadCount > 0 && activeFilter !== "read" && (
             <button
               type="button"
               onClick={() => markAllAsRead.mutate()}
@@ -436,7 +518,7 @@ export default function AlumniNotificationsPage() {
             </button>
           )}
 
-          {notifications.map((notification, index) => (
+          {filteredNotifications.map((notification, index) => (
             <NotificationCard
               key={notification.id ?? `${notification.type}-${index}`}
               notification={notification}

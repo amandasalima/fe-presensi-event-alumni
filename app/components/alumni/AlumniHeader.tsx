@@ -6,6 +6,7 @@ import { Icon } from "./Icon";
 import ProfilePopup from "./ProfilePopup";
 import {
   useMarkAllAsRead,
+  useMarkAsRead,
   useMyProfile,
   useMyNotifications,
   useUnreadCount,
@@ -22,6 +23,7 @@ export default function AlumniHeader() {
   const { data: notifications = [] } = useMyNotifications();
   const { data: unreadCountData } = useUnreadCount();
   const markAllAsRead = useMarkAllAsRead();
+  const markAsRead = useMarkAsRead();
 
   // Support both old and new field names
   const firstName = profile?.first_name ?? profile?.name?.split(' ')[0] ?? "Alumni";
@@ -169,28 +171,39 @@ export default function AlumniHeader() {
                     {latestNotifications.map((notification, index) => {
                       const { title, message } =
                         getNotificationText(notification);
+                      const isRead = notification.is_read === true;
+                      const canMarkRead = !isRead && typeof notification.id === "number";
 
                       return (
                         <button
                           key={notification.id ?? `${notification.type}-${index}`}
                           type="button"
                           onClick={() => {
+                            if (canMarkRead) {
+                              markAsRead.mutate(notification.id as number);
+                            }
                             setShowNotifications(false);
                             router.push("/alumni/main/notifikasi");
                           }}
-                          className="flex w-full items-start gap-3 border-b border-gray-50 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-gray-50"
+                          className={`flex w-full items-start gap-3 border-b border-gray-50 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-gray-50 ${
+                            !isRead ? "bg-teal-50/40" : ""
+                          }`}
                         >
                           <span
-                            className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${
-                              notification.is_read === true
-                                ? "bg-gray-200"
-                                : "bg-teal-500"
+                            className={`mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full ring-2 ${
+                              isRead
+                                ? "bg-gray-200 ring-gray-100"
+                                : "bg-teal-500 ring-teal-200 animate-pulse"
                             }`}
                           />
 
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start justify-between gap-2">
-                              <span className="line-clamp-1 text-sm font-semibold text-gray-900">
+                              <span className={`line-clamp-1 text-sm ${
+                                isRead
+                                  ? "font-medium text-gray-600"
+                                  : "font-bold text-gray-900"
+                              }`}>
                                 {title}
                               </span>
                               {notification.created_at && (
@@ -203,8 +216,16 @@ export default function AlumniHeader() {
                             </span>
 
                             {message && (
-                              <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-gray-500">
+                              <span className={`mt-0.5 line-clamp-2 block text-xs leading-relaxed ${
+                                isRead ? "text-gray-400" : "text-gray-500"
+                              }`}>
                                 {message}
+                              </span>
+                            )}
+
+                            {!isRead && (
+                              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-700">
+                                Belum dibaca
                               </span>
                             )}
                           </span>

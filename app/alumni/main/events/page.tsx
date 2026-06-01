@@ -5,6 +5,7 @@ import SearchInput from "@/app/components/SearchInput";
 import { useAlumniEvents } from "@/hooks/alumni/useAlumniHooks";
 import { AlumniEvent, useEventFilters } from "@/hooks/alumni/useEventFilters";
 import { Search, Calendar, MapPin, Users, ChevronRight, Tag } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -115,7 +116,12 @@ export default function AlumniEventsPage() {
               key={event.id}
               className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
             >
-              <div>
+              <div className="flex flex-col h-full">
+                {event.poster_url && (
+                  <div className="w-full h-40 mb-3 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                    <img src={getImageUrl(event.poster_url)} alt={event.event_title} className="w-full h-full object-cover" />
+                  </div>
+                )}
                 {/* Atas: Kategori & Status */}
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <span className="min-w-0 text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium flex items-center gap-1">
@@ -140,9 +146,9 @@ export default function AlumniEventsPage() {
                 </h3>
 
                 {/* Deskripsi Singkat */}
-                {event.event_description && (
+                {(event.description || event.event_description) && (
                   <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-                    {event.event_description}
+                    {event.description || event.event_description}
                   </p>
                 )}
 

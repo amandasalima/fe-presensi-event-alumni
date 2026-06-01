@@ -1,4 +1,4 @@
-import { fetchAPI } from "@/lib/api";
+import api, { fetchAPI } from "@/lib/api";
 import { normalizeEvent } from "./normalizers";
 import { buildQueryParams } from "./params";
 import type {
@@ -37,17 +37,37 @@ export async function getEventCategories() {
 }
 
 export async function createEvent(data: EventPayload) {
-	return (await fetchAPI("/admin/events", {
-		method: "POST",
-		body: JSON.stringify(data),
-	})) as ApiResponse<RawEvent>;
+	const formData = new FormData();
+	Object.keys(data).forEach((key) => {
+		if (key === "poster" && data.poster) {
+			formData.append("poster", data.poster);
+		} else if (key !== "poster" && data[key as keyof EventPayload] !== undefined && data[key as keyof EventPayload] !== null) {
+			formData.append(key, String(data[key as keyof EventPayload]));
+		}
+	});
+
+	const response = await api.post("/admin/events", formData, {
+		headers: { "Content-Type": "multipart/form-data" },
+	});
+	return response.data as ApiResponse<RawEvent>;
 }
 
 export async function updateEvent(id: number, data: Partial<EventPayload>) {
-	return (await fetchAPI(`/admin/events/${id}`, {
-		method: "PUT",
-		body: JSON.stringify(data),
-	})) as ApiResponse<RawEvent>;
+	const formData = new FormData();
+	formData.append("_method", "PUT");
+	
+	Object.keys(data).forEach((key) => {
+		if (key === "poster" && data.poster) {
+			formData.append("poster", data.poster);
+		} else if (key !== "poster" && data[key as keyof Partial<EventPayload>] !== undefined && data[key as keyof Partial<EventPayload>] !== null) {
+			formData.append(key, String(data[key as keyof Partial<EventPayload>]));
+		}
+	});
+
+	const response = await api.post(`/admin/events/${id}`, formData, {
+		headers: { "Content-Type": "multipart/form-data" },
+	});
+	return response.data as ApiResponse<RawEvent>;
 }
 
 export async function deleteEvent(id: number) {
@@ -71,5 +91,13 @@ export async function getEventQr(eventId: number) {
 		`/admin/events/${eventId}/qr`,
 	)) as EventQrCodeResponse;
 
-	return response.data.qr_code;
+	const qrCode = response.data.qr_code;
+
+	if (!qrCode) return null;
+	
+	if (!qrCode.is_active || qrCode.is_expired) {
+		return null;
+	}
+
+	return qrCode;
 }

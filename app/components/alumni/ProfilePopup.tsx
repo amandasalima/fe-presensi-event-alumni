@@ -2,16 +2,19 @@
 
 import { useEffect, useRef } from "react";
 import { Icon } from "./Icon";
+import { getImageUrl } from "@/lib/api";
 
 export default function ProfilePopup({
   name,
   email,
+  avatarUrl,
   onClose,
   onProfile,
   onLogout,
 }: {
   name: string;
   email: string;
+  avatarUrl?: string | null;
   onClose: () => void;
   onProfile: () => void;
   onLogout: () => void;
@@ -36,9 +39,17 @@ export default function ProfilePopup({
     >
       <div className="px-4 py-3 border-b border-gray-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            {name[0]?.toUpperCase()}
-          </div>
+          {avatarUrl ? (
+            <img 
+              src={getImageUrl(avatarUrl)} 
+              alt={name} 
+              className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" 
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              {name[0]?.toUpperCase()}
+            </div>
+          )}
 
           <div className="min-w-0">
             <p className="font-semibold text-gray-800 text-sm truncate">

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
+import { CheckCircle, Copy } from "lucide-react";
 import AdminHeader from "@/app/components/AdminHeader";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
@@ -214,7 +215,7 @@ function formatEventDate(event: Event) {
 function formatDateTime(value?: string | null) {
 	if (!value) return "-";
 
-	const d = new Date(value);
+	const d = new Date(value.replace(" ", "T")); // support "YYYY-MM-DD HH:mm:ss"
 
 	if (Number.isNaN(d.getTime())) return "-";
 
@@ -298,6 +299,8 @@ export default function GenerateQRPage() {
 		isLoading: loadingEvents,
 		isError: eventsError,
 	} = useEvents(search, 10);
+	const [copySuccess, setCopySuccess] = useState(false);
+
 	const {
 		data: activeQr,
 		isLoading: loadingQr,
@@ -396,6 +399,39 @@ export default function GenerateQRPage() {
 		timeoutMinutes < 1 ||
 		timeoutMinutes > 1440 ||
 		generateQR.isPending;
+
+	const handleCopyToken = async (token: string) => {
+		try {
+			if (navigator.clipboard && window.isSecureContext) {
+				await navigator.clipboard.writeText(token);
+				setCopySuccess(true);
+				setTimeout(() => setCopySuccess(false), 2000);
+			} else {
+				// Fallback for insecure contexts (HTTP on mobile testing)
+				const textArea = document.createElement("textarea");
+				textArea.value = token;
+				textArea.style.position = "fixed";
+				textArea.style.left = "-999999px";
+				textArea.style.top = "-999999px";
+				document.body.appendChild(textArea);
+				textArea.focus();
+				textArea.select();
+				
+				const successful = document.execCommand("copy");
+				document.body.removeChild(textArea);
+				
+				if (successful) {
+					setCopySuccess(true);
+					setTimeout(() => setCopySuccess(false), 2000);
+				} else {
+					alert("Gagal menyalin token secara otomatis. Silakan salin manual.");
+				}
+			}
+		} catch (error) {
+			console.error("Copy error:", error);
+			alert("Gagal menyalin token.");
+		}
+	};
 
 	return (
 		<div className="flex min-h-screen bg-gray-50">
@@ -708,11 +744,24 @@ export default function GenerateQRPage() {
 											</span>
 										</div>
 
-										<div className="flex justify-between gap-4">
+										<div className="flex justify-between items-center gap-4">
 											<span className="text-gray-500">Token</span>
-											<span className="font-mono text-xs text-gray-500 text-right truncate max-w-[220px]">
-												{displayedQr.qr_token}
-											</span>
+											<div className="flex items-center gap-2">
+												<span className="font-mono text-xs text-gray-500 text-right truncate max-w-[180px]">
+													{displayedQr.qr_token}
+												</span>
+												<button
+													onClick={() => handleCopyToken(displayedQr.qr_token)}
+													className="text-gray-400 hover:text-teal-600 transition-colors p-1"
+													title="Copy Token"
+												>
+													{copySuccess ? (
+														<CheckCircle size={14} className="text-teal-500" />
+													) : (
+														<Copy size={14} />
+													)}
+												</button>
+											</div>
 										</div>
 									</div>
 

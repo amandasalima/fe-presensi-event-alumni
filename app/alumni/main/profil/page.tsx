@@ -17,6 +17,7 @@ import {
   AlertCircle,
   LogOut,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 
@@ -24,10 +25,11 @@ import {
   useProfile,
   useUpdateProfile,
   useUploadAvatar,
+  useDeleteAvatar,
 } from "@/hooks/alumni/useProfile";
 
 import type { UpdateProfilePayload } from "@/types/profile";
-import { clearAuthStorage } from "@/lib/api";
+import { clearAuthStorage, getImageUrl } from "@/lib/api";
 
 /* ─── Skeleton loader ─────────────────────────────────────── */
 function ProfileSkeleton() {
@@ -65,6 +67,7 @@ function AvatarSection({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutate: uploadAvatar, isPending } = useUploadAvatar();
+  const { mutate: deleteAvatar, isPending: isDeleting } = useDeleteAvatar();
 
   const initials =
     name
@@ -80,12 +83,18 @@ function AvatarSection({
     if (file) uploadAvatar(file);
   }
 
+  function handleDeleteAvatar() {
+    if (confirm("Hapus foto profil?")) {
+      deleteAvatar();
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-3 mb-5">
       <div className="relative">
         {avatarUrl ? (
           <img
-            src={avatarUrl}
+            src={getImageUrl(avatarUrl)}
             alt={name}
             className="w-24 h-24 rounded-full object-cover ring-4 ring-emerald-100"
           />
@@ -103,7 +112,7 @@ function AvatarSection({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          disabled={isPending}
+          disabled={isPending || isDeleting}
           className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md transition hover:bg-emerald-600 active:scale-95 disabled:opacity-70"
         >
           {isPending ? (
@@ -112,6 +121,21 @@ function AvatarSection({
             <Camera size={14} />
           )}
         </button>
+
+        {avatarUrl && (
+          <button
+            type="button"
+            onClick={handleDeleteAvatar}
+            disabled={isPending || isDeleting}
+            className="absolute top-0 right-0 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md transition hover:bg-red-600 active:scale-95 disabled:opacity-70"
+          >
+            {isDeleting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+          </button>
+        )}
 
         <FormInput
           ref={fileRef}

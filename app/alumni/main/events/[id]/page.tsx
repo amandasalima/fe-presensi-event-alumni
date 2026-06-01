@@ -6,6 +6,7 @@ import {
   useRegisterEvent,
   useCancelRegistration,
 } from "@/hooks/alumni/useAlumniHooks";
+import { getImageUrl } from "@/lib/api";
 import {
   ArrowLeft,
   Calendar,
@@ -141,13 +142,24 @@ export default function AlumniEventDetailPage() {
 
       {/* Konten Utama Detail */}
       <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
-        {/* Cover Pattern / Gradient */}
-        <div className="h-28 bg-gradient-to-br from-teal-500 to-emerald-600 px-4 sm:px-6 flex items-end pb-4">
-          <span className="min-w-0 max-w-full text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
-            <Tag className="w-3 h-3" />
-            <span className="truncate">{event?.category?.category_name || "Kategori"}</span>
-          </span>
-        </div>
+        {/* Cover Pattern / Image / Gradient */}
+        {event?.poster_url ? (
+          <div className="h-48 sm:h-56 relative w-full px-4 sm:px-6 flex items-end pb-4 bg-gray-100">
+            <img src={getImageUrl(event.poster_url)} alt={event.event_title || "Event Poster"} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <span className="relative z-10 min-w-0 max-w-full text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
+              <Tag className="w-3 h-3" />
+              <span className="truncate">{event?.category?.category_name || "Kategori"}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="h-28 bg-gradient-to-br from-teal-500 to-emerald-600 px-4 sm:px-6 flex items-end pb-4">
+            <span className="min-w-0 max-w-full text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
+              <Tag className="w-3 h-3" />
+              <span className="truncate">{event?.category?.category_name || "Kategori"}</span>
+            </span>
+          </div>
+        )}
 
         {/* Info Event */}
         <div className="p-4 sm:p-6 space-y-5">
@@ -223,12 +235,20 @@ export default function AlumniEventDetailPage() {
               <Users className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <p className="font-semibold text-gray-700">Informasi Kuota</p>
-                <p className="text-gray-500">
-                  Tersedia untuk {event?.quota} alumni
-                </p>
-                <p className="text-gray-400 font-medium">
-                  Sisa kuota pendaftaran saat ini: {remaining_quota} tempat
-                </p>
+                {event?.quota ? (
+                  <>
+                    <p className="text-gray-500">
+                      Tersedia untuk {event.quota} alumni
+                    </p>
+                    <p className="text-gray-400 font-medium">
+                      Sisa kuota pendaftaran saat ini: {remaining_quota} tempat
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-gray-500">
+                    Kuota pendaftaran tidak dibatasi
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -239,7 +259,7 @@ export default function AlumniEventDetailPage() {
               Deskripsi Kegiatan
             </h3>
             <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">
-              {event?.event_description || "Tidak ada deskripsi tambahan untuk event ini."}
+              {event?.description || event?.event_description || "Tidak ada deskripsi tambahan untuk event ini."}
             </p>
           </div>
 
@@ -265,7 +285,7 @@ export default function AlumniEventDetailPage() {
                   <span>Batalkan Pendaftaran</span>
                 )}
               </button>
-            ) : remaining_quota > 0 ? (
+            ) : (!event?.quota || remaining_quota > 0) ? (
               <button
                 onClick={handleRegister}
                 disabled={isMutationLoading}

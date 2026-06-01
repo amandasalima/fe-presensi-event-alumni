@@ -12,7 +12,7 @@ import {
   useUnreadCount,
 } from "@/hooks/alumni/useAlumniHooks";
 import type { AlumniNotification } from "@/hooks/alumni/useAlumniHooks";
-import { clearAuthStorage } from "@/lib/api";
+import { clearAuthStorage, getImageUrl } from "@/lib/api";
 
 export default function AlumniHeader() {
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function AlumniHeader() {
     ? `${profile.first_name} ${profile.last_name}` 
     : profile?.name ?? "Alumni";
   const email = profile?.email ?? "";
+  const avatarUrl = profile?.avatar_url;
 
   const localUnreadNotif = notifications.filter(
     (n: AlumniNotification) => n.is_read !== true
@@ -258,9 +259,17 @@ export default function AlumniHeader() {
             }}
             className="flex items-center gap-1 hover:bg-gray-50 rounded-xl px-1 py-1 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
-              {loadingProfile ? "•" : firstName[0]?.toUpperCase()}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={getImageUrl(avatarUrl)}
+                alt={firstName}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
+                {loadingProfile ? "•" : firstName[0]?.toUpperCase()}
+              </div>
+            )}
 
             <Icon
               name="chevron"
@@ -274,6 +283,7 @@ export default function AlumniHeader() {
             <ProfilePopup
               name={fullName}
               email={email}
+              avatarUrl={avatarUrl}
               onClose={() => setShowProfile(false)}
               onProfile={() => {
                 setShowProfile(false);

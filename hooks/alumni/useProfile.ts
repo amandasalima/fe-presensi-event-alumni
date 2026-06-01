@@ -64,3 +64,22 @@ export function useUploadAvatar() {
     },
   });
 }
+
+/* ─── Delete avatar via DELETE /auth/profile/avatar ──────── */
+async function deleteAvatar(): Promise<{ success: boolean }> {
+  const { data } = await api.delete("/auth/profile/avatar");
+  return data;
+}
+
+export function useDeleteAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: () => {
+      queryClient.setQueryData<AlumniProfile>(profileKeys.detail(), (old) =>
+        old ? { ...old, avatar_url: null } : old
+      );
+    },
+  });
+}

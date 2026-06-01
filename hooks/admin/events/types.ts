@@ -14,6 +14,7 @@ export interface Event {
 	description?: string;
 	category: string;
 	category_id?: number;
+	poster_url?: string;
 	event_datetime: string;
 	event_date?: string;
 	start_time?: string;
@@ -34,6 +35,8 @@ export interface EventPayload {
 	event_date: string;
 	start_time: string;
 	end_time: string;
+	quota?: number;
+	poster?: File | null;
 }
 
 export interface EventCategory {
@@ -49,6 +52,7 @@ export type RawEvent = {
 	category?: string | CategoryObject | null;
 	category_name?: string;
 	category_id?: number;
+	poster_url?: string;
 	event_datetime?: string;
 	event_date?: string;
 	start_time?: string;

@@ -1,7 +1,22 @@
 import axios from "axios";
 
-const API_BASE_URL =
-	process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const getBaseUrl = () => {
+	if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+	if (typeof window !== "undefined") {
+		return `http://${window.location.hostname}:8000/api`;
+	}
+	return "http://localhost:8000/api";
+};
+
+const API_BASE_URL = getBaseUrl();
+const BACKEND_HOST = API_BASE_URL.replace("/api", "");
+
+export function getImageUrl(path?: string | null) {
+	if (!path) return "";
+	if (path.startsWith("http://") || path.startsWith("https://")) return path;
+	if (path.startsWith("/")) return `${BACKEND_HOST}${path}`;
+	return `${BACKEND_HOST}/${path}`;
+}
 
 function getAuthToken() {
 	if (typeof window === "undefined") return null;

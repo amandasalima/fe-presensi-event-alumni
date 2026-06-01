@@ -7,6 +7,7 @@ export interface AlumniEvent {
   id: number;
   event_title: string;
   event_description?: string;
+  description?: string;
   event_date: string;
   start_time: string;
   end_time: string;
@@ -14,6 +15,7 @@ export interface AlumniEvent {
   quota: number;
   remaining_quota: number;
   is_registered: boolean;
+  poster_url?: string;
   category?: {
     id: number;
     category_name: string;

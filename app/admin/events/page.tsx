@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Info, Plus, Trash2 } from "lucide-react";
+import { Info, Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import {
@@ -36,6 +36,8 @@ type EventFormState = {
 	event_date: string;
 	start_time: string;
 	end_time: string;
+	quota: number | "";
+	poster?: File | null;
 };
 
 const initialEventForm: EventFormState = {
@@ -46,6 +48,8 @@ const initialEventForm: EventFormState = {
 	event_date: "",
 	start_time: "",
 	end_time: "",
+	quota: "",
+	poster: null,
 };
 
 function toInputDate(value?: string | null) {
@@ -62,6 +66,20 @@ function toInputTime(value?: string | null) {
 	if (!value) return "";
 
 	return value.slice(0, 5);
+}
+
+/* ─── Toast Component ───────────────────────────────────────────────── */
+function Toast({ type, message }: { type: "success" | "error"; message: string }) {
+	return (
+		<div
+			className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all animate-in slide-in-from-bottom-5 fade-in duration-300 ${
+				type === "success" ? "bg-teal-500" : "bg-red-500"
+			}`}
+		>
+			{type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+			{message}
+		</div>
+	);
 }
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
@@ -132,11 +150,13 @@ function EventFormModal({
 	mode,
 	event,
 	onClose,
+	onSuccess,
 }: {
 	isOpen: boolean;
 	mode: EventFormMode;
 	event: Event | null;
 	onClose: () => void;
+	onSuccess?: (message: string) => void;
 }) {
 	const createEvent = useCreateEvent();
 	const updateEvent = useUpdateEvent();
@@ -166,6 +186,8 @@ function EventFormModal({
 				event_date: toInputDate(event.event_date ?? event.event_datetime),
 				start_time: toInputTime(event.start_time),
 				end_time: toInputTime(event.end_time),
+				quota: event.quota ?? "",
+				poster: null,
 			});
 
 			return;
@@ -174,6 +196,7 @@ function EventFormModal({
 		setForm({
 			...initialEventForm,
 			category_id: categories[0]?.id ?? 0,
+			poster: null,
 		});
 	}, [isOpen, mode, event, categories]);
 
@@ -194,7 +217,16 @@ function EventFormModal({
 			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 		>,
 	) => {
-		const { name, value } = e.target;
+		const { name, value, type } = e.target;
+
+		if (type === "file" && "files" in e.target) {
+			const files = (e.target as HTMLInputElement).files;
+			setForm((prev) => ({
+				...prev,
+				[name]: files && files.length > 0 ? files[0] : null,
+			}));
+			return;
+		}
 
 		setForm((prev) => ({
 			...prev,
@@ -207,27 +239,34 @@ function EventFormModal({
 
 		if (!form.category_id) return;
 
+		const payload: any = { ...form };
+		if (payload.quota === "") {
+			delete payload.quota;
+		}
+
 		if (mode === "edit" && event) {
 			updateEvent.mutate(
 				{
 					id: event.id,
-					data: form,
+					data: payload,
 				},
 				{
 					onSuccess: () => {
+						if (onSuccess) onSuccess("Event berhasil diperbarui!");
 						onClose();
 					},
 				},
 			);
 
 			return;
-		}
-
-		createEvent.mutate(form, {
+		} else {
+			createEvent.mutate(payload, {
 			onSuccess: () => {
+				if (onSuccess) onSuccess("Event berhasil ditambahkan!");
 				onClose();
 			},
 		});
+		}
 	};
 
 	return (
@@ -289,6 +328,32 @@ function EventFormModal({
 								Gagal memuat kategori event.
 							</p>
 						)}
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-1">
+							Poster Event (Opsional)
+						</label>
+						
+						{mode === "edit" && event?.poster_url && !form.poster && (
+							<div className="mb-3">
+								<img src={event.poster_url} alt="Current poster" className="h-32 object-cover rounded-xl border border-gray-200" />
+							</div>
+						)}
+						{form.poster && (
+							<div className="mb-3">
+								<img src={URL.createObjectURL(form.poster)} alt="Preview poster" className="h-32 object-cover rounded-xl border border-gray-200" />
+							</div>
+						)}
+						
+						<FormInput
+							type="file"
+							name="poster"
+							accept="image/jpeg,image/jpg,image/png,image/webp"
+							onChange={handleChange}
+							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+						/>
+						<p className="text-xs text-gray-400 mt-1">Format: JPG, JPEG, PNG, WebP (Max: 5MB)</p>
 					</div>
 
 					<div>
@@ -378,6 +443,21 @@ function EventFormModal({
 								required
 							/>
 						</div>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-1">
+							Kuota Peserta
+						</label>
+						<FormInput
+							type="number"
+							name="quota"
+							value={form.quota}
+							onChange={handleChange}
+							placeholder="Kosongkan jika tidak ada batasan kuota"
+							min={1}
+							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
+						/>
 					</div>
 
 					{isError && (
@@ -912,6 +992,12 @@ export default function KelolEventPage() {
 	const [eventModalMode, setEventModalMode] = useState<EventFormMode>("create");
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
+	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+	const showToast = (message: string, type: "success" | "error" = "success") => {
+		setToast({ message, type });
+		setTimeout(() => setToast(null), 3000);
+	};
 
 	const {
 		data: events = [],
@@ -1125,6 +1211,7 @@ export default function KelolEventPage() {
 				mode={eventModalMode}
 				event={selectedEvent}
 				onClose={handleCloseEventModal}
+				onSuccess={showToast}
 			/>
 
 			{broadcastEvent && (
@@ -1134,6 +1221,8 @@ export default function KelolEventPage() {
 					onClose={() => setBroadcastEvent(null)}
 				/>
 			)}
+
+			{toast && <Toast type={toast.type} message={toast.message} />}
 		</div>
 	);
 }

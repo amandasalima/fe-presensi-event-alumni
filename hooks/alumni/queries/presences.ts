@@ -25,6 +25,12 @@ export function useScanQR() {
 			fetchAPI("/presensi/scan", {
 				method: "POST",
 				body: JSON.stringify({ qr_token }),
+			}).catch((error) => {
+				const isGeneric404 = error?.status === 404 && (!error.message || error.message.includes("404") || error.message.toLowerCase() === "not found");
+				if (isGeneric404) {
+					throw new Error("QR Code tidak dikenali");
+				}
+				throw error;
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: alumniQueryKeys.presences });

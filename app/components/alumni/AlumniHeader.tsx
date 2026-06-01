@@ -12,6 +12,7 @@ import {
   useUnreadCount,
 } from "@/hooks/alumni/useAlumniHooks";
 import type { AlumniNotification } from "@/hooks/alumni/useAlumniHooks";
+import { clearAuthStorage } from "@/lib/api";
 
 export default function AlumniHeader() {
   const router = useRouter();
@@ -88,9 +89,8 @@ export default function AlumniHeader() {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    router.push("/alumni/login");
+    clearAuthStorage();
+    window.location.href = "/alumni/login";
   };
 
   return (

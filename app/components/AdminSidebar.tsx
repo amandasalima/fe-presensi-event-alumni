@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { clearAuthStorage } from "@/lib/api";
 
 const menuItems = [
   {
@@ -39,7 +40,8 @@ export default function AdminSidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    router.push("/admin/login");
+    clearAuthStorage();
+    window.location.href = "/admin/login";
   };
 
   return (

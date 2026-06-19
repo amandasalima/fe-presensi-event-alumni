@@ -7,7 +7,9 @@ import { AlumniEvent, useEventFilters } from "@/hooks/alumni/useEventFilters";
 import { Search, Calendar, MapPin, Users, ChevronRight, Tag } from "lucide-react";
 import { getImageUrl } from "@/lib/api";
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "-";
+
   return new Date(dateStr).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "long",
@@ -15,7 +17,7 @@ function formatDate(dateStr: string) {
   });
 }
 
-function formatTime(timeStr: string) {
+function formatTime(timeStr?: string) {
   if (!timeStr) return "";
   // format HH:MM:SS to HH:MM
   const parts = timeStr.split(":");
@@ -23,6 +25,14 @@ function formatTime(timeStr: string) {
     return `${parts[0]}:${parts[1]}`;
   }
   return timeStr;
+}
+
+function getQuotaText(event: AlumniEvent) {
+  if (event.quota === null || event.quota_status === "unlimited") {
+    return "Kuota tidak terbatas";
+  }
+
+  return `Sisa kuota: ${event.remaining_quota ?? 0} dari ${event.quota}`;
 }
 
 export default function AlumniEventsPage() {
@@ -168,8 +178,13 @@ export default function AlumniEventsPage() {
 
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Users className="w-3.5 h-3.5 text-[#41A07E] flex-shrink-0" />
-                    <span>Sisa kuota: {event.remaining_quota} / {event.quota}</span>
+                    <span>{getQuotaText(event)}</span>
                   </div>
+                  {event.is_quota_full && (
+                    <p className="text-xs text-red-500 pl-5">
+                      {event.quota_message || "Kuota penuh, segera hubungi penyelenggara"}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -23,7 +23,12 @@ export interface Event {
 	end_time?: string;
 	location: string;
 	status_event: EventStatus;
-	quota?: number;
+	quota?: number | null;
+	quota_used?: number;
+	remaining_quota?: number | null;
+	is_quota_full?: boolean;
+	quota_status?: "unlimited" | "available" | "full";
+	quota_message?: string;
 	registered?: number;
 	created_at?: string;
 	updated_at?: string;
@@ -62,7 +67,12 @@ export type RawEvent = {
 	location: string;
 	status_event?: string;
 	status?: string;
-	quota?: number;
+	quota?: number | null;
+	quota_used?: number;
+	remaining_quota?: number | null;
+	is_quota_full?: boolean;
+	quota_status?: "unlimited" | "available" | "full";
+	quota_message?: string;
 	registered?: number;
 	created_at?: string;
 	updated_at?: string;
@@ -128,8 +138,28 @@ export interface EventUser {
 	email?: string;
 	phone?: string;
 	angkatan?: string;
+	graduation_year?: string | number;
 	status?: string;
 	role?: string;
+}
+
+export interface EventQuotaSummary {
+	total_registered?: number;
+	total_attended?: number;
+	total_absent?: number;
+	total_not_attended?: number;
+	quota?: number | null;
+	quota_used?: number;
+	remaining_quota?: number | null;
+	is_quota_full?: boolean;
+	quota_status?: "unlimited" | "available" | "full";
+	quota_message?: string;
+}
+
+export interface EventAttendanceInfo {
+	status?: string;
+	registered_at?: string;
+	scanned_at?: string;
 }
 
 export interface EventRegistration {
@@ -138,6 +168,7 @@ export interface EventRegistration {
 	user_id: number;
 	status: EventRegistrationStatus;
 	registered_at?: string;
+	attendance?: EventAttendanceInfo | null;
 	created_at?: string;
 	updated_at?: string;
 	user?: EventUser;
@@ -147,7 +178,9 @@ export interface EventAttendance {
 	id: number;
 	event_id: number;
 	user_id: number;
-	scanned_at: string;
+	scanned_at?: string;
+	status?: string;
+	attendance?: EventAttendanceInfo | null;
 	created_at?: string;
 	updated_at?: string;
 	user?: EventUser;
@@ -155,6 +188,7 @@ export interface EventAttendance {
 
 export type EventRegistrationsData = {
 	event: RawEvent;
+	summary?: EventQuotaSummary;
 	registrations: EventRegistration[];
 	total: number;
 	current_page: number;
@@ -163,6 +197,7 @@ export type EventRegistrationsData = {
 
 export type EventAttendancesData = {
 	event: RawEvent;
+	summary?: EventQuotaSummary;
 	attendances: EventAttendance[];
 	total: number;
 	current_page: number;

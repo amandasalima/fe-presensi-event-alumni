@@ -19,8 +19,12 @@ export interface AlumniEvent {
   location?: string;
   lokasi?: string;
 
-  quota?: number;
-  remaining_quota?: number;
+  quota?: number | null;
+  quota_used?: number;
+  remaining_quota?: number | null;
+  is_quota_full?: boolean;
+  quota_status?: "unlimited" | "available" | "full";
+  quota_message?: string;
   is_registered?: boolean;
   poster_url?: string;
 

@@ -12,8 +12,12 @@ export interface AlumniEventQuery {
 	end_time: string;
 	event_datetime: string;
 	location: string;
-	quota: number;
-	remaining_quota: number;
+	quota: number | null;
+	quota_used?: number;
+	remaining_quota: number | null;
+	is_quota_full?: boolean;
+	quota_status?: "unlimited" | "available" | "full";
+	quota_message?: string;
 	is_registered: boolean;
 	attendance_status?: string | null;
 	status_event?: string;
@@ -24,7 +28,7 @@ export interface AlumniEventQuery {
 	[key: string]: unknown;
 }
 
-function toNumber(value: unknown, fallback = 0) {
+function toNumber(value: unknown, fallback: number | null = 0) {
 	const numberValue = Number(value);
 	return Number.isFinite(numberValue) ? numberValue : fallback;
 }
@@ -44,11 +48,15 @@ function withEventDateTime(event: AlumniEventQuery) {
 	const eventDateTime =
 		event.event_datetime ||
 		(datePart && event.start_time ? `${datePart}T${event.start_time}` : event.event_date);
-	const quota = toNumber(event.quota);
+	const quota = event.quota === null || event.quota === undefined ? null : toNumber(event.quota);
 	const remainingQuota =
 		event.remaining_quota === undefined || event.remaining_quota === null
 			? quota
 			: toNumber(event.remaining_quota, quota);
+	const quotaUsed =
+		event.quota_used === undefined || event.quota_used === null
+			? undefined
+			: Number(event.quota_used);
 
 	return {
 		...event,
@@ -56,7 +64,10 @@ function withEventDateTime(event: AlumniEventQuery) {
 		description: event.description || event.event_description || "",
 		event_datetime: eventDateTime,
 		quota,
-		remaining_quota: Math.max(remainingQuota, 0),
+		quota_used: Number.isFinite(quotaUsed) ? quotaUsed : undefined,
+		remaining_quota:
+			remainingQuota === null ? null : Math.max(remainingQuota, 0),
+		is_quota_full: toBoolean(event.is_quota_full),
 		is_registered: toBoolean(event.is_registered),
 	};
 }
@@ -118,7 +129,41 @@ export function useRegisterEvent() {
 				method: "POST",
 			});
 		},
-		onSuccess: (_, id) => {
+		onSuccess: (response, id) => {
+			const quotaUpdate = response?.data?.quota;
+			const eventUpdate = response?.data?.event;
+			const nextEvent = quotaUpdate || eventUpdate
+				? { ...(eventUpdate ?? {}), ...(quotaUpdate ?? {}), is_registered: true }
+				: null;
+
+			if (nextEvent) {
+				queryClient.setQueryData<AlumniEventQuery[]>(
+					alumniQueryKeys.events,
+					(events) =>
+						events?.map((event) =>
+							event.id === id
+								? withEventDateTime({ ...event, ...nextEvent } as AlumniEventQuery)
+								: event,
+						) ?? events,
+				);
+				queryClient.setQueryData(
+					alumniQueryKeys.eventDetail(id),
+					(current: unknown) => {
+						if (!current || typeof current !== "object") return current;
+						const detail = current as { event?: AlumniEventQuery; [key: string]: unknown };
+						if (!detail.event) return current;
+
+						return {
+							...detail,
+							event: withEventDateTime({
+								...detail.event,
+								...nextEvent,
+							} as AlumniEventQuery),
+						};
+					},
+				);
+			}
+
 			queryClient.invalidateQueries({ queryKey: alumniQueryKeys.events });
 			queryClient.invalidateQueries({
 				queryKey: alumniQueryKeys.eventDetail(id),

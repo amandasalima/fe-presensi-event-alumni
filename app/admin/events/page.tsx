@@ -15,6 +15,7 @@ import {
 	Megaphone,
 	Search,
 	Eye,
+	Users,
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
@@ -32,6 +33,7 @@ import {
 	useDeleteEvent,
 	useEventCategories,
 	useEvent,
+	useEventRegistrations,
 	type Event,
 	type EventPayload,
 } from "@/hooks/admin/useEvents";
@@ -87,13 +89,11 @@ function toInputTime(value?: string | null) {
 }
 
 function getRegisteredCount(event: Event) {
-	return event.registered ?? 0;
+	return event.quota_used ?? event.registered ?? 0;
 }
 
 function getRemainingQuota(event: Event) {
-	if (!event.quota) return null;
-
-	return Math.max(event.quota - getRegisteredCount(event), 0);
+	return event.remaining_quota ?? null;
 }
 
 function getQuotaPercent(event: Event) {
@@ -103,6 +103,41 @@ function getQuotaPercent(event: Event) {
 		Math.round((getRegisteredCount(event) / event.quota) * 100),
 		100,
 	);
+}
+
+function getQuotaLabel(event: Event) {
+	if (event.quota === null || event.quota === undefined || event.quota_status === "unlimited") {
+		return "Tidak terbatas";
+	}
+
+	return `${getRegisteredCount(event)}/${event.quota}`;
+}
+
+function getRemainingQuotaLabel(event: Event) {
+	const remainingQuota = getRemainingQuota(event);
+	return remainingQuota === null ? "Tidak terbatas" : remainingQuota;
+}
+
+function formatDateTimeIndonesia(value?: string | null) {
+	if (!value) return "-";
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "-";
+
+	const datePart = date.toLocaleDateString("id-ID", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	});
+	const timeParts = new Intl.DateTimeFormat("id-ID", {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).formatToParts(date);
+	const hour = timeParts.find((part) => part.type === "hour")?.value ?? "00";
+	const minute = timeParts.find((part) => part.type === "minute")?.value ?? "00";
+
+	return `${datePart}, ${hour}:${minute}`;
 }
 
 function isValidPoster(file: File) {
@@ -1073,6 +1108,178 @@ function DetailItem({
 	);
 }
 
+function EventRegistrationsModal({
+	event,
+	isOpen,
+	onClose,
+}: {
+	event: Event | null;
+	isOpen: boolean;
+	onClose: () => void;
+}) {
+	const { data, isLoading, isError, error } = useEventRegistrations(
+		event?.id ?? null,
+		undefined,
+		100,
+	);
+
+	if (!isOpen || !event) return null;
+
+	const summary = data?.summary;
+	const registrations = data?.registrations ?? [];
+	const quotaFull = summary?.is_quota_full ?? event.is_quota_full;
+	const quotaMessage =
+		summary?.quota_message || event.quota_message || "Kuota penuh, segera hubungi penyelenggara";
+	const quotaValue = summary?.quota ?? event.quota;
+	const quotaUsed = summary?.quota_used ?? event.quota_used ?? event.registered ?? 0;
+	const remainingQuota = summary?.remaining_quota ?? event.remaining_quota;
+
+	return (
+		<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+			<div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+				<div className="p-6 border-b border-gray-100 flex items-start justify-between gap-4">
+					<div>
+						<h3 className="font-semibold text-gray-800 text-lg">
+							Detail Pendaftar Event
+						</h3>
+						<p className="text-sm text-gray-400 mt-1">{event.event_title}</p>
+					</div>
+
+					<button
+						type="button"
+						onClick={onClose}
+						className="text-gray-400 hover:text-gray-600"
+						aria-label="Tutup daftar pendaftar"
+					>
+						<X size={20} />
+					</button>
+				</div>
+
+				<div className="p-6 space-y-4 overflow-y-auto">
+					<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+						<StatCard
+							label="Total Terdaftar"
+							value={summary?.total_registered ?? registrations.length}
+							sub="Pendaftar event"
+							accent="border-blue-400"
+						/>
+						<StatCard
+							label="Total Hadir"
+							value={summary?.total_attended ?? 0}
+							sub="Sudah scan QR"
+							accent="border-emerald-400"
+						/>
+						<StatCard
+							label="Kuota"
+							value={quotaValue === null || quotaValue === undefined ? "Tidak terbatas" : `${quotaUsed}/${quotaValue}`}
+							sub="Terpakai/kapasitas"
+							accent="border-[#7AB2B2]"
+						/>
+						<StatCard
+							label="Sisa Kuota"
+							value={remainingQuota === null || remainingQuota === undefined ? "Tidak terbatas" : remainingQuota}
+							sub="Dari backend"
+							accent="border-[#7AB2B2]"
+						/>
+					</div>
+
+					{quotaFull && (
+						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+							{quotaMessage}
+						</div>
+					)}
+
+					{isError && (
+						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+							{getApiErrorMessage(error, "Gagal memuat data pendaftar")}
+						</div>
+					)}
+
+					<div className="overflow-x-auto border border-gray-100 rounded-2xl">
+						<table className="w-full text-sm">
+							<thead>
+								<tr className="bg-gray-50 border-b border-gray-100">
+									{[
+										"Nama",
+										"Email",
+										"No HP",
+										"Angkatan",
+										"Status pendaftaran / kehadiran",
+										"Jam daftar",
+										"Jam scan QR",
+									].map((header) => (
+										<th
+											key={header}
+											className="text-left px-4 py-3 text-gray-500 font-medium whitespace-nowrap"
+										>
+											{header}
+										</th>
+									))}
+								</tr>
+							</thead>
+							<tbody>
+								{isLoading ? (
+									[1, 2, 3].map((item) => (
+										<tr key={item} className="border-b border-gray-50 animate-pulse">
+											{Array.from({ length: 7 }).map((_, index) => (
+												<td key={index} className="px-4 py-3">
+													<div className="h-4 bg-gray-100 rounded w-24" />
+												</td>
+											))}
+										</tr>
+									))
+								) : registrations.length === 0 ? (
+									<tr>
+										<td colSpan={7} className="text-center py-8 text-gray-400">
+											Belum ada pendaftar untuk event ini
+										</td>
+									</tr>
+								) : (
+									registrations.map((registration, index) => {
+										const attendance = registration.attendance;
+										const registeredAt =
+											registration.registered_at || attendance?.registered_at;
+										const attendanceStatus = attendance?.status || "-";
+
+										return (
+											<tr
+												key={registration.id ?? index}
+												className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+											>
+												<td className="px-4 py-3 font-medium text-gray-800">
+													{registration.user?.name ?? `User #${registration.user_id}`}
+												</td>
+												<td className="px-4 py-3 text-gray-500">
+													{registration.user?.email ?? "-"}
+												</td>
+												<td className="px-4 py-3 text-gray-500">
+													{registration.user?.phone ?? "-"}
+												</td>
+												<td className="px-4 py-3 text-gray-500">
+													{registration.user?.angkatan ?? registration.user?.graduation_year ?? "-"}
+												</td>
+												<td className="px-4 py-3 text-gray-500">
+													{registration.status} / {attendanceStatus}
+												</td>
+												<td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+													{formatDateTimeIndonesia(registeredAt)}
+												</td>
+												<td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+													{formatDateTimeIndonesia(attendance?.scanned_at)}
+												</td>
+											</tr>
+										);
+									})
+								)}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function EventDetailModal({
 	eventId,
 	fallbackEvent,
@@ -1099,7 +1306,6 @@ function EventDetailModal({
 		? parseEventDate(event)
 		: { date: "-", time: "-" };
 	const registered = event ? getRegisteredCount(event) : 0;
-	const remainingQuota = event ? getRemainingQuota(event) : null;
 	const quotaPercent = event ? getQuotaPercent(event) : 0;
 
 	return (
@@ -1178,6 +1384,11 @@ function EventDetailModal({
 										<span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
 											{event.category}
 										</span>
+										{event.is_quota_full && (
+											<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-full font-medium">
+												Penuh
+											</span>
+										)}
 									</div>
 
 									<h4 className="text-xl font-bold text-gray-800 leading-tight">
@@ -1198,13 +1409,13 @@ function EventDetailModal({
 								/>
 								<StatCard
 									label="Kuota"
-									value={event.quota ?? "Tanpa batas"}
+									value={getQuotaLabel(event)}
 									sub="Kapasitas awal"
 									accent="border-[#7AB2B2]"
 								/>
 								<StatCard
 									label="Sisa Kuota"
-									value={remainingQuota ?? "Tanpa batas"}
+									value={getRemainingQuotaLabel(event)}
 									sub="Update otomatis"
 									accent="border-emerald-400"
 								/>
@@ -1215,6 +1426,12 @@ function EventDetailModal({
 									accent="border-[#7AB2B2]"
 								/>
 							</div>
+
+							{event.is_quota_full && (
+								<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+									{event.quota_message || "Kuota penuh, segera hubungi penyelenggara"}
+								</div>
+							)}
 
 							{event.quota && (
 								<div>
@@ -1273,12 +1490,14 @@ function EventCardUpcoming({
 	onEdit,
 	onDelete,
 	onBroadcast,
+	onRegistrations,
 }: {
 	event: Event;
 	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
 	onDelete: (id: number) => void;
 	onBroadcast: (event: Event) => void;
+	onRegistrations: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
 	const registered = getRegisteredCount(event);
@@ -1294,6 +1513,11 @@ function EventCardUpcoming({
 				<span className="text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap ml-2">
 					Mendatang
 				</span>
+				{event.is_quota_full && (
+					<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+						Penuh
+					</span>
+				)}
 			</div>
 
 			<span className="inline-block text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full mb-3">
@@ -1318,14 +1542,23 @@ function EventCardUpcoming({
 				</div>
 			</div>
 
-			{event.quota && (
-				<div className="mt-4">
+			<div className="mt-4">
+				{event.quota === null || event.quota === undefined || event.quota_status === "unlimited" ? (
+					<div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+						<p className="font-medium">Kuota: Tidak terbatas</p>
+						<p className="text-xs text-gray-400 mt-0.5">Sisa kuota: Tidak terbatas</p>
+					</div>
+				) : (
+					<>
 					<div className="flex justify-between text-sm text-gray-600 mb-1.5">
-						<span>Sisa Kuota</span>
+						<span>Kuota</span>
 						<span className="font-medium">
-							{remainingQuota} dari {event.quota}
+							{registered}/{event.quota}
 						</span>
 					</div>
+					<p className="text-xs text-gray-400 mb-1.5">
+						Sisa kuota: {remainingQuota ?? 0}
+					</p>
 
 					<div className="w-full bg-gray-100 rounded-full h-2">
 						<div
@@ -1337,8 +1570,14 @@ function EventCardUpcoming({
 					<p className="text-xs text-gray-400 mt-1 text-right">
 						{registered} terdaftar
 					</p>
-				</div>
-			)}
+					</>
+				)}
+				{event.is_quota_full && (
+					<p className="text-xs text-red-500 mt-2">
+						{event.quota_message || "Kuota penuh, segera hubungi penyelenggara"}
+					</p>
+				)}
+			</div>
 
 			<div className="grid grid-cols-2 gap-2 mt-4">
 				<button
@@ -1347,6 +1586,14 @@ function EventCardUpcoming({
 				>
 					<Eye size={13} />
 					Detail
+				</button>
+
+				<button
+					onClick={() => onRegistrations(event)}
+					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+				>
+					<Users size={13} />
+					Pendaftar
 				</button>
 
 				<button
@@ -1384,12 +1631,14 @@ function EventCardDone({
 	onEdit,
 	onDelete,
 	onBroadcast,
+	onRegistrations,
 }: {
 	event: Event;
 	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
 	onDelete: (id: number) => void;
 	onBroadcast: (event: Event) => void;
+	onRegistrations: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
 	const registered = getRegisteredCount(event);
@@ -1406,6 +1655,11 @@ function EventCardDone({
 				<span className="text-xs bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap ml-2">
 					Selesai
 				</span>
+				{event.is_quota_full && (
+					<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+						Penuh
+					</span>
+				)}
 			</div>
 
 			<span className="inline-block text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full mb-3">
@@ -1430,10 +1684,16 @@ function EventCardDone({
 				</div>
 			</div>
 
-			{event.quota && event.registered !== undefined && (
-				<div>
+			<div>
+				{event.quota === null || event.quota === undefined || event.quota_status === "unlimited" ? (
+					<div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+						<p className="font-medium">Kuota: Tidak terbatas</p>
+						<p className="text-xs text-gray-400 mt-0.5">Sisa kuota: Tidak terbatas</p>
+					</div>
+				) : (
+					<>
 					<div className="flex justify-between text-sm text-gray-600 mb-1.5">
-						<span>Peserta Terdaftar</span>
+						<span>Kuota</span>
 						<span className="font-medium">
 							{registered} / {event.quota}
 						</span>
@@ -1450,8 +1710,14 @@ function EventCardDone({
 						{pct}% terisi
 						{remainingQuota !== null ? ` • sisa ${remainingQuota}` : ""}
 					</p>
-				</div>
-			)}
+					</>
+				)}
+				{event.is_quota_full && (
+					<p className="text-xs text-red-500 mt-2">
+						{event.quota_message || "Kuota penuh, segera hubungi penyelenggara"}
+					</p>
+				)}
+			</div>
 
 			<div className="grid grid-cols-2 gap-2 mt-4">
 				<button
@@ -1460,6 +1726,14 @@ function EventCardDone({
 				>
 					<Eye size={13} />
 					Detail
+				</button>
+
+				<button
+					onClick={() => onRegistrations(event)}
+					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+				>
+					<Users size={13} />
+					Pendaftar
 				</button>
 
 				<button
@@ -1497,6 +1771,7 @@ export default function KelolEventPage() {
 	const [eventModalMode, setEventModalMode] = useState<EventFormMode>("create");
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 	const [detailEvent, setDetailEvent] = useState<Event | null>(null);
+	const [registrationsEvent, setRegistrationsEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
 	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -1528,6 +1803,10 @@ export default function KelolEventPage() {
 
 	const handleDetail = (event: Event) => {
 		setDetailEvent(event);
+	};
+
+	const handleRegistrations = (event: Event) => {
+		setRegistrationsEvent(event);
 	};
 
 	const handleCloseEventModal = () => {
@@ -1678,6 +1957,7 @@ export default function KelolEventPage() {
 													onEdit={handleEdit}
 													onDelete={handleDelete}
 													onBroadcast={handleOpenBroadcast}
+													onRegistrations={handleRegistrations}
 												/>
 											))}
 										</div>
@@ -1704,6 +1984,7 @@ export default function KelolEventPage() {
 													onEdit={handleEdit}
 													onDelete={handleDelete}
 													onBroadcast={handleOpenBroadcast}
+													onRegistrations={handleRegistrations}
 												/>
 											))}
 										</div>
@@ -1739,6 +2020,12 @@ export default function KelolEventPage() {
 				fallbackEvent={detailEvent}
 				isOpen={!!detailEvent}
 				onClose={() => setDetailEvent(null)}
+			/>
+
+			<EventRegistrationsModal
+				event={registrationsEvent}
+				isOpen={!!registrationsEvent}
+				onClose={() => setRegistrationsEvent(null)}
 			/>
 
 			{broadcastEvent && (

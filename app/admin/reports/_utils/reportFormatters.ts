@@ -13,7 +13,7 @@ export interface Presence {
 	id: number;
 	event_id: number;
 	user_id: number;
-	scanned_at: string;
+	scanned_at?: string;
 	user?: {
 		id: number;
 		name: string;
@@ -50,6 +50,29 @@ export function formatTime(dateValue?: string | null) {
 		hour: "2-digit",
 		minute: "2-digit",
 	});
+}
+
+export function formatDateTimeIndonesia(dateValue?: string | null) {
+	if (!dateValue) return "-";
+
+	const d = new Date(dateValue);
+
+	if (Number.isNaN(d.getTime())) return "-";
+
+	const datePart = d.toLocaleDateString("id-ID", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	});
+	const timeParts = new Intl.DateTimeFormat("id-ID", {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).formatToParts(d);
+	const hour = timeParts.find((part) => part.type === "hour")?.value ?? "00";
+	const minute = timeParts.find((part) => part.type === "minute")?.value ?? "00";
+
+	return `${datePart}, ${hour}:${minute}`;
 }
 
 export function formatEventTime(startTime?: string | null, endTime?: string | null) {

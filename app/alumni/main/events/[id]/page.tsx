@@ -40,6 +40,18 @@ function formatTime(timeStr: string) {
   return timeStr;
 }
 
+function getQuotaText(event: {
+  quota?: number | null;
+  remaining_quota?: number | null;
+  quota_status?: string;
+}) {
+  if (event.quota === null || event.quota === undefined || event.quota_status === "unlimited") {
+    return "Kuota tidak terbatas";
+  }
+
+  return `Sisa kuota: ${event.remaining_quota ?? 0} dari ${event.quota}`;
+}
+
 function Skeleton({ className }: { className: string }) {
   return <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />;
 }
@@ -190,10 +202,8 @@ export default function EventDetailPage({
     String(attendanceStatus || "").toLowerCase()
   );
   const description = event.description || event.event_description;
-  const quota = Number(event.quota || 0);
-  const remainingQuota =
-    typeof event.remaining_quota === "number" ? event.remaining_quota : quota;
-  const quotaFull = quota > 0 && remainingQuota <= 0;
+  const quotaFull = event.is_quota_full === true;
+  const quotaMessage = event.quota_message || "Kuota penuh, segera hubungi penyelenggara";
   const eventDateTime = event.event_datetime || event.event_date;
   const isEventDone =
     event.status_event === "Selesai" ||
@@ -325,13 +335,11 @@ export default function EventDetailPage({
                 <div className="min-w-0">
                   <p className="text-xs text-gray-400 mb-0.5">Kuota</p>
                   <p className="text-sm font-medium text-gray-800">
-                    {quota > 0
-                      ? `Sisa ${remainingQuota} dari ${quota} peserta`
-                      : "Kuota tidak dibatasi"}
+                    {getQuotaText(event)}
                   </p>
-                  {quota > 0 && quotaFull && !isRegistered && (
+                  {quotaFull && !isRegistered && (
                     <p className="text-xs text-red-500 mt-1">
-                      Kuota sudah penuh
+                      {quotaMessage}
                     </p>
                   )}
                 </div>

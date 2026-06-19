@@ -17,8 +17,7 @@ import { FormSelect } from "@/app/components/FormControl";
 import { useReportsPage } from "./_hooks/useReportsPage";
 import {
 	formatDate,
-	formatTime,
-	type Presence,
+	formatDateTimeIndonesia,
 	type ReportEvent,
 } from "./_utils/reportFormatters";
 
@@ -79,18 +78,17 @@ function Icon3D({
 export default function ReportsPage() {
 	const {
 		avgRate,
-		detailPresences,
+		attendances,
 		events,
 		getHadir,
 		getRate,
 		handleDownload,
-		loadingDetail,
+		loadingAttendanceSummaries,
+		loadingAttendances,
 		loadingEvents,
-		loadingPresences,
 		selectedAttendanceEvent,
 		selectedEventId,
 		setSelectedEventId,
-		setSelectedId,
 		selesai,
 		totalAttendances,
 		totalHadir,
@@ -126,7 +124,7 @@ export default function ReportsPage() {
 								),
 								label: "Peserta",
 								accent: "border-blue-400",
-								value: loadingPresences ? "..." : totalHadir,
+								value: loadingAttendanceSummaries ? "..." : totalHadir,
 								sub: "Total Kehadiran",
 							},
 							{
@@ -138,7 +136,7 @@ export default function ReportsPage() {
 								label: "Rate",
 								accent: "border-emerald-400",
 								value:
-									loadingEvents || loadingPresences ? "..." : `${avgRate}%`,
+									loadingEvents || loadingAttendanceSummaries ? "..." : `${avgRate}%`,
 								sub: "Rata-rata Kehadiran",
 							},
 						].map((s, i) => (
@@ -171,10 +169,10 @@ export default function ReportsPage() {
 								<Icon3D variant="teal" size="sm">
 									<CalendarDays size={16} strokeWidth={2.5} />
 								</Icon3D>
-								Pilih Event untuk Download Laporan
+								Pilih Event untuk Detail Kehadiran
 							</h3>
 							<p className="text-sm text-gray-400 mt-1 ml-10">
-								Pilih event tertentu untuk melihat detail dan download laporan
+								Pilih event atau klik baris event di bawah untuk melihat siapa saja yang hadir saat scan QR
 								kehadiran
 							</p>
 						</div>
@@ -249,9 +247,11 @@ export default function ReportsPage() {
 												{[
 													"Nama",
 													"Email",
+													"No HP",
 													"Angkatan",
-													"Waktu Scan",
-													"Status",
+													"Jam daftar",
+													"Jam hadir / scan QR",
+													"Status hadir",
 												].map((h) => (
 													<th
 														key={h}
@@ -264,46 +264,62 @@ export default function ReportsPage() {
 										</thead>
 
 										<tbody>
-											{loadingDetail ? (
-												<TableSkeleton cols={5} />
-											) : detailPresences.length === 0 ? (
+											{loadingAttendances ? (
+												<TableSkeleton cols={7} />
+											) : attendances.length === 0 ? (
 												<tr>
 													<td
-														colSpan={5}
+														colSpan={7}
 														className="text-center py-8 text-gray-400 text-sm"
 													>
 														Belum ada data kehadiran untuk event ini
 													</td>
 												</tr>
 											) : (
-												detailPresences.map((p: Presence, i: number) => (
-													<tr
-														key={p.id ?? i}
-														className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-													>
-														<td className="px-5 py-3 font-medium text-gray-800">
-															{p.user?.name ?? `User #${p.user_id}`}
-														</td>
+												attendances.map((attendance, i: number) => {
+													const nested = attendance.attendance;
+													const scannedAt =
+														nested?.scanned_at || attendance.scanned_at;
+													const status =
+														nested?.status || attendance.status || "hadir";
 
-														<td className="px-5 py-3 text-gray-500">
-															{p.user?.email ?? "-"}
-														</td>
+													return (
+														<tr
+															key={attendance.id ?? i}
+															className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+														>
+															<td className="px-5 py-3 font-medium text-gray-800">
+																{attendance.user?.name ?? `User #${attendance.user_id}`}
+															</td>
 
-														<td className="px-5 py-3 text-gray-500">
-															{p.user?.angkatan ?? "-"}
-														</td>
+															<td className="px-5 py-3 text-gray-500">
+																{attendance.user?.email ?? "-"}
+															</td>
 
-														<td className="px-5 py-3 text-gray-500">
-															{formatTime(p.scanned_at)}
-														</td>
+															<td className="px-5 py-3 text-gray-500">
+																{attendance.user?.phone ?? "-"}
+															</td>
 
-														<td className="px-5 py-3">
-															<span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200">
-																Hadir
-															</span>
-														</td>
-													</tr>
-												))
+															<td className="px-5 py-3 text-gray-500">
+																{attendance.user?.angkatan ?? "-"}
+															</td>
+
+															<td className="px-5 py-3 text-gray-500 whitespace-nowrap">
+																{formatDateTimeIndonesia(nested?.registered_at)}
+															</td>
+
+															<td className="px-5 py-3 text-gray-500 whitespace-nowrap">
+																{formatDateTimeIndonesia(scannedAt)}
+															</td>
+
+															<td className="px-5 py-3">
+																<span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200">
+																	{status}
+																</span>
+															</td>
+														</tr>
+													);
+												})
 											)}
 										</tbody>
 									</table>
@@ -346,7 +362,7 @@ export default function ReportsPage() {
 									</tr>
 								</thead>
 								<tbody>
-									{loadingEvents || loadingPresences ? (
+									{loadingEvents || loadingAttendanceSummaries ? (
 										<TableSkeleton cols={5} />
 									) : events.length === 0 ? (
 										<tr>
@@ -367,8 +383,8 @@ export default function ReportsPage() {
 											return (
 												<tr
 													key={e.id}
-													className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
-													onClick={() => setSelectedId(e.id)}
+											className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+													onClick={() => setSelectedEventId(e.id)}
 												>
 													<td className="px-5 py-4 font-medium text-gray-800">
 														<div className="flex items-center gap-3">

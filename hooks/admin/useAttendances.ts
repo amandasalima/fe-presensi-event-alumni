@@ -32,13 +32,31 @@ export interface Attendance {
 	id: number;
 	event_id: number;
 	user_id: number;
-	scanned_at: string;
+	scanned_at?: string;
+	status?: string;
+	attendance?: {
+		registered_at?: string;
+		scanned_at?: string;
+		status?: string;
+	} | null;
 	event?: AttendanceEvent;
 	user?: AttendanceUser;
 }
 
 export interface AttendanceResponseData {
 	event: AttendanceEvent;
+	summary?: {
+		total_registered?: number;
+		total_attended?: number;
+		total_absent?: number;
+		total_not_attended?: number;
+		quota?: number | null;
+		quota_used?: number;
+		remaining_quota?: number | null;
+		is_quota_full?: boolean;
+		quota_status?: "unlimited" | "available" | "full";
+		quota_message?: string;
+	};
 	attendances: Attendance[];
 	total: number;
 	current_page: number;

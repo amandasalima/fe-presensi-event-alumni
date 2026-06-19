@@ -125,7 +125,7 @@ export default function AlumniDashboard() {
         )}
 
         <p className="text-sm text-gray-400 mt-0.5">
-          Selamat datang di dashboard presensi Anda
+          Selamat datang di Sistem Presensi Alumni
         </p>
       </div>
 
@@ -134,7 +134,7 @@ export default function AlumniDashboard() {
         <div
           className="rounded-2xl p-4 flex items-start gap-3 cursor-pointer active:opacity-90"
           style={{
-            background: "linear-gradient(135deg, #3ecf8e 0%, #20b070 100%)",
+            background: "#41A07E",
           }}
           onClick={() => router.push("/alumni/main/notifikasi")}
         >
@@ -158,7 +158,7 @@ export default function AlumniDashboard() {
             <p className="text-white font-semibold text-sm leading-tight">
               {unreadNotification.title}
             </p>
-            <p className="text-green-100 text-xs mt-1 leading-relaxed line-clamp-2">
+            <p className="text-[#B2DE96] text-xs mt-1 leading-relaxed line-clamp-2">
               {unreadNotification.message ?? unreadNotification.body}
             </p>
           </div>
@@ -199,7 +199,7 @@ export default function AlumniDashboard() {
         <div
           className="rounded-2xl p-5 space-y-3"
           style={{
-            background: "linear-gradient(135deg, #2d9e6b 0%, #1a7a50 100%)",
+            background: "#41A07E",
           }}
         >
           <div className="flex items-center justify-between">
@@ -209,7 +209,7 @@ export default function AlumniDashboard() {
 
             <button
               onClick={() => router.push("/alumni/main/events")}
-              className="text-xs text-green-200 hover:text-white transition-colors"
+              className="text-xs text-[#B2DE96] hover:text-white transition-colors"
             >
               Lihat Semua →
             </button>
@@ -236,7 +236,7 @@ export default function AlumniDashboard() {
             ].map((item, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 text-green-100 text-sm"
+                className="flex items-center gap-2 text-[#B2DE96] text-sm"
               >
                 <Icon name={item.icon} className="w-4 h-4 flex-shrink-0" />
                 <span>{item.text}</span>
@@ -248,7 +248,7 @@ export default function AlumniDashboard() {
             onClick={() =>
               router.push(`/alumni/main/events/${topRecommendation.id}`)
             }
-            className="w-full bg-white text-teal-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-green-50 transition-colors"
+            className="w-full bg-white text-[#41A07E] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#B2DE96] transition-colors"
           >
             Lihat Detail & Daftar
           </button>
@@ -262,7 +262,7 @@ export default function AlumniDashboard() {
 
           <button
             onClick={() => router.push("/alumni/main/events")}
-            className="text-xs text-teal-600"
+            className="text-xs text-[#41A07E]"
           >
             Lihat Semua →
           </button>
@@ -284,8 +284,7 @@ export default function AlumniDashboard() {
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #3ecf8e 0%, #20b070 100%)",
+                    background: "#41A07E",
                   }}
                 >
                   <span className="text-white font-bold text-lg">
@@ -334,7 +333,7 @@ export default function AlumniDashboard() {
 
           <button
             onClick={() => router.push("/alumni/main/events")}
-            className="text-xs text-teal-600"
+            className="text-xs text-[#41A07E]"
           >
             Lihat Semua →
           </button>
@@ -371,8 +370,7 @@ export default function AlumniDashboard() {
                   onClick={() => router.push(`/alumni/main/events/${event.id}`)}
                   className="text-xs text-white px-4 py-2 rounded-xl font-medium flex-shrink-0"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #3ecf8e 0%, #20b070 100%)",
+                    background: "#41A07E",
                   }}
                 >
                   Lihat
@@ -390,7 +388,7 @@ export default function AlumniDashboard() {
 
           <button
             onClick={() => router.push("/alumni/main/riwayat")}
-            className="text-xs text-teal-600"
+            className="text-xs text-[#41A07E]"
           >
             Lihat Semua →
           </button>
@@ -424,7 +422,7 @@ export default function AlumniDashboard() {
                   </p>
                 </div>
 
-                <span className="text-xs bg-teal-50 text-teal-600 border border-teal-200 px-3 py-1.5 rounded-xl font-medium flex-shrink-0">
+                <span className="text-xs bg-[#B2DE96] text-[#41A07E] border border-[#B2DE96] px-3 py-1.5 rounded-xl font-medium flex-shrink-0">
                   Hadir
                 </span>
               </div>

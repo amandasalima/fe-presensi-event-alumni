@@ -1,27 +1,29 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Tag,
+} from "lucide-react";
 import {
   useAlumniEventDetail,
   useRegisterEvent,
   useCancelRegistration,
-} from "@/hooks/alumni/useAlumniHooks";
+} from "@/hooks/alumni/queries/events";
 import { getImageUrl } from "@/lib/api";
-import {
-  ArrowLeft,
-  Calendar,
-  MapPin,
-  Users,
-  Tag,
-  CheckCircle,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
 import { useState } from "react";
 
 function formatDate(dateStr: string) {
-  if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("id-ID", {
+    weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -37,277 +39,384 @@ function formatTime(timeStr: string) {
   return timeStr;
 }
 
-function getMessage(value: unknown) {
-  if (
-    value &&
-    typeof value === "object" &&
-    "message" in value &&
-    typeof value.message === "string"
-  ) {
-    return value.message;
-  }
-
-  return null;
+function Skeleton({ className }: { className: string }) {
+  return <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />;
 }
 
-export default function AlumniEventDetailPage() {
-  const params = useParams();
+function Toast({
+  type,
+  message,
+}: {
+  type: "success" | "error";
+  message: string;
+}) {
+  return (
+    <div
+      className={`fixed bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all ${
+        type === "success" ? "bg-[#41A07E]" : "bg-red-500"
+      }`}
+    >
+      {type === "success" ? (
+        <CheckCircle size={16} />
+      ) : (
+        <AlertCircle size={16} />
+      )}
+      {message}
+    </div>
+  );
+}
+
+export default function EventDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
-  const id = Number(params.id);
+  const eventId = parseInt(id, 10);
 
-  const { data, isLoading, error } = useAlumniEventDetail(id);
-  const registerMutation = useRegisterEvent();
-  const cancelMutation = useCancelRegistration();
+  const { data, isLoading, isError } = useAlumniEventDetail(eventId);
+  const registerEvent = useRegisterEvent();
+  const cancelRegistration = useCancelRegistration();
 
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const event = data?.event;
+  const attendanceStatus = data?.attendance_status;
+
+  function showToast(type: "success" | "error", message: string) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  function handleRegister() {
+    registerEvent.mutate(eventId, {
+      onSuccess: () => {
+        showToast("success", "Berhasil mendaftar event!");
+      },
+      onError: (error: any) => {
+        const msg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Gagal mendaftar event";
+        showToast("error", msg);
+      },
+    });
+  }
+
+  function handleCancelRegistration() {
+    if (
+      !confirm(
+        "Apakah Anda yakin ingin membatalkan pendaftaran event ini?"
+      )
+    ) {
+      return;
+    }
+
+    cancelRegistration.mutate(eventId, {
+      onSuccess: () => {
+        showToast("success", "Pendaftaran berhasil dibatalkan");
+      },
+      onError: (error: any) => {
+        const msg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Gagal membatalkan pendaftaran";
+        showToast("error", msg);
+      },
+    });
+  }
 
   if (isLoading) {
     return (
-      <div className="space-y-4 py-10 text-center">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin mx-auto" />
-        <p className="text-sm text-gray-500">Memuat detail event...</p>
+      <div className="space-y-5">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-50 rounded-xl transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div>
+            <Skeleton className="h-6 w-48 mb-1" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-4">
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
 
-  if (error || !data) {
+  if (isError || !event) {
     return (
-      <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 space-y-4">
-        <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
-        <h3 className="font-bold text-gray-800">Event Tidak Ditemukan</h3>
-        <p className="text-xs text-gray-500">
-          Maaf, data event tidak berhasil dimuat atau event tersebut tidak terdaftar di sistem.
-        </p>
-        <button
-          onClick={() => router.push("/alumni/main/events")}
-          className="bg-teal-600 text-white text-xs font-semibold px-4 py-2 rounded-xl"
-        >
-          Kembali ke Daftar Event
-        </button>
+      <div className="space-y-5">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-50 rounded-xl transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Detail Event</h1>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+          <p className="font-semibold text-gray-800 mb-1">
+            Event Tidak Ditemukan
+          </p>
+          <p className="text-sm text-gray-500 mb-4">
+            Event yang Anda cari tidak tersedia atau sudah dihapus
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#41A07E] hover:bg-[#357f65]"
+          >
+            Kembali
+          </button>
+        </div>
       </div>
     );
   }
 
-  const { event, remaining_quota, is_registered: isRegistered, registration } = data;
-
-  const handleRegister = () => {
-    setMessage(null);
-    registerMutation.mutate(id, {
-      onSuccess: (res: unknown) => {
-        setMessage({
-          text: getMessage(res) || "Berhasil mendaftar event! Sampai jumpa di lokasi.",
-          type: "success",
-        });
-      },
-      onError: (err: unknown) => {
-        setMessage({
-          text: getMessage(err) || "Gagal mendaftar ke event ini.",
-          type: "error",
-        });
-      },
-    });
-  };
-
-  const handleCancel = () => {
-    setMessage(null);
-    cancelMutation.mutate(id, {
-      onSuccess: (res: unknown) => {
-        setMessage({
-          text: getMessage(res) || "Pendaftaran event berhasil dibatalkan.",
-          type: "success",
-        });
-      },
-      onError: (err: unknown) => {
-        setMessage({
-          text: getMessage(err) || "Gagal membatalkan pendaftaran.",
-          type: "error",
-        });
-      },
-    });
-  };
-
-  const isAttended = registration?.status === "attended";
-  const isMutationLoading = registerMutation.isPending || cancelMutation.isPending;
+  const isRegistered = event.is_registered === true;
+  const isAttended = attendanceStatus === "present";
+  const quotaFull = event.remaining_quota <= 0;
 
   return (
     <div className="space-y-5 pb-6">
-      {/* Tombol Back */}
-      <button
-        onClick={() => router.push("/alumni/main/events")}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm font-semibold transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Kembali ke Event</span>
-      </button>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.back()}
+          className="p-2 hover:bg-gray-50 rounded-xl transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-gray-900">Detail Event</h1>
+          <p className="text-xs text-gray-400 mt-0.5 truncate">
+            Informasi lengkap event alumni
+          </p>
+        </div>
+      </div>
 
-      {/* Konten Utama Detail */}
-      <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
-        {/* Cover Pattern / Image / Gradient */}
-        {event?.poster_url ? (
-          <div className="h-48 sm:h-56 relative w-full px-4 sm:px-6 flex items-end pb-4 bg-gray-100">
-            <img src={getImageUrl(event.poster_url)} alt={event.event_title || "Event Poster"} className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-            <span className="relative z-10 min-w-0 max-w-full text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
-              <Tag className="w-3 h-3" />
-              <span className="truncate">{event?.category?.category_name || "Kategori"}</span>
-            </span>
-          </div>
-        ) : (
-          <div className="h-28 bg-gradient-to-br from-teal-500 to-emerald-600 px-4 sm:px-6 flex items-end pb-4">
-            <span className="min-w-0 max-w-full text-[10px] bg-white/20 text-white px-3 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
-              <Tag className="w-3 h-3" />
-              <span className="truncate">{event?.category?.category_name || "Kategori"}</span>
-            </span>
+      {/* Event Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Poster Image */}
+        {event.poster_url && (
+          <div className="w-full h-56 bg-gray-100">
+            <img
+              src={getImageUrl(event.poster_url)}
+              alt={event.event_title}
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
 
-        {/* Info Event */}
-        <div className="p-4 sm:p-6 space-y-5">
-          <div className="space-y-2">
-            <h1 className="text-xl font-bold text-gray-800 leading-snug">
-              {event?.event_title}
-            </h1>
-            <p className="text-xs text-gray-400">
-              Dibuat pada {formatDate(event?.created_at)}
-            </p>
-          </div>
+        <div className="p-5 space-y-4">
+          {/* Kategori & Status */}
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[10px] bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
+              <Tag className="w-3 h-3" />
+              {event.category?.category_name || "Umum"}
+            </span>
 
-          {/* Alert Message */}
-          {message && (
-            <div
-              className={`p-3.5 rounded-xl text-xs font-semibold leading-relaxed border ${
-                message.type === "success"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                  : "bg-red-50 text-red-700 border-red-100"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
-          {/* Status Pendaftaran Banner */}
-          {isRegistered && (
-            <div
-              className={`p-4 rounded-2xl flex items-start gap-3 border ${
-                isAttended
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-100"
-                  : "bg-teal-50 text-teal-800 border-teal-100"
-              }`}
-            >
-              <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isAttended ? "text-emerald-600" : "text-teal-600"}`} />
-              <div className="space-y-0.5">
-                <p className="text-xs font-bold">
-                  {isAttended ? "Kehadiran Terverifikasi" : "Pendaftaran Terdaftar"}
-                </p>
-                <p className="text-[11px] opacity-80 leading-relaxed">
-                  {isAttended
-                    ? "Anda telah tercatat hadir pada event ini via scan QR Code. Terima kasih!"
-                    : `Anda telah terdaftar pada event ini sejak ${formatDate(registration?.registered_at)}.`}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Informasi Detail / Metadata */}
-          <div className="space-y-3.5 bg-gray-50/50 rounded-2xl p-4 border border-gray-50">
-            <div className="flex items-start gap-3 text-xs text-gray-600">
-              <Calendar className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p className="font-semibold text-gray-700">Waktu Pelaksanaan</p>
-                <p className="text-gray-500">
-                  {formatDate(event?.event_date)}
-                </p>
-                <p className="text-gray-400 font-medium">
-                  Pukul {formatTime(event?.start_time)} - {formatTime(event?.end_time)} WIB
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 text-xs text-gray-600">
-              <MapPin className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p className="font-semibold text-gray-700">Tempat / Lokasi</p>
-                <p className="text-gray-500">{event?.location}</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 text-xs text-gray-600">
-              <Users className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p className="font-semibold text-gray-700">Informasi Kuota</p>
-                {event?.quota ? (
-                  <>
-                    <p className="text-gray-500">
-                      Tersedia untuk {event.quota} alumni
-                    </p>
-                    <p className="text-gray-400 font-medium">
-                      Sisa kuota pendaftaran saat ini: {remaining_quota} tempat
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-gray-500">
-                    Kuota pendaftaran tidak dibatasi
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Deskripsi Acara */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Deskripsi Kegiatan
-            </h3>
-            <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-line">
-              {event?.description || event?.event_description || "Tidak ada deskripsi tambahan untuk event ini."}
-            </p>
-          </div>
-
-          {/* Tombol Aksi */}
-          <div className="pt-2">
             {isAttended ? (
-              <button
-                disabled
-                className="w-full bg-gray-100 text-gray-400 text-sm font-bold py-3 rounded-2xl cursor-not-allowed flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>Anda Sudah Hadir</span>
-              </button>
+              <span className="text-[10px] bg-[#B2DE96] text-[#41A07E] border border-[#B2DE96] px-3 py-1 rounded-full font-bold flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Hadir
+              </span>
             ) : isRegistered ? (
-              <button
-                onClick={handleCancel}
-                disabled={isMutationLoading}
-                className="w-full bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold py-3 rounded-2xl transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+              <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full font-bold">
+                Terdaftar
+              </span>
+            ) : (
+              <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-100 px-3 py-1 rounded-full font-semibold">
+                Belum Terdaftar
+              </span>
+            )}
+          </div>
+
+          {/* Judul */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+              {event.event_title}
+            </h2>
+          </div>
+
+          {/* Deskripsi */}
+          {event.event_description && (
+            <div className="border-t border-gray-50 pt-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Deskripsi Event
+              </h3>
+              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                {event.event_description}
+              </p>
+            </div>
+          )}
+
+          {/* Info Detail */}
+          <div className="border-t border-gray-50 pt-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              Informasi Event
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-[#41A07E]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 mb-0.5">Tanggal</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {formatDate(event.event_date)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-4 h-4 text-[#41A07E]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 mb-0.5">Waktu</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {formatTime(event.start_time)} - {formatTime(event.end_time)}{" "}
+                    WIB
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-[#41A07E]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 mb-0.5">Lokasi</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {event.location}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-4 h-4 text-[#41A07E]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 mb-0.5">Kuota</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    Sisa {event.remaining_quota} dari {event.quota} peserta
+                  </p>
+                  {quotaFull && !isRegistered && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Kuota sudah penuh
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Kehadiran Info */}
+          {isRegistered && (
+            <div className="border-t border-gray-50 pt-4">
+              <div
+                className={`rounded-xl p-4 ${
+                  isAttended
+                    ? "bg-[#B2DE96]/20 border border-[#B2DE96]/30"
+                    : "bg-blue-50 border border-blue-100"
+                }`}
               >
-                {isMutationLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span>Batalkan Pendaftaran</span>
-                )}
-              </button>
-            ) : (!event?.quota || remaining_quota > 0) ? (
+                <div className="flex items-start gap-3">
+                  {isAttended ? (
+                    <CheckCircle className="w-5 h-5 text-[#41A07E] flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  )}
+                  <div className="min-w-0">
+                    <p
+                      className={`text-sm font-semibold ${
+                        isAttended ? "text-[#41A07E]" : "text-blue-700"
+                      }`}
+                    >
+                      {isAttended
+                        ? "Anda Sudah Hadir"
+                        : "Anda Sudah Terdaftar"}
+                    </p>
+                    <p
+                      className={`text-xs mt-1 leading-relaxed ${
+                        isAttended ? "text-[#357f65]" : "text-blue-600"
+                      }`}
+                    >
+                      {isAttended
+                        ? "Terima kasih telah menghadiri event ini. Presensi Anda sudah tercatat."
+                        : "Jangan lupa scan QR code saat event dimulai untuk konfirmasi kehadiran Anda."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="border-t border-gray-50 pt-4 space-y-2">
+            {!isRegistered ? (
               <button
                 onClick={handleRegister}
-                disabled={isMutationLoading}
-                className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold py-3 rounded-2xl hover:opacity-90 transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
+                disabled={registerEvent.isPending || quotaFull}
+                className="w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {isMutationLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                {registerEvent.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Memproses...
+                  </>
+                ) : quotaFull ? (
+                  "Kuota Penuh"
                 ) : (
-                  <span>Daftar Event Sekarang</span>
+                  "Konfirmasi Kehadiran"
                 )}
               </button>
             ) : (
-              <button
-                disabled
-                className="w-full bg-gray-100 text-gray-400 text-sm font-bold py-3 rounded-2xl cursor-not-allowed"
-              >
-                Kuota Sudah Penuh
-              </button>
+              <>
+                {!isAttended && (
+                  <button
+                    onClick={handleCancelRegistration}
+                    disabled={cancelRegistration.isPending}
+                    className="w-full rounded-xl bg-white border-2 border-red-200 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {cancelRegistration.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      "Batal Daftar"
+                    )}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
+
+      {toast && <Toast type={toast.type} message={toast.message} />}
     </div>
   );
 }

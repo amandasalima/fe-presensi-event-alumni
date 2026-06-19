@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import AuthCard from "@/app/components/alumni/AuthCard";
 
 export const metadata: Metadata = {
-  title: "Masuk | Sistem Presensi Event Berbasis QR",
+  title: "Masuk | Sistem Presensi Event Alumni Berbasis QR",
   description: "Masuk ke akun alumni Anda",
 };
 

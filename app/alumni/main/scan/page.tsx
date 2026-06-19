@@ -86,7 +86,6 @@ function getFriendlyErrorMessage(message: string): string {
       "Anda sudah melakukan presensi sebelumnya.",
   };
 
-  // Cek exact match dulu
   if (errorMap[message]) {
     return errorMap[message];
   }
@@ -131,7 +130,7 @@ export default function ScanPage() {
     try {
       setStatus("scanning");
       setCameraReady(false);
-      
+
       if (typeof window !== "undefined" && !window.isSecureContext) {
         throw new Error(
           "Kamera diblokir oleh browser. Anda harus menggunakan koneksi HTTPS atau localhost untuk mengaktifkan kamera di HP."
@@ -165,63 +164,69 @@ export default function ScanPage() {
           await stopScanner();
 
           let qrToken = decodedText.trim();
-          
-          // Jika QR code berisi URL, ekstrak token dari segment terakhir
+
           if (qrToken.includes("http://") || qrToken.includes("https://")) {
             const parts = qrToken.split("/");
             qrToken = parts[parts.length - 1];
           }
 
           scanQR.mutate(qrToken, {
-              onSuccess: (data: any) => {
-                if (data && data.success === false) {
-                  setStatus("error");
-                  setCameraReady(false);
-                  setMessage(getMessage(data) || "QR Code tidak dikenali atau Anda belum mendaftar");
-                  setManualToken("");
-                  return;
-                }
+            onSuccess: (data: any) => {
+              if (data && data.success === false) {
+                setStatus("error");
+                setCameraReady(false);
+                setMessage(
+                  getMessage(data) ||
+                    "QR Code tidak dikenali atau Anda belum mendaftar"
+                );
+                setManualToken("");
+                return;
+              }
 
+              setStatus("success");
+              setCameraReady(false);
+              setMessage(getMessage(data) || "Presensi berhasil dicatat");
+              setManualToken("");
+            },
+            onError: (error) => {
+              const errMsg =
+                error instanceof Error ? error.message.toLowerCase() : "";
+
+              if (
+                errMsg.includes("belum aktif") ||
+                errMsg.includes("belum mulai") ||
+                errMsg.includes("belum berlaku") ||
+                errMsg.includes("waktu")
+              ) {
+                setStatus("error");
+                setCameraReady(false);
+                setMessage("Anda belum bisa melakukan presensi");
+                setManualToken("");
+              } else if (
+                errMsg.includes("sudah melakukan presensi") ||
+                errMsg.includes("sudah presensi") ||
+                errMsg.includes("sudah tercatat")
+              ) {
                 setStatus("success");
                 setCameraReady(false);
-                setMessage(getMessage(data) || "Presensi berhasil dicatat");
+                setMessage("Anda sudah melakukan presensi");
                 setManualToken("");
-              },
-              onError: (error) => {
-                const errMsg = error instanceof Error ? error.message.toLowerCase() : "";
-                
-                if (
-                  errMsg.includes("belum aktif") || 
-                  errMsg.includes("belum mulai") || 
-                  errMsg.includes("belum berlaku") || 
-                  errMsg.includes("waktu")
-                ) {
-                  setStatus("error");
-                  setCameraReady(false);
-                  setMessage("Anda belum bisa melakukan presensi");
-                  setManualToken("");
-                } else if (
-                  errMsg.includes("sudah melakukan presensi") || 
-                  errMsg.includes("sudah presensi") || 
-                  errMsg.includes("sudah tercatat")
-                ) {
-                  setStatus("success");
-                  setCameraReady(false);
-                  setMessage("Anda sudah melakukan presensi");
-                  setManualToken("");
-                } else {
-                  setStatus("error");
-                  setCameraReady(false);
-                  
-                  const rawMessage = error instanceof Error ? error.message : "Presensi gagal diproses";
-                  setMessage(getFriendlyErrorMessage(rawMessage));
-                }
-                isProcessingRef.current = false;
-              },
-            });
+              } else {
+                setStatus("error");
+                setCameraReady(false);
+
+                const rawMessage =
+                  error instanceof Error
+                    ? error.message
+                    : "Presensi gagal diproses";
+                setMessage(getFriendlyErrorMessage(rawMessage));
+              }
+
+              isProcessingRef.current = false;
+            },
+          });
         },
-        () => {
-        }
+        () => {}
       );
 
       setCameraReady(true);
@@ -258,8 +263,7 @@ export default function ScanPage() {
     await stopScanner();
 
     let qrToken = manualToken.trim();
-    
-    // Jika input manual berisi URL, ekstrak token dari segment terakhir
+
     if (qrToken.includes("http://") || qrToken.includes("https://")) {
       const parts = qrToken.split("/");
       qrToken = parts[parts.length - 1];
@@ -267,13 +271,16 @@ export default function ScanPage() {
 
     scanQR.mutate(qrToken, {
       onSuccess: (data: any) => {
-                if (data && data.success === false) {
-                  setStatus("error");
-                  setCameraReady(false);
-                  setMessage(getMessage(data) || "QR Code tidak dikenali atau Anda belum mendaftar");
-                  setManualToken("");
-                  return;
-                }
+        if (data && data.success === false) {
+          setStatus("error");
+          setCameraReady(false);
+          setMessage(
+            getMessage(data) ||
+              "QR Code tidak dikenali atau Anda belum mendaftar"
+          );
+          setManualToken("");
+          return;
+        }
 
         setStatus("success");
         setCameraReady(false);
@@ -281,12 +288,13 @@ export default function ScanPage() {
         setManualToken("");
       },
       onError: (error) => {
-        const errMsg = error instanceof Error ? error.message.toLowerCase() : "";
-                
+        const errMsg =
+          error instanceof Error ? error.message.toLowerCase() : "";
+
         if (
-          errMsg.includes("belum aktif") || 
-          errMsg.includes("belum mulai") || 
-          errMsg.includes("belum berlaku") || 
+          errMsg.includes("belum aktif") ||
+          errMsg.includes("belum mulai") ||
+          errMsg.includes("belum berlaku") ||
           errMsg.includes("waktu")
         ) {
           setStatus("error");
@@ -294,8 +302,8 @@ export default function ScanPage() {
           setMessage("Anda belum bisa melakukan presensi");
           setManualToken("");
         } else if (
-          errMsg.includes("sudah melakukan presensi") || 
-          errMsg.includes("sudah presensi") || 
+          errMsg.includes("sudah melakukan presensi") ||
+          errMsg.includes("sudah presensi") ||
           errMsg.includes("sudah tercatat")
         ) {
           setStatus("success");
@@ -305,9 +313,14 @@ export default function ScanPage() {
         } else {
           setStatus("error");
           setCameraReady(false);
-          const rawMessage = error instanceof Error ? error.message : "Presensi gagal diproses";
+
+          const rawMessage =
+            error instanceof Error
+              ? error.message
+              : "Presensi gagal diproses";
           setMessage(getFriendlyErrorMessage(rawMessage));
         }
+
         isProcessingRef.current = false;
       },
     });
@@ -320,15 +333,9 @@ export default function ScanPage() {
   }, []);
 
   return (
-    <div
-      className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-5 pb-6"
-      style={{
-        background:
-          "linear-gradient(180deg, #f8fbff 0%, #eef8ff 36%, #d7f3e6 100%)",
-      }}
-    >
+    <div className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-5 pb-6 bg-slate-50">
       <section className="text-center">
-        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center text-white shadow-lg">
+        <div className="w-16 h-16 mx-auto rounded-full bg-[#41A07E] flex items-center justify-center text-white shadow-md shadow-[#B2DE96]/30">
           <Icon name="camera" className="w-8 h-8" />
         </div>
 
@@ -342,9 +349,9 @@ export default function ScanPage() {
               {message}
             </div>
           )}
-          
+
           {status === "success" && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-3 rounded-xl text-sm font-semibold mb-2 shadow-sm animate-in slide-in-from-top-2">
+            <div className="bg-green-50 border border-green-100 text-[#41A07E] p-3 rounded-xl text-sm font-semibold mb-2 shadow-sm animate-in slide-in-from-top-2">
               {message}
             </div>
           )}
@@ -364,7 +371,7 @@ export default function ScanPage() {
           {!cameraReady && (
             <div className="absolute inset-0 z-20 flex items-center justify-center text-slate-500 bg-slate-950">
               {status === "success" ? (
-                <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <div className="w-16 h-16 rounded-full bg-[#41A07E] text-white flex items-center justify-center shadow-md shadow-[#B2DE96]/30">
                   <Icon name="check" className="w-9 h-9" />
                 </div>
               ) : status === "error" ? (
@@ -384,10 +391,10 @@ export default function ScanPage() {
               <div className="qr-scanner-sweep absolute left-3 right-3 h-12 rounded-full" />
             )}
 
-            <div className="absolute top-0 left-0 w-12 h-12 sm:w-14 sm:h-14 border-t-[5px] border-l-[5px] border-emerald-400 rounded-tl-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
-            <div className="absolute top-0 right-0 w-12 h-12 sm:w-14 sm:h-14 border-t-[5px] border-r-[5px] border-emerald-400 rounded-tr-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
-            <div className="absolute bottom-0 left-0 w-12 h-12 sm:w-14 sm:h-14 border-b-[5px] border-l-[5px] border-emerald-400 rounded-bl-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
-            <div className="absolute bottom-0 right-0 w-12 h-12 sm:w-14 sm:h-14 border-b-[5px] border-r-[5px] border-emerald-400 rounded-br-[18px] shadow-[0_0_18px_rgba(52,211,153,0.55)]" />
+            <div className="absolute top-0 left-0 w-12 h-12 sm:w-14 sm:h-14 border-t-[5px] border-l-[5px] border-[#41A07E] rounded-tl-[18px] shadow-[0_0_18px_rgba(65,160,126,0.35)]" />
+            <div className="absolute top-0 right-0 w-12 h-12 sm:w-14 sm:h-14 border-t-[5px] border-r-[5px] border-[#41A07E] rounded-tr-[18px] shadow-[0_0_18px_rgba(65,160,126,0.35)]" />
+            <div className="absolute bottom-0 left-0 w-12 h-12 sm:w-14 sm:h-14 border-b-[5px] border-l-[5px] border-[#41A07E] rounded-bl-[18px] shadow-[0_0_18px_rgba(65,160,126,0.35)]" />
+            <div className="absolute bottom-0 right-0 w-12 h-12 sm:w-14 sm:h-14 border-b-[5px] border-r-[5px] border-[#41A07E] rounded-br-[18px] shadow-[0_0_18px_rgba(65,160,126,0.35)]" />
           </div>
         </div>
 
@@ -395,11 +402,7 @@ export default function ScanPage() {
           <button
             onClick={startScanner}
             disabled={scanQR.isPending}
-            className="mt-5 w-full rounded-2xl py-3.5 font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{
-              background: "linear-gradient(135deg, #b8e8a0 0%, #37ad82 100%)",
-              boxShadow: "0 10px 24px rgba(32, 176, 112, 0.25)",
-            }}
+            className="mt-5 w-full rounded-2xl bg-[#41A07E] py-3.5 font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <Icon name="camera" className="w-4 h-4" />
             Aktifkan Kamera
@@ -409,7 +412,7 @@ export default function ScanPage() {
         {status === "scanning" && (
           <button
             onClick={resetScanner}
-            className="mt-5 w-full rounded-2xl py-3.5 font-semibold text-emerald-700 bg-white border border-emerald-200"
+            className="mt-5 w-full rounded-2xl py-3.5 font-semibold text-[#41A07E] bg-white border border-green-100 transition-colors hover:bg-green-50 active:scale-[0.98]"
           >
             Matikan Kamera
           </button>
@@ -418,7 +421,7 @@ export default function ScanPage() {
         {status === "success" && (
           <button
             onClick={() => router.push("/alumni/main/riwayat")}
-            className="mt-5 w-full rounded-2xl py-3.5 font-semibold text-white bg-emerald-600"
+            className="mt-5 w-full rounded-2xl bg-[#41A07E] py-3.5 font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98]"
           >
             Lihat Riwayat Kehadiran
           </button>
@@ -430,22 +433,26 @@ export default function ScanPage() {
           <h2 className="font-bold text-gray-800 text-sm mb-2">
             Input Kode Manual
           </h2>
+
           <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-            Gunakan opsi ini jika kamera perangkat Anda bermasalah atau tidak dapat membaca QR Code.
+            Gunakan opsi ini jika kamera perangkat Anda bermasalah atau tidak
+            dapat membaca QR Code.
           </p>
+
           <div className="flex gap-2">
             <input
               type="text"
               value={manualToken}
               onChange={(e) => setManualToken(e.target.value)}
               placeholder="Masukkan kode presensi..."
-              className="flex-1 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+              className="flex-1 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#41A07E] focus:ring-1 focus:ring-[#41A07E] transition-colors"
               disabled={scanQR.isPending}
             />
+
             <button
               onClick={handleManualSubmit}
               disabled={!manualToken.trim() || scanQR.isPending}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors flex items-center justify-center min-w-[80px]"
+              className="bg-[#41A07E] hover:bg-[#357f65] text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-md shadow-[#B2DE96]/30 transition-colors active:scale-[0.98] flex items-center justify-center min-w-[80px]"
             >
               {scanQR.isPending ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -457,19 +464,19 @@ export default function ScanPage() {
         </section>
       )}
 
-      <section className="mt-5 rounded-2xl border border-emerald-500 bg-white/45 p-4">
+      <section className="mt-5 rounded-2xl border border-green-100 bg-white p-4 shadow-sm">
         <div className="flex items-start gap-3">
           <Icon
             name="info"
-            className="w-5 h-5 text-teal-700 mt-0.5 flex-shrink-0"
+            className="w-5 h-5 text-[#41A07E] mt-0.5 flex-shrink-0"
           />
 
           <div>
-            <h2 className="font-bold text-teal-800 text-sm">
+            <h2 className="font-bold text-gray-800 text-sm">
               Tips Scan QR Code
             </h2>
 
-            <ul className="text-xs text-emerald-700 mt-1 space-y-1 leading-relaxed">
+            <ul className="text-xs text-gray-500 mt-1 space-y-1 leading-relaxed">
               <li>• Pastikan QR Code berada di dalam bingkai</li>
               <li>• Hindari pantulan cahaya pada QR Code</li>
               <li>• Pegang kamera dengan stabil</li>

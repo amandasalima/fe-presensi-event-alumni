@@ -1,5 +1,16 @@
 "use client";
 
+import type { ReactNode } from "react";
+import {
+	CalendarDays,
+	ClipboardList,
+	Download,
+	FileText,
+	Inbox,
+	MapPin,
+	TrendingUp,
+	Users,
+} from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import { FormSelect } from "@/app/components/FormControl";
@@ -28,6 +39,42 @@ function TableSkeleton({ cols }: { cols: number }) {
 	);
 }
 
+// ─── Icon 3D ──────────────────────────────────────────────────────────────────
+function Icon3D({
+	children,
+	variant = "teal",
+	size = "md",
+}: {
+	children: ReactNode;
+	variant?: "teal" | "blue" | "green" | "red" | "amber" | "gray";
+	size?: "sm" | "md" | "lg";
+}) {
+	const variants = {
+		teal: "from-[#D8F3F0] via-[#7AB2B2] to-[#2D7EA0] text-white",
+		blue: "from-blue-100 via-blue-400 to-blue-600 text-white",
+		green: "from-emerald-100 via-emerald-400 to-emerald-600 text-white",
+		red: "from-red-100 via-red-400 to-red-600 text-white",
+		amber: "from-amber-100 via-amber-400 to-amber-600 text-white",
+		gray: "from-gray-100 via-gray-300 to-gray-500 text-white",
+	};
+
+	const sizes = {
+		sm: "w-8 h-8 rounded-xl",
+		md: "w-10 h-10 rounded-2xl",
+		lg: "w-14 h-14 rounded-2xl",
+	};
+
+	return (
+		<span
+			className={`${sizes[size]} shrink-0 overflow-visible inline-flex items-center justify-center bg-gradient-to-br ${variants[variant]} shadow-lg shadow-gray-300/70 border border-white/60 ring-1 ring-black/5`}
+		>
+			<span className="inline-flex items-center justify-center leading-none drop-shadow-sm">
+				{children}
+			</span>
+		</span>
+	);
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
 	const {
@@ -50,45 +97,44 @@ export default function ReportsPage() {
 	} = useReportsPage();
 
 	return (
-		<div className="flex min-h-screen bg-gray-50">
+		<div className="h-screen bg-gray-100 flex overflow-hidden">
 			<AdminSidebar />
-			<div className="flex-1 ml-72 flex flex-col min-h-screen">
+
+			<div className="flex-1 ml-56 flex flex-col h-screen">
 				<AdminHeader title="Kehadiran" />
 
-				<main className="flex-1 p-8 space-y-6">
-					{/* ── Hero ── */}
-					<div className="bg-linear-to-r from-teal-600 to-cyan-500 rounded-2xl p-7 flex items-center gap-5 shadow-sm">
-						<div className="bg-white/20 rounded-xl p-3 text-2xl">📋</div>
-						<div>
-							<h2 className="text-2xl font-bold text-white">
-								Laporan Kehadiran
-							</h2>
-							<p className="text-teal-100 text-sm mt-1">
-								Pilih event dan download laporan kehadiran dalam format CSV,
-								Excel, atau PDF
-							</p>
-						</div>
-					</div>
-
+				<main className="flex-1 overflow-y-auto p-5 space-y-5">
 					{/* ── Stat Cards ── */}
-					<div className="grid grid-cols-3 gap-5">
+					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 						{[
 							{
-								icon: "📅",
+								icon: (
+									<Icon3D variant="teal" size="md">
+										<CalendarDays size={21} strokeWidth={2.5} />
+									</Icon3D>
+								),
 								label: "Total",
-								accent: "border-teal-400",
+								accent: "border-[#7AB2B2]",
 								value: loadingEvents ? "..." : selesai,
 								sub: "Event Terlaksana",
 							},
 							{
-								icon: "👥",
+								icon: (
+									<Icon3D variant="blue" size="md">
+										<Users size={21} strokeWidth={2.5} />
+									</Icon3D>
+								),
 								label: "Peserta",
-								accent: "border-cyan-400",
+								accent: "border-blue-400",
 								value: loadingPresences ? "..." : totalHadir,
 								sub: "Total Kehadiran",
 							},
 							{
-								icon: "📈",
+								icon: (
+									<Icon3D variant="green" size="md">
+										<TrendingUp size={21} strokeWidth={2.5} />
+									</Icon3D>
+								),
 								label: "Rate",
 								accent: "border-emerald-400",
 								value:
@@ -98,18 +144,20 @@ export default function ReportsPage() {
 						].map((s, i) => (
 							<div
 								key={i}
-								className={`bg-white border-l-4 ${s.accent} rounded-2xl p-6 shadow-sm flex items-start gap-4`}
+								className={`bg-white border-l-4 ${s.accent} rounded-2xl p-5 shadow-sm shadow-gray-200/70 flex items-start gap-4`}
 							>
-								<span className="text-3xl">{s.icon}</span>
+								{s.icon}
+
 								<div className="flex-1">
-									<div className="flex items-center justify-between">
-										<p className="text-4xl font-bold text-gray-800">
+									<div className="flex items-center justify-between gap-3">
+										<p className="text-3xl font-bold text-gray-800">
 											{s.value}
 										</p>
 										<span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
 											{s.label}
 										</span>
 									</div>
+
 									<p className="text-sm text-gray-400 mt-1">{s.sub}</p>
 								</div>
 							</div>
@@ -117,13 +165,15 @@ export default function ReportsPage() {
 					</div>
 
 					{/* ── Pilih Event ── */}
-					<div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
+					<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm shadow-gray-200/70 space-y-4">
 						<div>
 							<h3 className="font-semibold text-gray-800 flex items-center gap-2">
-								<span className="text-teal-500">📅</span> Pilih Event untuk
-								Download Laporan
+								<Icon3D variant="teal" size="sm">
+									<CalendarDays size={16} strokeWidth={2.5} />
+								</Icon3D>
+								Pilih Event untuk Download Laporan
 							</h3>
-							<p className="text-sm text-gray-400 mt-0.5">
+							<p className="text-sm text-gray-400 mt-1 ml-10">
 								Pilih event tertentu untuk melihat detail dan download laporan
 								kehadiran
 							</p>
@@ -135,7 +185,7 @@ export default function ReportsPage() {
 								onChange={(e) =>
 									setSelectedEventId(Number(e.target.value) || null)
 								}
-								className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-400"
+								className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 							>
 								<option value="">Pilih event...</option>
 
@@ -153,21 +203,27 @@ export default function ReportsPage() {
 
 						{/* Detail event terpilih */}
 						{selectedAttendanceEvent && (
-							<div className="border border-teal-100 rounded-2xl overflow-hidden">
+							<div className="border border-[#7AB2B2]/20 rounded-2xl overflow-hidden">
 								{/* Header detail */}
-								<div className="bg-teal-50 px-5 py-4 flex items-center justify-between">
+								<div className="bg-[#7AB2B2]/10 px-5 py-4 flex items-center justify-between gap-4">
 									<div>
 										<p className="font-semibold text-teal-800">
 											{selectedAttendanceEvent.event_title}
 										</p>
-										<p className="text-sm text-teal-600 mt-0.5">
-											📅 {formatDate(selectedAttendanceEvent.event_date)}
+										<p className="text-sm text-[#2D7EA0] mt-2 flex items-center gap-2">
+											<Icon3D variant="teal" size="sm">
+												<CalendarDays size={15} strokeWidth={2.5} />
+											</Icon3D>
+											{formatDate(selectedAttendanceEvent.event_date)}
 										</p>
-										<p className="text-sm text-teal-600 mt-0.5">
-											📍 {selectedAttendanceEvent.location}
+										<p className="text-sm text-[#2D7EA0] mt-1.5 flex items-center gap-2">
+											<Icon3D variant="blue" size="sm">
+												<MapPin size={15} strokeWidth={2.5} />
+											</Icon3D>
+											{selectedAttendanceEvent.location}
 										</p>
 
-										<p className="text-sm text-teal-600 mt-0.5">
+										<p className="text-sm text-[#2D7EA0] mt-2 font-medium">
 											Total kehadiran: {totalAttendances}
 										</p>
 									</div>
@@ -176,9 +232,10 @@ export default function ReportsPage() {
 											<button
 												key={f}
 												onClick={() => handleDownload(f)}
-												className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+												className="text-xs bg-[#2D7EA0] hover:bg-[#236175] text-white px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 shadow-sm"
 											>
-												⬇ {f}
+												<Download size={13} strokeWidth={2.5} />
+												{f}
 											</button>
 										))}
 									</div>
@@ -241,7 +298,7 @@ export default function ReportsPage() {
 														</td>
 
 														<td className="px-5 py-3">
-															<span className="text-xs px-2.5 py-1 rounded-full font-medium bg-teal-50 text-teal-600 border border-teal-200">
+															<span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200">
 																Hadir
 															</span>
 														</td>
@@ -256,19 +313,22 @@ export default function ReportsPage() {
 					</div>
 
 					{/* ── Semua Event Table ── */}
-					<div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+					<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm shadow-gray-200/70">
 						<div className="mb-5">
 							<h3 className="font-semibold text-gray-800 flex items-center gap-2">
-								<span className="text-teal-500">📅</span> Semua Event
+								<Icon3D variant="teal" size="sm">
+									<ClipboardList size={16} strokeWidth={2.5} />
+								</Icon3D>
+								Semua Event
 							</h3>
-							<p className="text-sm text-gray-400 mt-0.5">
+							<p className="text-sm text-gray-400 mt-1 ml-10">
 								Ringkasan kehadiran semua event yang telah berlangsung
 							</p>
 						</div>
 						<div className="overflow-x-auto">
 							<table className="w-full text-sm">
 								<thead>
-									<tr className="bg-teal-50">
+									<tr className="bg-[#7AB2B2]/10">
 										{[
 											"Event",
 											"Tanggal",
@@ -278,7 +338,7 @@ export default function ReportsPage() {
 										].map((h, i) => (
 											<th
 												key={h}
-												className={`text-left px-5 py-3.5 text-teal-700 font-semibold ${i === 0 ? "rounded-l-xl" : ""} ${i === 4 ? "rounded-r-xl" : ""}`}
+												className={`text-left px-5 py-3.5 text-[#236175] font-semibold ${i === 0 ? "rounded-l-xl" : ""} ${i === 4 ? "rounded-r-xl" : ""}`}
 											>
 												{h}
 											</th>
@@ -294,8 +354,10 @@ export default function ReportsPage() {
 												colSpan={5}
 												className="text-center py-10 text-gray-400 text-sm"
 											>
-												<p className="text-3xl mb-2">📭</p>
-												Belum ada data event
+												<Icon3D variant="gray" size="lg">
+													<Inbox size={26} strokeWidth={2.5} />
+												</Icon3D>
+												<p className="mt-3">Belum ada data event</p>
 											</td>
 										</tr>
 									) : (
@@ -309,19 +371,24 @@ export default function ReportsPage() {
 													onClick={() => setSelectedId(e.id)}
 												>
 													<td className="px-5 py-4 font-medium text-gray-800">
-														{e.event_title}
+														<div className="flex items-center gap-3">
+															<Icon3D variant="teal" size="sm">
+																<FileText size={15} strokeWidth={2.5} />
+															</Icon3D>
+															{e.event_title}
+														</div>
 													</td>
 													<td className="px-5 py-4 text-gray-500">
 														{formatDate(e.event_datetime)}
 													</td>
-													<td className="px-5 py-4 font-bold text-teal-600">
+													<td className="px-5 py-4 font-bold text-[#2D7EA0]">
 														{hadir}
 													</td>
 													<td className="px-5 py-4">
 														<div className="flex items-center gap-3">
 															<div className="w-28 bg-gray-100 rounded-full h-2">
 																<div
-																	className="bg-teal-500 h-2 rounded-full transition-all"
+																	className="bg-[#3EBDAF] h-2 rounded-full transition-all"
 																	style={{ width: `${rate}%` }}
 																/>
 															</div>
@@ -334,7 +401,7 @@ export default function ReportsPage() {
 														<span
 															className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
 																e.status_event === "Mendatang"
-																	? "bg-teal-50 text-teal-600 border-teal-200"
+																	? "bg-[#7AB2B2]/10 text-[#2D7EA0] border-teal-200"
 																	: "bg-gray-50 text-gray-500 border-gray-200"
 															}`}
 														>

@@ -267,10 +267,7 @@ export default function AlumniChangePasswordPage() {
           type="button"
           onClick={handleSubmit}
           disabled={changePassword.isPending}
-          className="w-full py-3.5 rounded-xl text-sm font-bold text-white shadow-sm transition active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
-          style={{
-            background: "linear-gradient(135deg, #4ade80 0%, #16a34a 100%)",
-          }}
+          className="w-full py-3.5 rounded-xl bg-[#16a34a] text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#15803d] active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {changePassword.isPending ? (
             <>

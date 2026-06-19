@@ -23,8 +23,8 @@ export default function SuccessModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
         <div className="flex flex-col items-center text-center">
           {/* Success Icon */}
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-            <CheckCircle size={32} className="text-emerald-600" />
+          <div className="w-16 h-16 rounded-full bg-[#B2DE96]/30 flex items-center justify-center mb-4">
+            <CheckCircle size={32} className="text-[#41A07E]" />
           </div>
 
           {/* Title */}
@@ -38,7 +38,7 @@ export default function SuccessModal({
             onClick={onClose}
             className="w-full rounded-xl py-3 text-sm font-semibold text-white transition active:scale-95"
             style={{
-              background: "linear-gradient(135deg, #4ade80 0%, #16a34a 100%)",
+              background: "#41A07E",
             }}
           >
             OK

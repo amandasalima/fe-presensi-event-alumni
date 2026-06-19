@@ -40,7 +40,7 @@ function Input({
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <FormInput
-      className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 ${className}`}
+      className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 ${className}`}
       {...props}
     />
   );
@@ -106,7 +106,7 @@ function LoginForm() {
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
-            className="w-4 h-4 rounded border-slate-300 accent-emerald-500"
+            className="w-4 h-4 rounded border-slate-300 accent-[#41A07E]"
             checked={form.remember}
             onChange={(e) => setForm({ ...form, remember: e.target.checked })}
           />
@@ -114,7 +114,7 @@ function LoginForm() {
         </label>
         <Link
           href="/forgot-password"
-          className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition"
+          className="text-sm font-medium text-[#41A07E] hover:text-[#357f65] transition"
         >
           Lupa kata sandi ?
         </Link>
@@ -123,10 +123,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-1 w-full rounded-xl py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-200 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-        style={{
-          background: "linear-gradient(135deg, #4ade80 0%, #16a34a 100%)",
-        }}
+        className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isPending ? "Memproses..." : "Masuk"}
       </button>
@@ -193,7 +190,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           <Field label="Nama Depan" error={fieldErrors.first_name?.[0]}>
             <Input
               type="text"
-              placeholder="Ahmad"
+              placeholder="nama depan anda"
               value={form.first_name}
               onChange={(e) => setForm({ ...form, first_name: e.target.value })}
               required
@@ -202,7 +199,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           <Field label="Nama Belakang" error={fieldErrors.last_name?.[0]}>
             <Input
               type="text"
-              placeholder="Fauzi"
+              placeholder="nama belakang anda"
               value={form.last_name}
               onChange={(e) => setForm({ ...form, last_name: e.target.value })}
               required
@@ -214,7 +211,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           <FormSelect
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30"
             required
           >
             <option value="Laki-laki">Laki-laki</option>
@@ -253,7 +250,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           <FormSelect
             value={form.graduation_year}
             onChange={(e) => setForm({ ...form, graduation_year: e.target.value })}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30"
             required
           >
             <option value="">Pilih Tahun Lulus</option>
@@ -324,15 +321,12 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         </Field>
 
         <button
-          type="submit"
-          disabled={isPending}
-          className="mt-1 w-full rounded-xl py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-200 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-          style={{
-            background: "linear-gradient(135deg, #4ade80 0%, #16a34a 100%)",
-          }}
-        >
-          {isPending ? "Memproses..." : "Daftar"}
-        </button>
+        type="submit"
+        disabled={isPending}
+        className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {isPending ? "Memproses..." : "Daftar"}
+      </button>
       </form>
 
       {/* Success Modal - rendered outside form so the fixed overlay covers entire viewport */}
@@ -356,12 +350,12 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
       className="min-h-dvh w-full flex items-start justify-center px-3 sm:px-4 md:px-8 pt-8 sm:pt-10 md:pt-12 pb-8"
       style={{
         background:
-          "linear-gradient(160deg, #ecfdf5 0%, #d1fae5 40%, #a7f3d0 100%)",
+          "linear-gradient(160deg, #f0fdf4 0%, #dcfce7 40%, #B2DE96 100%)",
       }}
     >
       <div className="w-full max-w-sm md:max-w-md min-w-0">
         {/* App label */}
-        <p className="text-xs font-medium text-emerald-700 mb-5 tracking-wide">
+        <p className="text-xs font-medium text-[#357f65] mb-5 tracking-wide">
           Sistem Presensi Event Alumni Berbasis QR
         </p>
 
@@ -374,7 +368,7 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
         </p>
 
         {/* Card */}
-        <div className="rounded-2xl bg-white/80 backdrop-blur-md shadow-xl shadow-emerald-100/50 p-4 sm:p-6">
+        <div className="rounded-2xl bg-white/80 backdrop-blur-md shadow-xl shadow-[#B2DE96]/30 p-4 sm:p-6">
           {/* Tabs */}
           <div className="flex mb-6 rounded-xl bg-slate-100 p-1">
             {(["masuk", "daftar"] as Tab[]).map((tab) => (

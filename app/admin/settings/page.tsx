@@ -45,7 +45,7 @@ function SectionCard({
 }) {
 	return (
 		<div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-			<div className="p-8 bg-cyan-50 border-b">
+			<div className="p-8 bg-[#7AB2B2]/10 border-b">
 				<h2 className="text-2xl font-bold text-gray-800">{title}</h2>
 				<p className="text-gray-500 mt-1 text-sm">{desc}</p>
 			</div>
@@ -121,7 +121,7 @@ export default function SettingsPage() {
 						{[
 							{
 								label: "Status Sistem",
-								accent: "border-cyan-400",
+								accent: "border-[#7AB2B2]",
 								value: loadingStatus ? "..." : (status?.system ?? "Online"),
 								sub: "Sistem berjalan normal",
 								color: "text-green-600",
@@ -133,7 +133,7 @@ export default function SettingsPage() {
 									? "..."
 									: (status?.database ?? "Connected"),
 								sub: "MySQL aktif",
-								color: "text-cyan-600",
+								color: "text-[#2D7EA0]",
 							},
 							{
 								label: "WhatsApp API",
@@ -184,7 +184,7 @@ export default function SettingsPage() {
 												loadingProfile ? "Memuat..." : "Nama administrator"
 											}
 											disabled={loadingProfile}
-											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
+											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
 										/>
 									</div>
 									<div>
@@ -199,7 +199,7 @@ export default function SettingsPage() {
 												loadingProfile ? "Memuat..." : "email@pesantren.ac.id"
 											}
 											disabled={loadingProfile}
-											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
+											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
 										/>
 									</div>
 
@@ -217,7 +217,7 @@ export default function SettingsPage() {
 									<button
 										onClick={handleSaveProfile}
 										disabled={updateProfile.isPending || loadingProfile}
-										className="px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+										className="px-8 py-4 bg-[#2D7EA0] hover:bg-[#236175] text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
 									>
 										{updateProfile.isPending && (
 											<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -262,7 +262,7 @@ export default function SettingsPage() {
 												value={field.value}
 												onChange={(e) => field.set(e.target.value)}
 												placeholder={field.placeholder}
-												className="text-gray-500 w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm"
+												className="text-gray-500 w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm"
 											/>
 										</div>
 									))}
@@ -302,8 +302,8 @@ export default function SettingsPage() {
 								desc="Atur koneksi Fonnte untuk broadcast WhatsApp"
 							>
 									<div className="space-y-5">
-										<div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl flex items-start gap-3">
-											<CheckCircle2 className="w-5 h-5 text-teal-600 mt-0.5" />
+										<div className="p-4 bg-[#7AB2B2]/10 border border-[#7AB2B2]/20 rounded-2xl flex items-start gap-3">
+											<CheckCircle2 className="w-5 h-5 text-[#2D7EA0] mt-0.5" />
 											<div>
 												<p className="text-sm font-semibold text-gray-800">
 													Provider aktif: Fonnte
@@ -418,7 +418,7 @@ export default function SettingsPage() {
 																	: "Masukkan API token"
 															}
 															disabled={loadingWA || savingWA}
-															className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
+															className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
 														/>
 														<button
 															type="button"
@@ -457,7 +457,7 @@ export default function SettingsPage() {
 														}}
 														placeholder="628123456789"
 														disabled={loadingWA || savingWA}
-														className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 text-sm disabled:bg-gray-50"
+														className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
 													/>
 													<p className="text-xs text-gray-400 mt-1">
 														Format: angka saja, diawali 62.
@@ -535,10 +535,10 @@ export default function SettingsPage() {
 										<button
 											onClick={handleTestWA}
 											disabled={loadingWA || testingWA}
-											className="px-6 py-4 border-2 border-teal-500 text-teal-600 rounded-2xl font-semibold hover:bg-teal-50 transition-colors disabled:opacity-50 flex items-center gap-2"
+											className="px-6 py-4 border-2 border-[#3EBDAF] text-[#2D7EA0] rounded-2xl font-semibold hover:bg-[#7AB2B2]/10 transition-colors disabled:opacity-50 flex items-center gap-2"
 										>
 											{testingWA ? (
-												<span className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+												<span className="w-4 h-4 border-2 border-[#3EBDAF] border-t-transparent rounded-full animate-spin" />
 											) : (
 												<PlugZap className="w-5 h-5" />
 											)}
@@ -548,7 +548,7 @@ export default function SettingsPage() {
 											<button
 												onClick={handleStartEditWA}
 												disabled={!canEditWA}
-												className="flex-1 min-w-48 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+												className="flex-1 min-w-48 py-4 bg-[#2D7EA0] hover:bg-[#236175] text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
 											>
 												<Edit3 className="w-5 h-5" />
 												Edit
@@ -567,7 +567,7 @@ export default function SettingsPage() {
 												<button
 													onClick={handleSaveWAConfig}
 													disabled={savingWA || loadingWA}
-													className="flex-1 min-w-48 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+													className="flex-1 min-w-48 py-4 bg-[#2D7EA0] hover:bg-[#236175] text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
 												>
 													{savingWA && (
 														<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -595,7 +595,7 @@ export default function SettingsPage() {
 						<div className="space-y-8">
 							{/* Avatar Card */}
 							<div className="bg-white rounded-3xl p-8 shadow-sm text-center">
-								<div className="w-28 h-28 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center text-4xl font-bold mb-5 mx-auto">
+								<div className="w-28 h-28 rounded-full bg-[#2D7EA0] hover:bg-[#236175] text-white flex items-center justify-center text-4xl font-bold mb-5 mx-auto">
 									{loadingProfile
 										? "..."
 										: (profile?.name?.[0]?.toUpperCase() ?? "A")}
@@ -610,10 +610,10 @@ export default function SettingsPage() {
 										? ""
 										: (profile?.email ?? "admin@pesantren.ac.id")}
 								</p>
-								<span className="inline-block mt-3 text-xs bg-teal-50 text-teal-600 border border-teal-200 px-3 py-1 rounded-full font-medium">
+								<span className="inline-block mt-3 text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-3 py-1 rounded-full font-medium">
 									Administrator
 								</span>
-								<button className="mt-5 w-full px-6 py-3 border-2 border-cyan-500 text-cyan-600 rounded-2xl font-semibold hover:bg-cyan-50 transition-colors text-sm">
+								<button className="mt-5 w-full px-6 py-3 border-2 border-[#3EBDAF] text-[#2D7EA0] rounded-2xl font-semibold hover:bg-[#7AB2B2]/10 transition-colors text-sm">
 									Ubah Foto Profil
 								</button>
 							</div>
@@ -637,7 +637,7 @@ export default function SettingsPage() {
 										{
 											label: "Database",
 											sub: "MySQL Server",
-											bg: "bg-cyan-50",
+											bg: "bg-[#7AB2B2]/10",
 											border: "border-cyan-200",
 											status: loadingStatus
 												? "..."
@@ -663,7 +663,7 @@ export default function SettingsPage() {
 							</div>
 
 							{/* Info Sistem */}
-							<div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-3xl p-8 text-white">
+							<div className="bg-gradient-to-br from-[#2D7EA0] to-[#2D7EA0] rounded-3xl p-8 text-white">
 								<h2 className="text-xl font-bold mb-5">Informasi Sistem</h2>
 								<div className="space-y-3">
 									{[

@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Info, Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
+import {
+	Info,
+	Plus,
+	Trash2,
+	CheckCircle,
+	AlertCircle,
+	X,
+	CalendarDays,
+	MapPin,
+	Clock3,
+	Pencil,
+	Megaphone,
+	Search,
+} from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import {
@@ -73,7 +86,7 @@ function Toast({ type, message }: { type: "success" | "error"; message: string }
 	return (
 		<div
 			className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all animate-in slide-in-from-bottom-5 fade-in duration-300 ${
-				type === "success" ? "bg-teal-500" : "bg-red-500"
+				type === "success" ? "bg-[#3EBDAF]" : "bg-red-500"
 			}`}
 		>
 			{type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
@@ -82,10 +95,44 @@ function Toast({ type, message }: { type: "success" | "error"; message: string }
 	);
 }
 
+
+// ─── 3D Icon ─────────────────────────────────────────────────────────────────
+function Icon3D({
+	children,
+	variant = "teal",
+	size = "md",
+}: {
+	children: React.ReactNode;
+	variant?: "teal" | "blue" | "green" | "red" | "gray";
+	size?: "sm" | "md";
+}) {
+	const variants = {
+		teal: "from-[#D8F3F0] via-[#7AB2B2] to-[#2D7EA0] text-white",
+		blue: "from-blue-100 via-blue-400 to-blue-600 text-white",
+		green:
+			"from-emerald-100 via-emerald-400 to-emerald-600 text-white",
+		red: "from-red-100 via-red-400 to-red-600 text-white",
+		gray: "from-gray-100 via-gray-300 to-gray-500 text-white",
+	};
+
+	const sizes = {
+		sm: "w-7 h-7 rounded-xl",
+		md: "w-9 h-9 rounded-2xl",
+	};
+
+	return (
+		<span
+			className={`${sizes[size]} inline-flex items-center justify-center bg-gradient-to-br ${variants[variant]} shadow-lg shadow-gray-300/70 border border-white/60 ring-1 ring-black/5`}
+		>
+			<span className="drop-shadow-sm">{children}</span>
+		</span>
+	);
+}
+
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 function CardSkeleton() {
 	return (
-		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm animate-pulse">
+		<div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm animate-pulse">
 			<div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
 			<div className="h-3 bg-gray-100 rounded w-1/4 mb-4" />
 			<div className="h-3 bg-gray-100 rounded w-1/2 mb-2" />
@@ -108,13 +155,13 @@ function StatCard({
 }) {
 	return (
 		<div
-			className={`bg-white rounded-2xl border p-6 flex flex-col gap-1 shadow-sm ${
+			className={`bg-white rounded-2xl border p-4 flex flex-col gap-1 shadow-sm ${
 				accent ? `border-l-4 ${accent}` : "border-gray-100"
 			}`}
 		>
-			<p className="text-sm text-gray-500">{label}</p>
+			<p className="text-xs text-gray-500">{label}</p>
 			<p
-				className={`text-4xl font-bold ${accent ? "text-teal-600" : "text-gray-800"}`}
+				className={`text-3xl font-bold ${accent ? "text-[#2D7EA0]" : "text-gray-800"}`}
 			>
 				{value}
 			</p>
@@ -259,218 +306,225 @@ function EventFormModal({
 			);
 
 			return;
-		} else {
-			createEvent.mutate(payload, {
+		}
+
+		createEvent.mutate(payload, {
 			onSuccess: () => {
 				if (onSuccess) onSuccess("Event berhasil ditambahkan!");
 				onClose();
 			},
 		});
-		}
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-			<div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100">
-				<div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-					<div>
-						<h3 className="text-lg font-semibold text-gray-800">
-							{mode === "edit" ? "Edit Event" : "Buat Event Baru"}
-						</h3>
-						<p className="text-sm text-gray-400">
-							{mode === "edit"
-								? "Perbarui data event alumni"
-								: "Tambahkan data event alumni"}
-						</p>
-					</div>
+		<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+			<div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+				<div className="p-6 border-b border-gray-100 flex items-center justify-between">
+					<h3 className="font-semibold text-gray-800 text-lg">
+						{mode === "edit" ? "Edit Event" : "Buat Event Baru"}
+					</h3>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+						className="text-gray-400 hover:text-gray-600"
+						aria-label="Tutup modal"
 					>
-						✕
+						<X size={20} />
 					</button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="p-6 space-y-5">
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Kategori
-						</label>
+				<form onSubmit={handleSubmit}>
+					<div className="p-6 space-y-4">
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Kategori
+							</label>
 
-						<FormSelect
-							name="category_id"
-							value={form.category_id}
-							onChange={handleChange}
-							disabled={isCategoryLoading || categories.length === 0}
-							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-							required
-						>
-							{isCategoryLoading && (
-								<option value={0}>Memuat kategori...</option>
+							<FormSelect
+								name="category_id"
+								value={form.category_id}
+								onChange={handleChange}
+								disabled={isCategoryLoading || categories.length === 0}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+								required
+							>
+								{isCategoryLoading && (
+									<option value={0}>Memuat kategori...</option>
+								)}
+
+								{!isCategoryLoading && categories.length === 0 && (
+									<option value={0}>Kategori belum tersedia</option>
+								)}
+
+								{!isCategoryLoading &&
+									categories.map((category) => (
+										<option key={category.id} value={category.id}>
+											{category.category_name}
+										</option>
+									))}
+							</FormSelect>
+
+							{isCategoryError && (
+								<p className="text-xs text-red-500 mt-1">
+									Gagal memuat kategori event.
+								</p>
+							)}
+						</div>
+
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Poster Event (Opsional)
+							</label>
+
+							{mode === "edit" && event?.poster_url && !form.poster && (
+								<div className="mb-3">
+									<img
+										src={event.poster_url}
+										alt="Current poster"
+										className="h-24 object-cover rounded-xl border border-gray-200"
+									/>
+								</div>
 							)}
 
-							{!isCategoryLoading && categories.length === 0 && (
-								<option value={0}>Kategori belum tersedia</option>
+							{form.poster && (
+								<div className="mb-3">
+									<img
+										src={URL.createObjectURL(form.poster)}
+										alt="Preview poster"
+										className="h-24 object-cover rounded-xl border border-gray-200"
+									/>
+								</div>
 							)}
 
-							{!isCategoryLoading &&
-								categories.map((category) => (
-									<option key={category.id} value={category.id}>
-										{category.category_name}
-									</option>
-								))}
-						</FormSelect>
-
-						{isCategoryError && (
-							<p className="text-xs text-red-500 mt-1">
-								Gagal memuat kategori event.
+							<FormInput
+								type="file"
+								name="poster"
+								accept="image/jpeg,image/jpg,image/png,image/webp"
+								onChange={handleChange}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#7AB2B2]/10 file:text-[#236175] hover:file:bg-[#7AB2B2]/20"
+							/>
+							<p className="text-xs text-gray-400 mt-1">
+								Format: JPG, JPEG, PNG, WebP (Max: 5MB)
 							</p>
-						)}
-					</div>
+						</div>
 
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Poster Event (Opsional)
-						</label>
-						
-						{mode === "edit" && event?.poster_url && !form.poster && (
-							<div className="mb-3">
-								<img src={event.poster_url} alt="Current poster" className="h-32 object-cover rounded-xl border border-gray-200" />
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Judul Event
+							</label>
+							<FormInput
+								type="text"
+								name="event_title"
+								value={form.event_title}
+								onChange={handleChange}
+								placeholder="Contoh: Reuni Akbar 2025"
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+								required
+							/>
+						</div>
+
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Deskripsi
+							</label>
+							<FormTextarea
+								name="description"
+								value={form.description}
+								onChange={handleChange}
+								placeholder="Contoh: Reuni alumni angkatan 2010-2015"
+								rows={2}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] resize-none"
+								required
+							/>
+						</div>
+
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Lokasi
+							</label>
+							<FormInput
+								type="text"
+								name="location"
+								value={form.location}
+								onChange={handleChange}
+								placeholder="Contoh: Aula Pesantren"
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+								required
+							/>
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+							<div>
+								<label className="text-xs font-medium text-gray-600 mb-1 block">
+									Tanggal Event
+								</label>
+								<FormInput
+									type="date"
+									name="event_date"
+									value={form.event_date}
+									onChange={handleChange}
+									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+									required
+								/>
+							</div>
+
+							<div>
+								<label className="text-xs font-medium text-gray-600 mb-1 block">
+									Jam Mulai
+								</label>
+								<FormInput
+									type="time"
+									name="start_time"
+									value={form.start_time}
+									onChange={handleChange}
+									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+									required
+								/>
+							</div>
+
+							<div>
+								<label className="text-xs font-medium text-gray-600 mb-1 block">
+									Jam Selesai
+								</label>
+								<FormInput
+									type="time"
+									name="end_time"
+									value={form.end_time}
+									onChange={handleChange}
+									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+									required
+								/>
+							</div>
+						</div>
+
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Kuota Peserta
+							</label>
+							<FormInput
+								type="number"
+								name="quota"
+								value={form.quota}
+								onChange={handleChange}
+								placeholder="Kosongkan jika tidak ada batasan kuota"
+								min={1}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+							/>
+						</div>
+
+						{isError && (
+							<div className="rounded-xl px-4 py-3 text-xs font-medium bg-red-50 text-red-600 border border-red-100">
+								{errorMessage}
 							</div>
 						)}
-						{form.poster && (
-							<div className="mb-3">
-								<img src={URL.createObjectURL(form.poster)} alt="Preview poster" className="h-32 object-cover rounded-xl border border-gray-200" />
-							</div>
-						)}
-						
-						<FormInput
-							type="file"
-							name="poster"
-							accept="image/jpeg,image/jpg,image/png,image/webp"
-							onChange={handleChange}
-							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-						/>
-						<p className="text-xs text-gray-400 mt-1">Format: JPG, JPEG, PNG, WebP (Max: 5MB)</p>
 					</div>
 
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Judul Event
-						</label>
-						<FormInput
-							type="text"
-							name="event_title"
-							value={form.event_title}
-							onChange={handleChange}
-							placeholder="Contoh: Reuni Akbar 2025"
-							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
-							required
-						/>
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Deskripsi
-						</label>
-						<FormTextarea
-							name="description"
-							value={form.description}
-							onChange={handleChange}
-							placeholder="Contoh: Reuni alumni angkatan 2010-2015"
-							rows={3}
-							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 resize-none"
-							required
-						/>
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Lokasi
-						</label>
-						<FormInput
-							type="text"
-							name="location"
-							value={form.location}
-							onChange={handleChange}
-							placeholder="Contoh: Aula Pesantren"
-							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
-							required
-						/>
-					</div>
-
-					<div className="grid grid-cols-3 gap-4">
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Tanggal Event
-							</label>
-							<FormInput
-								type="date"
-								name="event_date"
-								value={form.event_date}
-								onChange={handleChange}
-								className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
-								required
-							/>
-						</div>
-
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Jam Mulai
-							</label>
-							<FormInput
-								type="time"
-								name="start_time"
-								value={form.start_time}
-								onChange={handleChange}
-								className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
-								required
-							/>
-						</div>
-
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Jam Selesai
-							</label>
-							<FormInput
-								type="time"
-								name="end_time"
-								value={form.end_time}
-								onChange={handleChange}
-								className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
-								required
-							/>
-						</div>
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Kuota Peserta
-						</label>
-						<FormInput
-							type="number"
-							name="quota"
-							value={form.quota}
-							onChange={handleChange}
-							placeholder="Kosongkan jika tidak ada batasan kuota"
-							min={1}
-							className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
-						/>
-					</div>
-
-					{isError && (
-						<div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
-							{errorMessage}
-						</div>
-					)}
-
-					<div className="flex justify-end gap-3 pt-2">
+					<div className="p-6 border-t border-gray-100 flex gap-3">
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+							className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
 						>
 							Batal
 						</button>
@@ -483,18 +537,16 @@ function EventFormModal({
 								categories.length === 0 ||
 								!form.category_id
 							}
-							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
+							className="flex-1 bg-[#2D7EA0] hover:bg-[#236175] disabled:bg-[#A8D5D5] text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
 						>
-							{isPending ? (
-								<>
-									<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-									Menyimpan...
-								</>
-							) : mode === "edit" ? (
-								"Update Event"
-							) : (
-								"Simpan Event"
+							{isPending && (
+								<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
 							)}
+							{isPending
+								? "Menyimpan..."
+								: mode === "edit"
+									? "Perbarui"
+									: "Simpan"}
 						</button>
 					</div>
 				</form>
@@ -567,7 +619,7 @@ function BroadcastModal({
 									: (previewData?.breakdown.total_all ?? 0)
 							}
 							sub="Total alumni dengan nomor"
-							accent="border-teal-400"
+							accent="border-[#7AB2B2]"
 						/>
 						<StatCard
 							label="Terdaftar Event"
@@ -583,7 +635,7 @@ function BroadcastModal({
 							label="Estimasi Penerima"
 							value={preview.isLoading ? "..." : estimatedTargets}
 							sub="Target broadcast saat ini"
-							accent="border-teal-400"
+							accent="border-[#7AB2B2]"
 						/>
 						{target === "custom" && (
 							<StatCard
@@ -610,7 +662,7 @@ function BroadcastModal({
 									onChange={(e) =>
 										handleTargetChange(e.target.value as EventBroadcastTarget)
 									}
-									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
+									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-gray-50"
 								>
 									<option value="all">Semua alumni yang punya nomor HP</option>
 									<option value="registered">
@@ -618,13 +670,13 @@ function BroadcastModal({
 									</option>
 									<option value="custom">Nomor manual</option>
 								</FormSelect>
-								<div className="mt-3 flex gap-3 rounded-xl border border-teal-100 bg-teal-50 p-3 text-sm text-teal-800">
+								<div className="mt-3 flex gap-3 rounded-xl border border-[#7AB2B2]/20 bg-[#7AB2B2]/10 p-3 text-sm text-teal-800">
 									<Info className="mt-0.5 h-4 w-4 shrink-0" />
 									<div>
 										<p className="font-medium">
 											{broadcastTargetDescriptions[target].label}
 										</p>
-										<p className="mt-0.5 text-xs text-teal-700">
+										<p className="mt-0.5 text-xs text-[#236175]">
 											{broadcastTargetDescriptions[target].description}
 										</p>
 									</div>
@@ -640,7 +692,7 @@ function BroadcastModal({
 										<button
 											type="button"
 											onClick={addManualNumber}
-											className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-100"
+											className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-[#7AB2B2]/10 px-3 py-1.5 text-xs font-medium text-[#236175] transition-colors hover:bg-[#7AB2B2]/20"
 										>
 											<Plus className="h-3.5 w-3.5" />
 											Tambah
@@ -659,7 +711,7 @@ function BroadcastModal({
 														updateManualNumber(index, e.target.value)
 													}
 													placeholder={`Nomor ${index + 1}, contoh: 081234567890`}
-													className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"
+													className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-gray-50"
 												/>
 												<button
 													type="button"
@@ -702,7 +754,7 @@ function BroadcastModal({
 									onChange={(e) => setCustomMessage(e.target.value)}
 									placeholder="Kosongkan jika ingin memakai pesan default"
 									rows={6}
-									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 resize-none"
+									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-gray-50 resize-none"
 								/>
 								{isMessageTooLong && (
 									<p className="text-xs text-red-500 mt-1">
@@ -717,7 +769,7 @@ function BroadcastModal({
 								<label className="block text-sm font-medium text-gray-700">
 									Preview Pesan
 								</label>
-								<span className="text-xs bg-teal-50 text-teal-600 border border-teal-200 px-2 py-0.5 rounded-full font-medium">
+								<span className="text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-2 py-0.5 rounded-full font-medium">
 									{target}
 								</span>
 							</div>
@@ -804,7 +856,7 @@ function BroadcastModal({
 						<button
 							type="submit"
 							disabled={isSubmitDisabled}
-							className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
+							className="px-5 py-2.5 rounded-xl bg-[#2D7EA0] hover:bg-[#236175] text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
 						>
 							{sendEventBroadcast.isPending ? (
 								<>
@@ -842,7 +894,7 @@ function EventCardUpcoming({
 				<h3 className="font-semibold text-gray-800 text-base leading-tight">
 					{event.event_title}
 				</h3>
-				<span className="text-xs bg-teal-50 text-teal-600 border border-teal-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap ml-2">
+				<span className="text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap ml-2">
 					Mendatang
 				</span>
 			</div>
@@ -853,14 +905,18 @@ function EventCardUpcoming({
 
 			<div className="space-y-1.5 text-sm text-gray-500">
 				<div className="flex items-center gap-2">
-					<span>📅</span>
+					<Icon3D size="sm" variant="teal">
+						<CalendarDays size={15} />
+					</Icon3D>
 					<span>
 						{date} • {time}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-2">
-					<span>📍</span>
+					<Icon3D size="sm" variant="blue">
+						<MapPin size={15} />
+					</Icon3D>
 					<span>{event.location}</span>
 				</div>
 			</div>
@@ -868,22 +924,25 @@ function EventCardUpcoming({
 			<div className="flex gap-2 mt-4">
 				<button
 					onClick={() => onEdit(event)}
-					className="flex-1 text-xs border border-teal-200 text-teal-600 hover:bg-teal-50 py-1.5 rounded-lg transition-colors"
+					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
+					<Pencil size={13} />
 					Edit
 				</button>
 
 				<button
 					onClick={() => onBroadcast(event)}
-					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors"
+					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
-					WA Broadcast
+					<Megaphone size={13} />
+					WA
 				</button>
 
 				<button
 					onClick={() => onDelete(event.id)}
-					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors"
+					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
+					<Trash2 size={13} />
 					Hapus
 				</button>
 			</div>
@@ -927,14 +986,18 @@ function EventCardDone({
 
 			<div className="space-y-1.5 text-sm text-gray-500 mb-4">
 				<div className="flex items-center gap-2">
-					<span>📅</span>
+					<Icon3D size="sm" variant="gray">
+						<CalendarDays size={15} />
+					</Icon3D>
 					<span>
 						{date} • {time}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-2">
-					<span>📍</span>
+					<Icon3D size="sm" variant="blue">
+						<MapPin size={15} />
+					</Icon3D>
 					<span>{event.location}</span>
 				</div>
 			</div>
@@ -950,7 +1013,7 @@ function EventCardDone({
 
 					<div className="w-full bg-gray-100 rounded-full h-2">
 						<div
-							className="bg-teal-500 h-2 rounded-full transition-all"
+							className="bg-[#3EBDAF] h-2 rounded-full transition-all"
 							style={{ width: `${pct}%` }}
 						/>
 					</div>
@@ -962,22 +1025,25 @@ function EventCardDone({
 			<div className="flex gap-2 mt-4">
 				<button
 					onClick={() => onEdit(event)}
-					className="flex-1 text-xs border border-teal-200 text-teal-600 hover:bg-teal-50 py-1.5 rounded-lg transition-colors"
+					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
+					<Pencil size={13} />
 					Edit
 				</button>
 
 				<button
 					onClick={() => onBroadcast(event)}
-					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors"
+					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
-					WA Broadcast
+					<Megaphone size={13} />
+					WA
 				</button>
 
 				<button
 					onClick={() => onDelete(event.id)}
-					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors"
+					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
+					<Trash2 size={13} />
 					Hapus
 				</button>
 			</div>
@@ -1045,14 +1111,14 @@ export default function KelolEventPage() {
 		.reduce((sum, e) => sum + (e.registered ?? 0), 0);
 
 	return (
-		<div className="flex min-h-screen bg-gray-50">
+		<div className="h-screen bg-gray-100 flex overflow-hidden">
 			<AdminSidebar />
 
-			<div className="flex-1 ml-72 flex flex-col min-h-screen">
+			<div className="flex-1 ml-56 flex flex-col h-screen">
 				<AdminHeader title="Kelola Event" />
 
-				<main className="flex-1 p-8 space-y-6">
-					<div className="grid grid-cols-4 gap-5">
+				<main className="flex-1 overflow-y-auto p-5">
+					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 						<StatCard
 							label="Total Event"
 							value={isLoading ? "..." : events.length}
@@ -1067,7 +1133,7 @@ export default function KelolEventPage() {
 									: events.filter((e) => e.status_event === "Mendatang").length
 							}
 							sub="Event aktif"
-							accent="border-teal-400"
+							accent="border-[#7AB2B2]"
 						/>
 
 						<StatCard
@@ -1088,38 +1154,41 @@ export default function KelolEventPage() {
 						/>
 					</div>
 
-					<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+					<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4 mb-5">
 						<div className="flex items-center justify-between">
 							<div>
-								<h2 className="text-xl font-semibold text-gray-800">
+								<h2 className="text-base font-bold text-gray-800">
 									Manajemen Event
 								</h2>
-								<p className="text-sm text-gray-400">Kelola semua data acara</p>
+								<p className="text-xs text-gray-400">Kelola semua data acara</p>
 							</div>
 
 							<button
 								onClick={handleCreate}
-								className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm"
+								className="flex items-center gap-2 bg-[#2D7EA0] hover:bg-[#236175] text-white px-4 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm"
 							>
-								<span className="text-lg leading-none">+</span>
+								<span className="w-7 h-7 inline-flex items-center justify-center rounded-xl bg-white/20 shadow-inner border border-white/30">
+									<Plus size={16} />
+								</span>
 								Buat Event Baru
 							</button>
 						</div>
 
 						<SearchInput
-							leadingIcon={<span className="text-gray-400">🔍</span>}
-							wrapperClassName="flex items-center bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 gap-2"
-							placeholder="Cari event..."
+							leadingIcon={<Search size={16} className="text-gray-400" />}
+							wrapperClassName="flex items-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-4 focus-within:border-[#3EBDAF] bg-white"
+							placeholder="Cari nama atau email..."
 							value={search}
 							onValueChange={setSearch}
-							className="bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400"
+							className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
 						/>
+
 
 						{isLoading && (
 							<div className="space-y-6">
 								<div>
 									<div className="h-4 bg-gray-200 rounded w-32 mb-4 animate-pulse" />
-									<div className="grid grid-cols-3 gap-4">
+									<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 										{[1, 2, 3].map((i) => (
 											<CardSkeleton key={i} />
 										))}
@@ -1147,13 +1216,15 @@ export default function KelolEventPage() {
 								{upcoming.length > 0 && (
 									<div>
 										<div className="flex items-center gap-2 mb-4">
-											<span>📅</span>
+											<Icon3D variant="teal">
+												<CalendarDays size={18} />
+											</Icon3D>
 											<h3 className="font-semibold text-gray-700">
 												Event Mendatang
 											</h3>
 										</div>
 
-										<div className="grid grid-cols-3 gap-4">
+										<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 											{upcoming.map((e) => (
 												<EventCardUpcoming
 													key={e.id}
@@ -1170,13 +1241,15 @@ export default function KelolEventPage() {
 								{done.length > 0 && (
 									<div>
 										<div className="flex items-center gap-2 mb-4">
-											<span>🕐</span>
+											<Icon3D variant="gray">
+												<Clock3 size={18} />
+											</Icon3D>
 											<h3 className="font-semibold text-gray-700">
 												Event Selesai
 											</h3>
 										</div>
 
-										<div className="grid grid-cols-2 gap-4">
+										<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 											{done.map((e) => (
 												<EventCardDone
 													key={e.id}

@@ -292,7 +292,7 @@ export default function BroadcastPage() {
 								type="button"
 								onClick={handleSubmit}
 								disabled={isSubmitDisabled}
-								className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+								className="flex items-center gap-2 rounded-xl bg-[#2D7EA0] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#236175] disabled:cursor-not-allowed disabled:opacity-60"
 							>
 								{sendBroadcast.isPending ? (
 									<>
@@ -318,7 +318,7 @@ export default function BroadcastPage() {
 											setSelectedEventId(Number(event.target.value) || null);
 										}}
 										disabled={loadingEvents}
-										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:cursor-not-allowed disabled:bg-gray-100"
+										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] disabled:cursor-not-allowed disabled:bg-gray-100"
 									>
 										<option value="">
 											{loadingEvents ? "Memuat event..." : "Pilih event"}
@@ -346,7 +346,7 @@ export default function BroadcastPage() {
 											resetResult();
 											setTarget(event.target.value as EventBroadcastTarget);
 										}}
-										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									>
 										<option value="all">Semua alumni yang punya nomor HP</option>
 										<option value="registered">
@@ -354,13 +354,13 @@ export default function BroadcastPage() {
 										</option>
 										<option value="custom">Nomor manual</option>
 									</FormSelect>
-									<div className="mt-3 flex gap-3 rounded-xl border border-teal-100 bg-teal-50 p-3 text-sm text-teal-800">
+									<div className="mt-3 flex gap-3 rounded-xl border border-[#7AB2B2]/20 bg-[#7AB2B2]/10 p-3 text-sm text-teal-800">
 										<Info className="mt-0.5 h-4 w-4 shrink-0" />
 										<div>
 											<p className="font-medium">
 												{targetDescriptions[target].label}
 											</p>
-											<p className="mt-0.5 text-xs text-teal-700">
+											<p className="mt-0.5 text-xs text-[#236175]">
 												{targetDescriptions[target].description}
 											</p>
 										</div>
@@ -376,7 +376,7 @@ export default function BroadcastPage() {
 											<button
 												type="button"
 												onClick={addManualNumber}
-												className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-700 transition-colors hover:bg-teal-100"
+												className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-[#7AB2B2]/10 px-3 py-1.5 text-xs font-medium text-[#236175] transition-colors hover:bg-[#7AB2B2]/20"
 											>
 												<Plus className="h-3.5 w-3.5" />
 												Tambah
@@ -395,7 +395,7 @@ export default function BroadcastPage() {
 															updateManualNumber(index, event.target.value)
 														}
 														placeholder={`Nomor ${index + 1}, contoh: 081234567890`}
-														className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+														className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 													/>
 													<button
 														type="button"
@@ -439,7 +439,7 @@ export default function BroadcastPage() {
 										}}
 										placeholder="Kosongkan jika ingin memakai template default backend"
 										rows={7}
-										className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+										className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									/>
 									{isMessageTooLong && (
 										<p className="mt-1 text-xs text-red-500">
@@ -455,7 +455,7 @@ export default function BroadcastPage() {
 										<label className="block text-sm font-medium text-gray-700">
 											Preview Pesan
 										</label>
-										<span className="rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-600">
+										<span className="rounded-full border border-teal-200 bg-[#7AB2B2]/10 px-2 py-0.5 text-xs font-medium text-[#2D7EA0]">
 											{target}
 										</span>
 									</div>

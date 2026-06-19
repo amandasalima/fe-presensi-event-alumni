@@ -18,7 +18,7 @@ export default function AlumniFooter() {
               onClick={() => router.push("/alumni/main/dashboard")}
               className={`flex flex-col items-center gap-1 py-1.5 rounded-xl transition-colors ${
                 isActive("/alumni/main/dashboard")
-                  ? "text-teal-600"
+                  ? "text-[#41A07E]"
                   : "text-gray-400"
               }`}
             >
@@ -34,7 +34,7 @@ export default function AlumniFooter() {
               onClick={() => router.push("/alumni/main/events")}
               className={`flex flex-col items-center gap-1 py-1.5 rounded-xl transition-colors ${
                 isActive("/alumni/main/events")
-                  ? "text-teal-600"
+                  ? "text-[#41A07E]"
                   : "text-gray-400"
               }`}
             >
@@ -48,15 +48,9 @@ export default function AlumniFooter() {
 
         <button
           onClick={() => router.push("/alumni/main/scan")}
-          className="absolute left-1/2 -top-7 min-[360px]:-top-8 -translate-x-1/2 flex flex-col items-center gap-1 text-teal-700 active:scale-95 transition-transform"
+          className="absolute left-1/2 -top-7 min-[360px]:-top-8 -translate-x-1/2 flex flex-col items-center gap-1 text-[#41A07E] active:scale-95 transition-transform"
         >
-          <span
-            className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 rounded-full text-white flex items-center justify-center border-4 border-white"
-            style={{
-              background: "linear-gradient(135deg, #3ecf8e 0%, #20b070 100%)",
-              boxShadow: "0 8px 24px rgba(32,176,112,0.35)",
-            }}
-          >
+          <span className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 rounded-full bg-[#41A07E] text-white flex items-center justify-center border-4 border-white shadow-[0_8px_24px_rgba(65,160,126,0.35)]">
             <Icon name="qr" className="w-6 h-6 min-[360px]:w-7 min-[360px]:h-7" />
           </span>
           <span className="text-[11px] font-semibold leading-none">

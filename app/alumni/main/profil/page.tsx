@@ -96,13 +96,13 @@ function AvatarSection({
           <img
             src={getImageUrl(avatarUrl)}
             alt={name}
-            className="w-24 h-24 rounded-full object-cover ring-4 ring-emerald-100"
+            className="w-24 h-24 rounded-full object-cover ring-4 ring-[#B2DE96]/30"
           />
         ) : (
           <div
-            className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white ring-4 ring-emerald-100"
+            className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white ring-4 ring-[#B2DE96]/30"
             style={{
-              background: "linear-gradient(135deg, #4ade80 0%, #16a34a 100%)",
+              background: "linear-gradient(135deg, #5ab494 0%, #41A07E 100%)",
             }}
           >
             {initials}
@@ -113,7 +113,7 @@ function AvatarSection({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={isPending || isDeleting}
-          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md transition hover:bg-emerald-600 active:scale-95 disabled:opacity-70"
+          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#41A07E] text-white flex items-center justify-center shadow-md transition hover:bg-[#357f65] active:scale-95 disabled:opacity-70"
         >
           {isPending ? (
             <Loader2 size={14} className="animate-spin" />
@@ -150,7 +150,7 @@ function AvatarSection({
         <p className="font-bold text-slate-800 text-lg leading-tight">
           {name}
         </p>
-        <p className="text-xs text-emerald-600 font-medium mt-0.5">
+        <p className="text-xs text-[#41A07E] font-medium mt-0.5">
           Alumni Terdaftar
         </p>
       </div>
@@ -174,8 +174,8 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-3 py-3.5 border-b border-slate-100 last:border-0">
-      <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Icon size={15} className="text-emerald-600" />
+      <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Icon size={15} className="text-[#41A07E]" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -211,7 +211,7 @@ function EditInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-emerald-200 bg-emerald-50/50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+      className="w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition"
     />
   );
 }
@@ -227,7 +227,7 @@ function Toast({
   return (
     <div
       className={`fixed bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all ${
-        type === "success" ? "bg-emerald-500" : "bg-red-500"
+        type === "success" ? "bg-[#41A07E]" : "bg-red-500"
       }`}
     >
       {type === "success" ? (
@@ -375,7 +375,7 @@ export default function AlumniProfilePage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700"
+            className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#41A07E] hover:bg-[#357f65]"
           >
             Login Ulang
           </button>
@@ -405,7 +405,7 @@ export default function AlumniProfilePage() {
           <button
             type="button"
             onClick={startEdit}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#41A07E] bg-[#B2DE96]/20 hover:bg-[#B2DE96]/30 transition"
           >
             <Edit3 size={13} />
             Edit
@@ -425,7 +425,7 @@ export default function AlumniProfilePage() {
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition active:scale-95 disabled:opacity-70"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-[#41A07E] hover:bg-[#357f65] shadow-sm transition active:scale-95 disabled:opacity-70"
             >
               {isSaving ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -506,7 +506,7 @@ export default function AlumniProfilePage() {
                 gender: e.target.value as "Laki-laki" | "Perempuan",
               })
             }
-            className="w-full rounded-xl border border-emerald-200 bg-emerald-50/50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+            className="w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition"
           >
             <option value="">Pilih jenis kelamin</option>
             <option value="Laki-laki">Laki-laki</option>
@@ -527,7 +527,7 @@ export default function AlumniProfilePage() {
             onChange={(e) =>
               setDraft({ ...draft, graduation_year: e.target.value })
             }
-            className="w-full rounded-xl border border-emerald-200 bg-emerald-50/50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+            className="w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition"
           >
             <option value="">Pilih tahun</option>
             {Array.from({ length: 50 }, (_, i) => {

@@ -27,16 +27,20 @@ export default function AlumniHeader() {
   const markAsRead = useMarkAsRead();
 
   // Support both old and new field names
-  const firstName = profile?.first_name ?? profile?.name?.split(' ')[0] ?? "Alumni";
-  const fullName = profile?.first_name 
-    ? `${profile.first_name} ${profile.last_name}` 
+  const firstName =
+    profile?.first_name ?? profile?.name?.split(" ")[0] ?? "Alumni";
+
+  const fullName = profile?.first_name
+    ? `${profile.first_name} ${profile.last_name}`
     : profile?.name ?? "Alumni";
+
   const email = profile?.email ?? "";
   const avatarUrl = profile?.avatar_url;
 
   const localUnreadNotif = notifications.filter(
     (n: AlumniNotification) => n.is_read !== true
   ).length;
+
   const unreadNotif = unreadCountData?.unread_count ?? localUnreadNotif;
   const readNotif = Math.max(0, notifications.length - unreadNotif);
 
@@ -98,9 +102,10 @@ export default function AlumniHeader() {
     <header className="fixed inset-x-0 top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top)] shadow-sm">
       <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-[#41A07E] flex items-center justify-center text-white flex-shrink-0">
             <Icon name="qr" className="w-4 h-4" />
           </div>
+
           <span className="text-[13px] min-[360px]:text-sm font-semibold text-gray-700 truncate">
             Presensi Event Alumni
           </span>
@@ -133,10 +138,12 @@ export default function AlumniHeader() {
                     <h2 className="text-sm font-bold text-gray-900">
                       Notifikasi
                     </h2>
+
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-700">
+                      <span className="rounded-full bg-[#B2DE96]/20 px-2 py-0.5 text-[10px] font-bold text-[#41A07E]">
                         {unreadNotif} belum
                       </span>
+
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">
                         {readNotif} dibaca
                       </span>
@@ -148,7 +155,7 @@ export default function AlumniHeader() {
                       type="button"
                       onClick={() => markAllAsRead.mutate()}
                       disabled={markAllAsRead.isPending}
-                      className="flex-shrink-0 rounded-xl bg-teal-600 px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex-shrink-0 rounded-xl bg-[#41A07E] px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#B2DE96] hover:text-[#41A07E] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {markAllAsRead.isPending ? "..." : "Tandai semua"}
                     </button>
@@ -160,9 +167,11 @@ export default function AlumniHeader() {
                     <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-50 text-gray-300">
                       <Icon name="bell" className="h-5 w-5" />
                     </div>
+
                     <p className="mt-2 text-sm font-semibold text-gray-800">
                       Belum ada notifikasi
                     </p>
+
                     <p className="mt-1 text-xs leading-relaxed text-gray-400">
                       Info terbaru akan muncul di sini.
                     </p>
@@ -172,8 +181,10 @@ export default function AlumniHeader() {
                     {latestNotifications.map((notification, index) => {
                       const { title, message } =
                         getNotificationText(notification);
+
                       const isRead = notification.is_read === true;
-                      const canMarkRead = !isRead && typeof notification.id === "number";
+                      const canMarkRead =
+                        !isRead && typeof notification.id === "number";
 
                       return (
                         <button
@@ -183,30 +194,34 @@ export default function AlumniHeader() {
                             if (canMarkRead) {
                               markAsRead.mutate(notification.id as number);
                             }
+
                             setShowNotifications(false);
                             router.push("/alumni/main/notifikasi");
                           }}
                           className={`flex w-full items-start gap-3 border-b border-gray-50 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-gray-50 ${
-                            !isRead ? "bg-teal-50/40" : ""
+                            !isRead ? "bg-[#B2DE96]/20" : ""
                           }`}
                         >
                           <span
                             className={`mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full ring-2 ${
                               isRead
                                 ? "bg-gray-200 ring-gray-100"
-                                : "bg-teal-500 ring-teal-200 animate-pulse"
+                                : "bg-[#41A07E] ring-[#B2DE96] animate-pulse"
                             }`}
                           />
 
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start justify-between gap-2">
-                              <span className={`line-clamp-1 text-sm ${
-                                isRead
-                                  ? "font-medium text-gray-600"
-                                  : "font-bold text-gray-900"
-                              }`}>
+                              <span
+                                className={`line-clamp-1 text-sm ${
+                                  isRead
+                                    ? "font-medium text-gray-600"
+                                    : "font-bold text-gray-900"
+                                }`}
+                              >
                                 {title}
                               </span>
+
                               {notification.created_at && (
                                 <span className="flex-shrink-0 text-[10px] font-medium text-gray-400">
                                   {formatNotificationDate(
@@ -217,15 +232,17 @@ export default function AlumniHeader() {
                             </span>
 
                             {message && (
-                              <span className={`mt-0.5 line-clamp-2 block text-xs leading-relaxed ${
-                                isRead ? "text-gray-400" : "text-gray-500"
-                              }`}>
+                              <span
+                                className={`mt-0.5 line-clamp-2 block text-xs leading-relaxed ${
+                                  isRead ? "text-gray-400" : "text-gray-500"
+                                }`}
+                              >
                                 {message}
                               </span>
                             )}
 
                             {!isRead && (
-                              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-700">
+                              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#B2DE96]/35 px-2 py-0.5 text-[10px] font-bold text-[#41A07E]">
                                 Belum dibaca
                               </span>
                             )}
@@ -243,7 +260,7 @@ export default function AlumniHeader() {
                       setShowNotifications(false);
                       router.push("/alumni/main/notifikasi");
                     }}
-                    className="w-full rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
+                    className="w-full rounded-xl bg-[#41A07E] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#B2DE96] hover:text-[#41A07E]"
                   >
                     Lihat semua
                   </button>
@@ -266,7 +283,7 @@ export default function AlumniHeader() {
                 className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
+              <div className="w-8 h-8 rounded-full bg-[#41A07E] flex items-center justify-center text-white text-sm font-bold">
                 {loadingProfile ? "•" : firstName[0]?.toUpperCase()}
               </div>
             )}

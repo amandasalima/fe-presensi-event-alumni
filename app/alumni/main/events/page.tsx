@@ -129,7 +129,7 @@ export default function AlumniEventsPage() {
               <div className="flex flex-col h-full">
                 {event.poster_url && (
                   <div className="w-full h-40 mb-3 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                    <img src={getImageUrl(event.poster_url)} alt={event.event_title} className="w-full h-full object-cover" />
+                    <img src={getImageUrl(event.poster_url)} alt={event.event_title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} loading="lazy" />
                   </div>
                 )}
                 {/* Atas: Kategori & Status */}

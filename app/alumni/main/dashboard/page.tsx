@@ -33,14 +33,11 @@ interface Presence {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function isToday(datetime: string) {
-  const d = new Date(datetime);
+  // Extract just the date part to avoid UTC midnight interpretation
+  const datePart = datetime.split("T")[0];
   const now = new Date();
-
-  return (
-    d.getDate() === now.getDate() &&
-    d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear()
-  );
+  const nowDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return datePart === nowDateStr;
 }
 
 function formatDate(datetime: string) {
@@ -98,11 +95,10 @@ export default function AlumniDashboard() {
   );
 
   const upcomingEvents = events
-    .filter(
-      (event: Event) =>
-        new Date(event.event_datetime) > new Date() &&
-        !isToday(event.event_datetime)
-    )
+    .filter((event: Event) => {
+      const eventDate = new Date(event.event_datetime.includes("T") ? event.event_datetime : event.event_datetime + "T00:00");
+      return eventDate > new Date() && !isToday(event.event_datetime);
+    })
     .slice(0, 3);
 
   const topRecommendation = recommendations[0] ?? null;

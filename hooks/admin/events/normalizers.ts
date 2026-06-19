@@ -62,7 +62,28 @@ function getEventStatus(event: RawEvent): EventStatus {
 	return eventDate >= new Date() ? "Mendatang" : "Selesai";
 }
 
+function toLocalDateString(value?: string | null) {
+	if (!value) return "";
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		if (value.includes("T")) {
+			return value.split("T")[0];
+		}
+		return value.slice(0, 10);
+	}
+
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
+}
+
 export function normalizeEvent(event: RawEvent): Event {
+	const localDate = event.event_date ? toLocalDateString(event.event_date) : undefined;
+	const normalizedRaw = { ...event, event_date: localDate };
+
 	return {
 		id: event.id,
 		event_title: event.event_title,
@@ -70,12 +91,12 @@ export function normalizeEvent(event: RawEvent): Event {
 		category: getCategoryName(event.category, event.category_name),
 		category_id: getCategoryId(event),
 		poster_url: event.poster_url,
-		event_datetime: getEventDateTime(event),
-		event_date: event.event_date,
+		event_datetime: getEventDateTime(normalizedRaw),
+		event_date: localDate,
 		start_time: event.start_time,
 		end_time: event.end_time,
 		location: event.location,
-		status_event: getEventStatus(event),
+		status_event: getEventStatus(normalizedRaw),
 		quota: event.quota,
 		quota_used: event.quota_used,
 		remaining_quota: event.remaining_quota,

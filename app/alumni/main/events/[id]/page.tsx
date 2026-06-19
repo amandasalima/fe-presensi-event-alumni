@@ -96,7 +96,7 @@ export default function EventDetailPage({
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [currentTime] = useState(() => Date.now());
+
 
   const event = data?.event;
   const attendanceStatus = data?.attendance_status || event?.attendance_status;
@@ -204,10 +204,18 @@ export default function EventDetailPage({
   const description = event.description || event.event_description;
   const quotaFull = event.is_quota_full === true;
   const quotaMessage = event.quota_message || "Kuota penuh, segera hubungi penyelenggara";
-  const eventDateTime = event.event_datetime || event.event_date;
-  const isEventDone =
-    event.status_event === "Selesai" ||
-    (eventDateTime ? new Date(eventDateTime).getTime() < currentTime : false);
+  const isEventDone = (() => {
+    if (event.status_event === "Selesai") return true;
+    // Use event_date + end_time for accurate 'done' check
+    const datePart = (event.event_date || "").split("T")[0];
+    if (!datePart) return false;
+    const endTime = event.end_time || "23:59";
+    const endParts = endTime.split(":");
+    const endTimeFormatted = endParts.length >= 2 ? `${endParts[0]}:${endParts[1]}` : endTime;
+    // "YYYY-MM-DDThh:mm" format is parsed as LOCAL time (not UTC)
+    const eventEnd = new Date(`${datePart}T${endTimeFormatted}`);
+    return !isNaN(eventEnd.getTime()) && eventEnd.getTime() < Date.now();
+  })();
   const registerDisabled = registerEvent.isPending || quotaFull || isEventDone;
 
   return (
@@ -237,6 +245,8 @@ export default function EventDetailPage({
               src={getImageUrl(event.poster_url)}
               alt={event.event_title}
               className="w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              loading="lazy"
             />
           </div>
         )}

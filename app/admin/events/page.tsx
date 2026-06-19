@@ -75,11 +75,19 @@ const initialEventForm: EventFormState = {
 function toInputDate(value?: string | null) {
 	if (!value) return "";
 
-	if (value.includes("T")) {
-		return value.split("T")[0];
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		if (value.includes("T")) {
+			return value.split("T")[0];
+		}
+		return value.slice(0, 10);
 	}
 
-	return value.slice(0, 10);
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
 }
 
 function toInputTime(value?: string | null) {
@@ -1774,6 +1782,7 @@ export default function KelolEventPage() {
 	const [registrationsEvent, setRegistrationsEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
 	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+	const [activeTab, setActiveTab] = useState<"upcoming" | "done">("upcoming");
 
 	const showToast = (message: string, type: "success" | "error" = "success") => {
 		setToast({ message, type });
@@ -1937,65 +1946,86 @@ export default function KelolEventPage() {
 
 						{!isLoading && !isError && (
 							<>
-								{upcoming.length > 0 && (
-									<div>
-										<div className="flex items-center gap-2 mb-4">
-											<Icon3D variant="teal">
-												<CalendarDays size={18} />
-											</Icon3D>
-											<h3 className="font-semibold text-gray-700">
-												Event Mendatang
-											</h3>
-										</div>
-
-										<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-											{upcoming.map((e) => (
-												<EventCardUpcoming
-													key={e.id}
-													event={e}
-													onDetail={handleDetail}
-													onEdit={handleEdit}
-													onDelete={handleDelete}
-													onBroadcast={handleOpenBroadcast}
-													onRegistrations={handleRegistrations}
-												/>
-											))}
-										</div>
-									</div>
-								)}
-
-								{done.length > 0 && (
-									<div>
-										<div className="flex items-center gap-2 mb-4">
-											<Icon3D variant="gray">
-												<Clock3 size={18} />
-											</Icon3D>
-											<h3 className="font-semibold text-gray-700">
-												Event Selesai
-											</h3>
-										</div>
-
-										<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-											{done.map((e) => (
-												<EventCardDone
-													key={e.id}
-													event={e}
-													onDetail={handleDetail}
-													onEdit={handleEdit}
-													onDelete={handleDelete}
-													onBroadcast={handleOpenBroadcast}
-													onRegistrations={handleRegistrations}
-												/>
-											))}
-										</div>
-									</div>
-								)}
-
-								{filtered.length === 0 && (
+								{filtered.length === 0 ? (
 									<div className="text-center py-12 text-gray-400">
 										<p className="text-4xl mb-3">📭</p>
 										<p className="text-sm">Tidak ada event ditemukan</p>
 									</div>
+								) : (
+									<>
+										<div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit mb-4">
+											<button
+												onClick={() => setActiveTab("upcoming")}
+												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+													activeTab === "upcoming"
+														? "bg-white text-gray-800 shadow-sm"
+														: "text-gray-500 hover:text-gray-700"
+												}`}
+											>
+												Mendatang ({upcoming.length})
+											</button>
+											<button
+												onClick={() => setActiveTab("done")}
+												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+													activeTab === "done"
+														? "bg-white text-gray-800 shadow-sm"
+														: "text-gray-500 hover:text-gray-700"
+												}`}
+											>
+												Selesai ({done.length})
+											</button>
+										</div>
+
+										{activeTab === "upcoming" && (
+											<div>
+												{upcoming.length === 0 ? (
+													<div className="text-center py-12 text-gray-400 bg-white border border-gray-100 rounded-2xl">
+														<p className="text-4xl mb-3">📅</p>
+														<p className="text-sm">Tidak ada event mendatang</p>
+													</div>
+												) : (
+													<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+														{upcoming.map((e) => (
+															<EventCardUpcoming
+																key={e.id}
+																event={e}
+																onDetail={handleDetail}
+																onEdit={handleEdit}
+																onDelete={handleDelete}
+																onBroadcast={handleOpenBroadcast}
+																onRegistrations={handleRegistrations}
+															/>
+														))}
+													</div>
+												)}
+											</div>
+										)}
+
+										{activeTab === "done" && (
+											<div>
+												{done.length === 0 ? (
+													<div className="text-center py-12 text-gray-400 bg-white border border-gray-100 rounded-2xl">
+														<p className="text-4xl mb-3">🕒</p>
+														<p className="text-sm">Tidak ada event selesai</p>
+													</div>
+												) : (
+													<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+														{done.map((e) => (
+															<EventCardDone
+																key={e.id}
+																event={e}
+																onDetail={handleDetail}
+																onEdit={handleEdit}
+																onDelete={handleDelete}
+																onBroadcast={handleOpenBroadcast}
+																onRegistrations={handleRegistrations}
+															/>
+														))}
+													</div>
+												)}
+											</div>
+										)}
+									</>
 								)}
 							</>
 						)}

@@ -1,4 +1,6 @@
 export type EventStatus = "Mendatang" | "Selesai";
+export type EventActiveStatus = "active" | "inactive";
+export type EventRegistrationStatus = "registered" | "attended" | "absent";
 
 export type CategoryObject = {
 	id: number;
@@ -30,7 +32,7 @@ export interface Event {
 export interface EventPayload {
 	category_id: number;
 	event_title: string;
-	description: string;
+	description?: string;
 	location: string;
 	event_date: string;
 	start_time: string;
@@ -72,6 +74,16 @@ export type ApiResponse<T> = {
 	data: T;
 };
 
+export type EventMutationResponse = ApiResponse<{
+	event: RawEvent;
+}>;
+
+export type EventDetailResponse = ApiResponse<
+	RawEvent | {
+		event: RawEvent;
+	}
+>;
+
 export type EventsData = {
 	events: RawEvent[];
 	total: number;
@@ -90,9 +102,8 @@ export type CategoriesResponse = ApiResponse<CategoriesData>;
 export interface EventQrCode {
 	id: number;
 	event_id: number;
+	qr_payload?: string;
 	qr_token: string;
-	qr_code_image: string;
-	qr_code_url: string;
 	valid_from: string;
 	timeout_minutes: number;
 	is_active: boolean;
@@ -109,4 +120,66 @@ export type EventQrCodeResponse = ApiResponse<{
 export interface GenerateQrPayload {
 	valid_from: string;
 	timeout_minutes: number;
+}
+
+export interface EventUser {
+	id: number;
+	name: string;
+	email?: string;
+	phone?: string;
+	angkatan?: string;
+	status?: string;
+	role?: string;
+}
+
+export interface EventRegistration {
+	id: number;
+	event_id: number;
+	user_id: number;
+	status: EventRegistrationStatus;
+	registered_at?: string;
+	created_at?: string;
+	updated_at?: string;
+	user?: EventUser;
+}
+
+export interface EventAttendance {
+	id: number;
+	event_id: number;
+	user_id: number;
+	scanned_at: string;
+	created_at?: string;
+	updated_at?: string;
+	user?: EventUser;
+}
+
+export type EventRegistrationsData = {
+	event: RawEvent;
+	registrations: EventRegistration[];
+	total: number;
+	current_page: number;
+	last_page: number;
+};
+
+export type EventAttendancesData = {
+	event: RawEvent;
+	attendances: EventAttendance[];
+	total: number;
+	current_page: number;
+	last_page: number;
+};
+
+export type EventRegistrationsResponse = ApiResponse<EventRegistrationsData>;
+export type EventAttendancesResponse = ApiResponse<EventAttendancesData>;
+
+export interface EventListParams {
+	search?: string;
+	status?: EventActiveStatus;
+	category_id?: number | string;
+	per_page?: number;
+}
+
+export interface EventRegistrationParams {
+	status?: EventRegistrationStatus;
+	per_page?: number;
 }

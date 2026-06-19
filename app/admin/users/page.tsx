@@ -25,7 +25,7 @@ import {
 	getStatusClass,
 } from "./_utils/userFormatters";
 
-const ROLE_OPTIONS = ["admin", "alumni", "user"];
+const ROLE_OPTIONS = ["alumni", "user"];
 const STATUS_OPTIONS = ["active", "inactive"];
 
 function Icon3D({
@@ -331,7 +331,7 @@ export default function UsersPage() {
 										Gagal memuat data user
 									</p>
 									<p className="text-xs text-gray-400 mt-1">
-										Pastikan server backend sudah berjalan
+										Data belum bisa dimuat. Periksa koneksi, lalu coba lagi.
 									</p>
 								</div>
 							)}

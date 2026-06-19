@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useRouter } from "next/navigation";
 import { useScanQR } from "@/hooks/alumni/useAlumniHooks";
+import { toFriendlyErrorMessage } from "@/lib/api";
 
 function Icon({
   name,
@@ -70,6 +71,15 @@ function getMessage(value: unknown) {
   return null;
 }
 
+function isFailedResponse(value: unknown): value is { success: false } {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "success" in value &&
+    value.success === false
+  );
+}
+
 function getFriendlyErrorMessage(message: string): string {
   const errorMap: Record<string, string> = {
     "QR Code tidak valid":
@@ -90,7 +100,19 @@ function getFriendlyErrorMessage(message: string): string {
     return errorMap[message];
   }
 
-  return message;
+  return toFriendlyErrorMessage(
+    message,
+    "Presensi belum berhasil diproses. Silakan coba lagi."
+  );
+}
+
+function getCleanQrToken(value: string) {
+  const trimmedValue = value.trim();
+  const uuidMatch = trimmedValue.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i
+  );
+
+  return uuidMatch?.[0] ?? trimmedValue;
 }
 
 export default function ScanPage() {
@@ -163,21 +185,18 @@ export default function ScanPage() {
 
           await stopScanner();
 
-          let qrToken = decodedText.trim();
-
-          if (qrToken.includes("http://") || qrToken.includes("https://")) {
-            const parts = qrToken.split("/");
-            qrToken = parts[parts.length - 1];
-          }
+          const qrToken = getCleanQrToken(decodedText);
 
           scanQR.mutate(qrToken, {
-            onSuccess: (data: any) => {
-              if (data && data.success === false) {
+            onSuccess: (data) => {
+              if (isFailedResponse(data)) {
+                const failedMessage = getMessage(data);
                 setStatus("error");
                 setCameraReady(false);
                 setMessage(
-                  getMessage(data) ||
-                    "QR Code tidak dikenali atau Anda belum mendaftar"
+                  failedMessage
+                    ? getFriendlyErrorMessage(failedMessage)
+                    : "QR Code tidak dikenali atau Anda belum mendaftar"
                 );
                 setManualToken("");
                 return;
@@ -262,21 +281,18 @@ export default function ScanPage() {
     setMessage("Memproses presensi manual...");
     await stopScanner();
 
-    let qrToken = manualToken.trim();
-
-    if (qrToken.includes("http://") || qrToken.includes("https://")) {
-      const parts = qrToken.split("/");
-      qrToken = parts[parts.length - 1];
-    }
+    const qrToken = getCleanQrToken(manualToken);
 
     scanQR.mutate(qrToken, {
-      onSuccess: (data: any) => {
-        if (data && data.success === false) {
+      onSuccess: (data) => {
+        if (isFailedResponse(data)) {
+          const failedMessage = getMessage(data);
           setStatus("error");
           setCameraReady(false);
           setMessage(
-            getMessage(data) ||
-              "QR Code tidak dikenali atau Anda belum mendaftar"
+            failedMessage
+              ? getFriendlyErrorMessage(failedMessage)
+              : "QR Code tidak dikenali atau Anda belum mendaftar"
           );
           setManualToken("");
           return;

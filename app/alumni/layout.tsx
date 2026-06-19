@@ -5,6 +5,23 @@ import { useRouter, usePathname } from "next/navigation";
 import { QueryClientProvider } from "@tanstack/react-query";
 import queryClient from "@/lib/queryClient";
 
+const ALUMNI_LOGIN_PATH = "/alumni/login";
+const ALUMNI_REGISTER_PATH = "/alumni/register";
+const ALUMNI_DASHBOARD_PATH = "/alumni/main/dashboard";
+
+function isPublicAlumniPage(pathname: string) {
+  return pathname === ALUMNI_LOGIN_PATH || pathname === ALUMNI_REGISTER_PATH;
+}
+
+function getAlumniToken() {
+  return localStorage.getItem("alumni_token") || sessionStorage.getItem("alumni_token");
+}
+
+function clearAlumniToken() {
+  localStorage.removeItem("alumni_token");
+  sessionStorage.removeItem("alumni_token");
+}
+
 export default function AlumniLayout({
   children,
 }: {
@@ -12,35 +29,43 @@ export default function AlumniLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
+  const isPublicPage = isPublicAlumniPage(pathname);
+  const [authorized, setAuthorized] = useState(() => isPublicPage);
 
   useEffect(() => {
-    const isPublicPage = pathname === "/alumni/login" || pathname === "/alumni/register";
-    const token = localStorage.getItem("alumni_token") || sessionStorage.getItem("alumni_token");
+    const verifyAccess = () => {
+      const token = getAlumniToken();
 
-    if (isPublicPage) {
-      if (token) {
-        router.replace("/alumni/main/dashboard");
-      } else {
+      if (isPublicPage) {
+        if (token) {
+          router.replace(ALUMNI_DASHBOARD_PATH);
+          return;
+        }
+
         setAuthorized(true);
+        return;
       }
-      return;
-    }
 
-    // Protected page
-    if (!token) {
-      // Clear token/session if invalid and redirect
-      localStorage.removeItem("alumni_token");
-      sessionStorage.removeItem("alumni_token");
-      router.replace("/alumni/login");
-    } else {
+      if (!token) {
+        clearAlumniToken();
+        setAuthorized(false);
+        router.replace(ALUMNI_LOGIN_PATH);
+        return;
+      }
+
       setAuthorized(true);
+    };
+
+    const frameId = window.requestAnimationFrame(verifyAccess);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isPublicPage, pathname, router]);
+
+  if (!authorized) {
+    if (isPublicPage) {
+      return null;
     }
-  }, [pathname, router]);
 
-  const isPublicPage = pathname === "/alumni/login" || pathname === "/alumni/register";
-
-  if (!authorized && !isPublicPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="flex flex-col items-center gap-2">

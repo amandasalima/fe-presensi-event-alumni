@@ -3,6 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
+const ADMIN_LOGIN_PATH = "/admin/login";
+const ADMIN_DASHBOARD_PATH = "/admin/dashboard";
+
+function getAdminCredentials() {
+  return {
+    token: localStorage.getItem("access_token") || localStorage.getItem("token"),
+    role: localStorage.getItem("role"),
+  };
+}
+
+function clearAdminCredentials() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -10,37 +26,42 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
+  const [authorized, setAuthorized] = useState(() => pathname === ADMIN_LOGIN_PATH);
 
   useEffect(() => {
-    // 1. If it's the login page, check if already logged in
-    if (pathname === "/admin/login") {
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const role = localStorage.getItem("role");
-      if (token && role === "admin") {
-        router.replace("/admin/dashboard");
-      } else {
+    const verifyAccess = () => {
+      const { token, role } = getAdminCredentials();
+
+      if (pathname === ADMIN_LOGIN_PATH) {
+        if (token && role === "admin") {
+          router.replace(ADMIN_DASHBOARD_PATH);
+          return;
+        }
+
         setAuthorized(true);
+        return;
       }
-      return;
-    }
 
-    // 2. Protected page: check token and role
-    const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+      if (!token || role !== "admin") {
+        clearAdminCredentials();
+        setAuthorized(false);
+        router.replace(ADMIN_LOGIN_PATH);
+        return;
+      }
 
-    if (!token || role !== "admin") {
-      // Clear any invalid data and redirect
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      router.replace("/admin/login");
-    } else {
       setAuthorized(true);
-    }
+    };
+
+    const frameId = window.requestAnimationFrame(verifyAccess);
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [pathname, router]);
 
-  if (!authorized && pathname !== "/admin/login") {
+  if (!authorized) {
+    if (pathname === ADMIN_LOGIN_PATH) {
+      return null;
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-2">

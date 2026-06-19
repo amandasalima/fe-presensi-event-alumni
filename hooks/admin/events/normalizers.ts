@@ -69,6 +69,7 @@ export function normalizeEvent(event: RawEvent): Event {
 		description: event.description,
 		category: getCategoryName(event.category, event.category_name),
 		category_id: getCategoryId(event),
+		poster_url: event.poster_url,
 		event_datetime: getEventDateTime(event),
 		event_date: event.event_date,
 		start_time: event.start_time,

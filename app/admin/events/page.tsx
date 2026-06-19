@@ -14,6 +14,7 @@ import {
 	Pencil,
 	Megaphone,
 	Search,
+	Eye,
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
@@ -23,14 +24,16 @@ import {
 	FormTextarea,
 } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
-import { getApiErrorMessage } from "@/lib/api";
+import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 import {
 	useEvents,
 	useCreateEvent,
 	useUpdateEvent,
 	useDeleteEvent,
 	useEventCategories,
+	useEvent,
 	type Event,
+	type EventPayload,
 } from "@/hooks/admin/useEvents";
 import type { EventBroadcastTarget } from "@/hooks/admin/useBroadcast";
 import { useEventBroadcastForm } from "./_hooks/useEventBroadcastForm";
@@ -52,6 +55,8 @@ type EventFormState = {
 	quota: number | "";
 	poster?: File | null;
 };
+
+type EventFormErrors = Partial<Record<keyof EventFormState, string[]>>;
 
 const initialEventForm: EventFormState = {
 	category_id: 0,
@@ -79,6 +84,74 @@ function toInputTime(value?: string | null) {
 	if (!value) return "";
 
 	return value.slice(0, 5);
+}
+
+function getRegisteredCount(event: Event) {
+	return event.registered ?? 0;
+}
+
+function getRemainingQuota(event: Event) {
+	if (!event.quota) return null;
+
+	return Math.max(event.quota - getRegisteredCount(event), 0);
+}
+
+function getQuotaPercent(event: Event) {
+	if (!event.quota) return 0;
+
+	return Math.min(
+		Math.round((getRegisteredCount(event) / event.quota) * 100),
+		100,
+	);
+}
+
+function isValidPoster(file: File) {
+	const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+	return validTypes.includes(file.type) && file.size <= 5 * 1024 * 1024;
+}
+
+function hasEventValueChanged(
+	key: keyof EventFormState,
+	nextValue: EventFormState[keyof EventFormState],
+	event: Event,
+) {
+	if (key === "poster") return nextValue instanceof File;
+	if (key === "category_id") return Number(nextValue) !== (event.category_id ?? 0);
+	if (key === "quota") {
+		const currentQuota = event.quota ?? "";
+		return nextValue !== currentQuota;
+	}
+
+	if (key === "event_date") {
+		return nextValue !== toInputDate(event.event_date ?? event.event_datetime);
+	}
+
+	if (key === "start_time") return nextValue !== toInputTime(event.start_time);
+	if (key === "end_time") return nextValue !== toInputTime(event.end_time);
+
+	return nextValue !== event[key as keyof Event];
+}
+
+function buildChangedEventPayload(form: EventFormState, event: Event) {
+	const payload: Partial<EventPayload> = {};
+
+	(Object.keys(form) as Array<keyof EventFormState>).forEach((key) => {
+		const value = form[key];
+		if (value === "" || value === null || value === undefined) return;
+
+		if (hasEventValueChanged(key, value, event)) {
+			if (key === "quota") {
+				payload.quota = Number(value);
+			} else if (key === "poster") {
+				payload.poster = value as File;
+			} else {
+				payload[key] = value as never;
+			}
+		}
+	});
+
+	return payload;
 }
 
 /* ─── Toast Component ───────────────────────────────────────────────── */
@@ -215,6 +288,7 @@ function EventFormModal({
 	} = useEventCategories();
 
 	const [form, setForm] = useState<EventFormState>(initialEventForm);
+	const [formErrors, setFormErrors] = useState<EventFormErrors>({});
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -224,26 +298,32 @@ function EventFormModal({
 				(category) => category.category_name === event.category,
 			);
 
-			setForm({
-				category_id:
-					event.category_id ?? matchedCategory?.id ?? categories[0]?.id ?? 0,
-				event_title: event.event_title ?? "",
-				description: event.description ?? "",
-				location: event.location ?? "",
-				event_date: toInputDate(event.event_date ?? event.event_datetime),
-				start_time: toInputTime(event.start_time),
-				end_time: toInputTime(event.end_time),
-				quota: event.quota ?? "",
-				poster: null,
+			queueMicrotask(() => {
+				setForm({
+					category_id:
+						event.category_id ?? matchedCategory?.id ?? categories[0]?.id ?? 0,
+					event_title: event.event_title ?? "",
+					description: event.description ?? "",
+					location: event.location ?? "",
+					event_date: toInputDate(event.event_date ?? event.event_datetime),
+					start_time: toInputTime(event.start_time),
+					end_time: toInputTime(event.end_time),
+					quota: event.quota ?? "",
+					poster: null,
+				});
+				setFormErrors({});
 			});
 
 			return;
 		}
 
-		setForm({
-			...initialEventForm,
-			category_id: categories[0]?.id ?? 0,
-			poster: null,
+		queueMicrotask(() => {
+			setForm({
+				...initialEventForm,
+				category_id: categories[0]?.id ?? 0,
+				poster: null,
+			});
+			setFormErrors({});
 		});
 	}, [isOpen, mode, event, categories]);
 
@@ -253,11 +333,14 @@ function EventFormModal({
 	const isError = createEvent.isError || updateEvent.isError;
 
 	const errorMessage =
-		createEvent.error instanceof Error
-			? createEvent.error.message
-			: updateEvent.error instanceof Error
-				? updateEvent.error.message
+		createEvent.isError
+			? getApiErrorMessage(createEvent.error, "Gagal menyimpan event")
+			: updateEvent.isError
+				? getApiErrorMessage(updateEvent.error, "Gagal menyimpan event")
 				: "Gagal menyimpan event";
+
+	const getFieldError = (field: keyof EventFormState) =>
+		formErrors[field]?.[0] ?? "";
 
 	const handleChange = (
 		e: React.ChangeEvent<
@@ -268,13 +351,29 @@ function EventFormModal({
 
 		if (type === "file" && "files" in e.target) {
 			const files = (e.target as HTMLInputElement).files;
+			const file = files && files.length > 0 ? files[0] : null;
+
+			if (file && !isValidPoster(file)) {
+				setFormErrors((prev) => ({
+					...prev,
+					poster: ["Poster harus JPG, JPEG, PNG, atau WebP dan maksimal 5MB."],
+				}));
+				setForm((prev) => ({
+					...prev,
+					[name]: null,
+				}));
+				return;
+			}
+
+			setFormErrors((prev) => ({ ...prev, poster: undefined }));
 			setForm((prev) => ({
 				...prev,
-				[name]: files && files.length > 0 ? files[0] : null,
+				[name]: file,
 			}));
 			return;
 		}
 
+		setFormErrors((prev) => ({ ...prev, [name]: undefined }));
 		setForm((prev) => ({
 			...prev,
 			[name]: name === "category_id" ? Number(value) : value,
@@ -284,23 +383,57 @@ function EventFormModal({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!form.category_id) return;
+		const nextErrors: EventFormErrors = {};
 
-		const payload: any = { ...form };
-		if (payload.quota === "") {
-			delete payload.quota;
+		if (!form.category_id) {
+			nextErrors.category_id = ["Kategori wajib dipilih."];
 		}
 
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(form.event_date)) {
+			nextErrors.event_date = ["Tanggal event harus berformat YYYY-MM-DD."];
+		}
+
+		if (form.start_time && form.end_time && form.end_time <= form.start_time) {
+			nextErrors.end_time = ["Jam selesai harus lebih besar dari jam mulai."];
+		}
+
+		if (form.poster && !isValidPoster(form.poster)) {
+			nextErrors.poster = ["Poster harus JPG, JPEG, PNG, atau WebP dan maksimal 5MB."];
+		}
+
+		if (Object.keys(nextErrors).length > 0) {
+			setFormErrors(nextErrors);
+			return;
+		}
+
+		const payload: EventPayload = {
+			category_id: form.category_id,
+			event_title: form.event_title,
+			description: form.description,
+			location: form.location,
+			event_date: form.event_date,
+			start_time: form.start_time,
+			end_time: form.end_time,
+			poster: form.poster,
+			...(form.quota === "" ? {} : { quota: form.quota }),
+		};
+
 		if (mode === "edit" && event) {
+			const changedPayload = buildChangedEventPayload(form, event);
+
 			updateEvent.mutate(
 				{
 					id: event.id,
-					data: payload,
+					data: changedPayload,
 				},
 				{
 					onSuccess: () => {
+						setFormErrors({});
 						if (onSuccess) onSuccess("Event berhasil diperbarui!");
 						onClose();
+					},
+					onError: (error) => {
+						setFormErrors(getApiFieldErrors(error));
 					},
 				},
 			);
@@ -310,8 +443,12 @@ function EventFormModal({
 
 		createEvent.mutate(payload, {
 			onSuccess: () => {
+				setFormErrors({});
 				if (onSuccess) onSuccess("Event berhasil ditambahkan!");
 				onClose();
+			},
+			onError: (error) => {
+				setFormErrors(getApiFieldErrors(error));
 			},
 		});
 	};
@@ -370,6 +507,11 @@ function EventFormModal({
 									Gagal memuat kategori event.
 								</p>
 							)}
+							{getFieldError("category_id") && (
+								<p className="text-xs text-red-500 mt-1">
+									{getFieldError("category_id")}
+								</p>
+							)}
 						</div>
 
 						<div>
@@ -407,6 +549,11 @@ function EventFormModal({
 							<p className="text-xs text-gray-400 mt-1">
 								Format: JPG, JPEG, PNG, WebP (Max: 5MB)
 							</p>
+							{getFieldError("poster") && (
+								<p className="text-xs text-red-500 mt-1">
+									{getFieldError("poster")}
+								</p>
+							)}
 						</div>
 
 						<div>
@@ -422,6 +569,11 @@ function EventFormModal({
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 								required
 							/>
+							{getFieldError("event_title") && (
+								<p className="text-xs text-red-500 mt-1">
+									{getFieldError("event_title")}
+								</p>
+							)}
 						</div>
 
 						<div>
@@ -435,8 +587,12 @@ function EventFormModal({
 								placeholder="Contoh: Reuni alumni angkatan 2010-2015"
 								rows={2}
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] resize-none"
-								required
 							/>
+							{getFieldError("description") && (
+								<p className="text-xs text-red-500 mt-1">
+									{getFieldError("description")}
+								</p>
+							)}
 						</div>
 
 						<div>
@@ -452,6 +608,11 @@ function EventFormModal({
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 								required
 							/>
+							{getFieldError("location") && (
+								<p className="text-xs text-red-500 mt-1">
+									{getFieldError("location")}
+								</p>
+							)}
 						</div>
 
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -467,6 +628,11 @@ function EventFormModal({
 									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									required
 								/>
+								{getFieldError("event_date") && (
+									<p className="text-xs text-red-500 mt-1">
+										{getFieldError("event_date")}
+									</p>
+								)}
 							</div>
 
 							<div>
@@ -481,6 +647,11 @@ function EventFormModal({
 									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									required
 								/>
+								{getFieldError("start_time") && (
+									<p className="text-xs text-red-500 mt-1">
+										{getFieldError("start_time")}
+									</p>
+								)}
 							</div>
 
 							<div>
@@ -495,6 +666,11 @@ function EventFormModal({
 									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									required
 								/>
+								{getFieldError("end_time") && (
+									<p className="text-xs text-red-500 mt-1">
+										{getFieldError("end_time")}
+									</p>
+								)}
 							</div>
 						</div>
 
@@ -511,6 +687,11 @@ function EventFormModal({
 								min={1}
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 							/>
+							{getFieldError("quota") && (
+								<p className="text-xs text-red-500 mt-1">
+									{getFieldError("quota")}
+								</p>
+							)}
 						</div>
 
 						{isError && (
@@ -818,9 +999,10 @@ function BroadcastModal({
 						<div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm space-y-2">
 							<p>
 								{errorMessage ||
-									(sendEventBroadcast.error instanceof Error
-										? sendEventBroadcast.error.message
-										: "Gagal mengirim broadcast")}
+									getApiErrorMessage(
+										sendEventBroadcast.error,
+										"Broadcast belum berhasil dikirim. Silakan coba lagi.",
+									)}
 							</p>
 							{sendDetail?.senderStatus !== undefined && (
 								<p className="text-xs">
@@ -874,19 +1056,234 @@ function BroadcastModal({
 	);
 }
 
+function DetailItem({
+	label,
+	value,
+}: {
+	label: string;
+	value: React.ReactNode;
+}) {
+	return (
+		<div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+			<p className="text-xs font-medium text-gray-400">{label}</p>
+			<div className="mt-1 text-sm font-medium text-gray-800 break-words">
+				{value ?? "-"}
+			</div>
+		</div>
+	);
+}
+
+function EventDetailModal({
+	eventId,
+	fallbackEvent,
+	isOpen,
+	onClose,
+}: {
+	eventId: number | null;
+	fallbackEvent: Event | null;
+	isOpen: boolean;
+	onClose: () => void;
+}) {
+	const {
+		data: detailEvent,
+		isLoading,
+		isError,
+		error,
+		isFetching,
+	} = useEvent(eventId ?? 0, isOpen ? 5000 : false);
+
+	if (!isOpen) return null;
+
+	const event = detailEvent ?? fallbackEvent;
+	const { date, time } = event
+		? parseEventDate(event)
+		: { date: "-", time: "-" };
+	const registered = event ? getRegisteredCount(event) : 0;
+	const remainingQuota = event ? getRemainingQuota(event) : null;
+	const quotaPercent = event ? getQuotaPercent(event) : 0;
+
+	return (
+		<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+			<div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+				<div className="p-6 border-b border-gray-100 flex items-start justify-between gap-4">
+					<div>
+						<h3 className="font-semibold text-gray-800 text-lg">
+							Detail Event
+						</h3>
+						<p className="text-xs text-gray-400 mt-1">
+							{isFetching ? "Memperbarui data..." : "Data event terbaru"}
+						</p>
+					</div>
+
+					<button
+						type="button"
+						onClick={onClose}
+						className="text-gray-400 hover:text-gray-600"
+						aria-label="Tutup detail event"
+					>
+						<X size={20} />
+					</button>
+				</div>
+
+				<div className="p-6 space-y-5">
+					{isLoading && !event && (
+						<div className="space-y-3">
+							<div className="h-5 bg-gray-100 rounded w-2/3 animate-pulse" />
+							<div className="h-28 bg-gray-100 rounded-2xl animate-pulse" />
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								{[1, 2, 3, 4].map((item) => (
+									<div
+										key={item}
+										className="h-16 bg-gray-100 rounded-xl animate-pulse"
+									/>
+								))}
+							</div>
+						</div>
+					)}
+
+					{isError && !event && (
+						<div className="rounded-xl px-4 py-3 text-sm bg-red-50 text-red-600 border border-red-100">
+							{getApiErrorMessage(error, "Gagal memuat detail event")}
+						</div>
+					)}
+
+					{event && (
+						<>
+							<div className="flex flex-col sm:flex-row gap-5">
+								<div className="w-full sm:w-44 shrink-0">
+									{event.poster_url ? (
+										<img
+											src={event.poster_url}
+											alt={event.event_title}
+											className="h-44 w-full rounded-2xl border border-gray-100 object-cover bg-gray-50"
+										/>
+									) : (
+										<div className="h-44 w-full rounded-2xl border border-dashed border-gray-200 bg-gray-50 grid place-items-center text-sm text-gray-400">
+											Tanpa poster
+										</div>
+									)}
+								</div>
+
+								<div className="flex-1 min-w-0">
+									<div className="flex flex-wrap items-center gap-2 mb-3">
+										<span
+											className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+												event.status_event === "Mendatang"
+													? "bg-[#7AB2B2]/10 text-[#2D7EA0] border-teal-200"
+													: "bg-gray-50 text-gray-500 border-gray-200"
+											}`}
+										>
+											{event.status_event}
+										</span>
+										<span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
+											{event.category}
+										</span>
+									</div>
+
+									<h4 className="text-xl font-bold text-gray-800 leading-tight">
+										{event.event_title}
+									</h4>
+									<p className="mt-3 text-sm text-gray-500 whitespace-pre-wrap">
+										{event.description || "Tidak ada deskripsi."}
+									</p>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+								<StatCard
+									label="Terdaftar"
+									value={registered}
+									sub="Peserta saat ini"
+									accent="border-blue-400"
+								/>
+								<StatCard
+									label="Kuota"
+									value={event.quota ?? "Tanpa batas"}
+									sub="Kapasitas awal"
+									accent="border-[#7AB2B2]"
+								/>
+								<StatCard
+									label="Sisa Kuota"
+									value={remainingQuota ?? "Tanpa batas"}
+									sub="Update otomatis"
+									accent="border-emerald-400"
+								/>
+								<StatCard
+									label="Terisi"
+									value={event.quota ? `${quotaPercent}%` : "-"}
+									sub="Persentase"
+									accent="border-[#7AB2B2]"
+								/>
+							</div>
+
+							{event.quota && (
+								<div>
+									<div className="flex justify-between text-sm text-gray-600 mb-1.5">
+										<span>Progress kuota</span>
+										<span className="font-medium">
+											{registered} / {event.quota}
+										</span>
+									</div>
+									<div className="w-full bg-gray-100 rounded-full h-2.5">
+										<div
+											className="bg-[#3EBDAF] h-2.5 rounded-full transition-all"
+											style={{ width: `${quotaPercent}%` }}
+										/>
+									</div>
+								</div>
+							)}
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<DetailItem label="Tanggal" value={date} />
+								<DetailItem
+									label="Waktu"
+									value={`${time} - ${event.end_time?.slice(0, 5) || "-"}`}
+								/>
+								<DetailItem label="Lokasi" value={event.location} />
+								<DetailItem label="Kategori ID" value={event.category_id ?? "-"} />
+								<DetailItem
+									label="Dibuat"
+									value={
+										event.created_at
+											? new Date(event.created_at).toLocaleString("id-ID")
+											: "-"
+									}
+								/>
+								<DetailItem
+									label="Diperbarui"
+									value={
+										event.updated_at
+											? new Date(event.updated_at).toLocaleString("id-ID")
+											: "-"
+									}
+								/>
+							</div>
+						</>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
 // ─── Event Card (Mendatang) ───────────────────────────────────────────────────
 function EventCardUpcoming({
 	event,
+	onDetail,
 	onEdit,
 	onDelete,
 	onBroadcast,
 }: {
 	event: Event;
+	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
 	onDelete: (id: number) => void;
 	onBroadcast: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
+	const registered = getRegisteredCount(event);
+	const remainingQuota = getRemainingQuota(event);
+	const pct = getQuotaPercent(event);
 
 	return (
 		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -921,7 +1318,37 @@ function EventCardUpcoming({
 				</div>
 			</div>
 
-			<div className="flex gap-2 mt-4">
+			{event.quota && (
+				<div className="mt-4">
+					<div className="flex justify-between text-sm text-gray-600 mb-1.5">
+						<span>Sisa Kuota</span>
+						<span className="font-medium">
+							{remainingQuota} dari {event.quota}
+						</span>
+					</div>
+
+					<div className="w-full bg-gray-100 rounded-full h-2">
+						<div
+							className="bg-[#3EBDAF] h-2 rounded-full transition-all"
+							style={{ width: `${pct}%` }}
+						/>
+					</div>
+
+					<p className="text-xs text-gray-400 mt-1 text-right">
+						{registered} terdaftar
+					</p>
+				</div>
+			)}
+
+			<div className="grid grid-cols-2 gap-2 mt-4">
+				<button
+					onClick={() => onDetail(event)}
+					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+				>
+					<Eye size={13} />
+					Detail
+				</button>
+
 				<button
 					onClick={() => onEdit(event)}
 					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
@@ -953,20 +1380,21 @@ function EventCardUpcoming({
 // ─── Event Card (Selesai) ─────────────────────────────────────────────────────
 function EventCardDone({
 	event,
+	onDetail,
 	onEdit,
 	onDelete,
 	onBroadcast,
 }: {
 	event: Event;
+	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
 	onDelete: (id: number) => void;
 	onBroadcast: (event: Event) => void;
 }) {
 	const { date, time } = parseEventDate(event);
-	const pct =
-		event.quota && event.registered !== undefined
-			? Math.round((event.registered / event.quota) * 100)
-			: 0;
+	const registered = getRegisteredCount(event);
+	const remainingQuota = getRemainingQuota(event);
+	const pct = getQuotaPercent(event);
 
 	return (
 		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -1007,7 +1435,7 @@ function EventCardDone({
 					<div className="flex justify-between text-sm text-gray-600 mb-1.5">
 						<span>Peserta Terdaftar</span>
 						<span className="font-medium">
-							{event.registered} / {event.quota}
+							{registered} / {event.quota}
 						</span>
 					</div>
 
@@ -1018,11 +1446,22 @@ function EventCardDone({
 						/>
 					</div>
 
-					<p className="text-xs text-gray-400 mt-1 text-right">{pct}% terisi</p>
+					<p className="text-xs text-gray-400 mt-1 text-right">
+						{pct}% terisi
+						{remainingQuota !== null ? ` • sisa ${remainingQuota}` : ""}
+					</p>
 				</div>
 			)}
 
-			<div className="flex gap-2 mt-4">
+			<div className="grid grid-cols-2 gap-2 mt-4">
+				<button
+					onClick={() => onDetail(event)}
+					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+				>
+					<Eye size={13} />
+					Detail
+				</button>
+
 				<button
 					onClick={() => onEdit(event)}
 					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
@@ -1057,6 +1496,7 @@ export default function KelolEventPage() {
 	const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 	const [eventModalMode, setEventModalMode] = useState<EventFormMode>("create");
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+	const [detailEvent, setDetailEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
 	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -1070,7 +1510,7 @@ export default function KelolEventPage() {
 		isLoading,
 		isError,
 		error,
-	} = useEvents(search, 10);
+	} = useEvents(search, 10, undefined, undefined, 5000);
 
 	const deleteEvent = useDeleteEvent();
 
@@ -1084,6 +1524,10 @@ export default function KelolEventPage() {
 		setEventModalMode("edit");
 		setSelectedEvent(event);
 		setIsEventModalOpen(true);
+	};
+
+	const handleDetail = (event: Event) => {
+		setDetailEvent(event);
 	};
 
 	const handleCloseEventModal = () => {
@@ -1204,9 +1648,10 @@ export default function KelolEventPage() {
 									Gagal memuat data event
 								</p>
 								<p className="text-xs text-gray-400 mt-1">
-									{error instanceof Error
-										? error.message
-										: "Pastikan server backend sudah berjalan"}
+									{getApiErrorMessage(
+										error,
+										"Data event belum berhasil dimuat. Silakan coba lagi.",
+									)}
 								</p>
 							</div>
 						)}
@@ -1229,6 +1674,7 @@ export default function KelolEventPage() {
 												<EventCardUpcoming
 													key={e.id}
 													event={e}
+													onDetail={handleDetail}
 													onEdit={handleEdit}
 													onDelete={handleDelete}
 													onBroadcast={handleOpenBroadcast}
@@ -1254,6 +1700,7 @@ export default function KelolEventPage() {
 												<EventCardDone
 													key={e.id}
 													event={e}
+													onDetail={handleDetail}
 													onEdit={handleEdit}
 													onDelete={handleDelete}
 													onBroadcast={handleOpenBroadcast}
@@ -1285,6 +1732,13 @@ export default function KelolEventPage() {
 				event={selectedEvent}
 				onClose={handleCloseEventModal}
 				onSuccess={showToast}
+			/>
+
+			<EventDetailModal
+				eventId={detailEvent?.id ?? null}
+				fallbackEvent={detailEvent}
+				isOpen={!!detailEvent}
+				onClose={() => setDetailEvent(null)}
 			/>
 
 			{broadcastEvent && (

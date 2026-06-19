@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
@@ -18,10 +18,11 @@ import {
   useRegisterEvent,
   useCancelRegistration,
 } from "@/hooks/alumni/queries/events";
-import { getImageUrl } from "@/lib/api";
-import { useState } from "react";
+import { getApiErrorMessage, getImageUrl } from "@/lib/api";
 
 function formatDate(dateStr: string) {
+  if (!dateStr) return "-";
+
   return new Date(dateStr).toLocaleDateString("id-ID", {
     weekday: "long",
     day: "numeric",
@@ -83,9 +84,10 @@ export default function EventDetailPage({
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [currentTime] = useState(() => Date.now());
 
   const event = data?.event;
-  const attendanceStatus = data?.attendance_status;
+  const attendanceStatus = data?.attendance_status || event?.attendance_status;
 
   function showToast(type: "success" | "error", message: string) {
     setToast({ type, message });
@@ -97,12 +99,8 @@ export default function EventDetailPage({
       onSuccess: () => {
         showToast("success", "Berhasil mendaftar event!");
       },
-      onError: (error: any) => {
-        const msg =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Gagal mendaftar event";
-        showToast("error", msg);
+      onError: (error: unknown) => {
+        showToast("error", getApiErrorMessage(error, "Pendaftaran event belum berhasil. Silakan coba lagi."));
       },
     });
   }
@@ -120,12 +118,8 @@ export default function EventDetailPage({
       onSuccess: () => {
         showToast("success", "Pendaftaran berhasil dibatalkan");
       },
-      onError: (error: any) => {
-        const msg =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Gagal membatalkan pendaftaran";
-        showToast("error", msg);
+      onError: (error: unknown) => {
+        showToast("error", getApiErrorMessage(error, "Pendaftaran belum berhasil dibatalkan. Silakan coba lagi."));
       },
     });
   }
@@ -192,8 +186,19 @@ export default function EventDetailPage({
   }
 
   const isRegistered = event.is_registered === true;
-  const isAttended = attendanceStatus === "present";
-  const quotaFull = event.remaining_quota <= 0;
+  const isAttended = ["present", "attended", "hadir"].includes(
+    String(attendanceStatus || "").toLowerCase()
+  );
+  const description = event.description || event.event_description;
+  const quota = Number(event.quota || 0);
+  const remainingQuota =
+    typeof event.remaining_quota === "number" ? event.remaining_quota : quota;
+  const quotaFull = quota > 0 && remainingQuota <= 0;
+  const eventDateTime = event.event_datetime || event.event_date;
+  const isEventDone =
+    event.status_event === "Selesai" ||
+    (eventDateTime ? new Date(eventDateTime).getTime() < currentTime : false);
+  const registerDisabled = registerEvent.isPending || quotaFull || isEventDone;
 
   return (
     <div className="space-y-5 pb-6">
@@ -258,13 +263,13 @@ export default function EventDetailPage({
           </div>
 
           {/* Deskripsi */}
-          {event.event_description && (
+          {description && (
             <div className="border-t border-gray-50 pt-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-2">
                 Deskripsi Event
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                {event.event_description}
+                {description}
               </p>
             </div>
           )}
@@ -320,9 +325,11 @@ export default function EventDetailPage({
                 <div className="min-w-0">
                   <p className="text-xs text-gray-400 mb-0.5">Kuota</p>
                   <p className="text-sm font-medium text-gray-800">
-                    Sisa {event.remaining_quota} dari {event.quota} peserta
+                    {quota > 0
+                      ? `Sisa ${remainingQuota} dari ${quota} peserta`
+                      : "Kuota tidak dibatasi"}
                   </p>
-                  {quotaFull && !isRegistered && (
+                  {quota > 0 && quotaFull && !isRegistered && (
                     <p className="text-xs text-red-500 mt-1">
                       Kuota sudah penuh
                     </p>
@@ -333,12 +340,14 @@ export default function EventDetailPage({
           </div>
 
           {/* Status Kehadiran Info */}
-          {isRegistered && (
+          {(isRegistered || isEventDone) && (
             <div className="border-t border-gray-50 pt-4">
               <div
                 className={`rounded-xl p-4 ${
                   isAttended
                     ? "bg-[#B2DE96]/20 border border-[#B2DE96]/30"
+                    : isEventDone
+                    ? "bg-gray-50 border border-gray-100"
                     : "bg-blue-50 border border-blue-100"
                 }`}
               >
@@ -346,25 +355,41 @@ export default function EventDetailPage({
                   {isAttended ? (
                     <CheckCircle className="w-5 h-5 text-[#41A07E] flex-shrink-0 mt-0.5" />
                   ) : (
-                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <AlertCircle
+                      className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                        isEventDone ? "text-gray-500" : "text-blue-600"
+                      }`}
+                    />
                   )}
                   <div className="min-w-0">
                     <p
                       className={`text-sm font-semibold ${
-                        isAttended ? "text-[#41A07E]" : "text-blue-700"
+                        isAttended
+                          ? "text-[#41A07E]"
+                          : isEventDone
+                          ? "text-gray-700"
+                          : "text-blue-700"
                       }`}
                     >
                       {isAttended
                         ? "Anda Sudah Hadir"
+                        : isEventDone
+                        ? "Event Sudah Selesai"
                         : "Anda Sudah Terdaftar"}
                     </p>
                     <p
                       className={`text-xs mt-1 leading-relaxed ${
-                        isAttended ? "text-[#357f65]" : "text-blue-600"
+                        isAttended
+                          ? "text-[#357f65]"
+                          : isEventDone
+                          ? "text-gray-500"
+                          : "text-blue-600"
                       }`}
                     >
                       {isAttended
                         ? "Terima kasih telah menghadiri event ini. Presensi Anda sudah tercatat."
+                        : isEventDone
+                        ? "Pendaftaran dan pembatalan tidak tersedia untuk event yang sudah selesai."
                         : "Jangan lupa scan QR code saat event dimulai untuk konfirmasi kehadiran Anda."}
                     </p>
                   </div>
@@ -378,7 +403,7 @@ export default function EventDetailPage({
             {!isRegistered ? (
               <button
                 onClick={handleRegister}
-                disabled={registerEvent.isPending || quotaFull}
+                disabled={registerDisabled}
                 className="w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {registerEvent.isPending ? (
@@ -386,15 +411,17 @@ export default function EventDetailPage({
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Memproses...
                   </>
+                ) : isEventDone ? (
+                  "Event Selesai"
                 ) : quotaFull ? (
                   "Kuota Penuh"
                 ) : (
-                  "Konfirmasi Kehadiran"
+                  "Daftar Event"
                 )}
               </button>
             ) : (
               <>
-                {!isAttended && (
+                {!isAttended && !isEventDone && (
                   <button
                     onClick={handleCancelRegistration}
                     disabled={cancelRegistration.isPending}

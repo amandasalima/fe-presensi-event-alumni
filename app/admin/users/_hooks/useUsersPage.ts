@@ -10,7 +10,11 @@ import {
 } from "@/hooks/admin/users";
 import { useSearchFilter } from "@/hooks/useSearchFilter";
 import { getApiErrorMessage } from "@/lib/api";
-import { exportUsersToExcel, getUserStats } from "../_utils/userFormatters";
+import {
+	exportUsersToExcel,
+	getUserStats,
+	isAdminUser,
+} from "../_utils/userFormatters";
 
 export function useUsersPage() {
 	const [selected, setSelected] = useState<User | null>(null);
@@ -18,9 +22,13 @@ export function useUsersPage() {
 		type: "success" | "error";
 		message: string;
 	} | null>(null);
-	const { data: users = [], isLoading, isError } = useUsers();
+	const { data: allUsers = [], isLoading, isError } = useUsers();
 	const updateUser = useUpdateUser();
 	const deleteUser = useDeleteUser();
+	const users = useMemo(
+		() => allUsers.filter((user) => !isAdminUser(user)),
+		[allUsers],
+	);
 	const {
 		filteredItems: filtered,
 		searchQuery: search,
@@ -32,6 +40,14 @@ export function useUsersPage() {
 
 	const handleSubmit = (data: UpdateUserPayload) => {
 		if (!selected) return;
+		if (isAdminUser(selected)) {
+			setSelected(null);
+			setFeedback({
+				type: "error",
+				message: "User dengan role admin tidak dapat diedit",
+			});
+			return;
+		}
 
 		setFeedback(null);
 		updateUser.mutate(
@@ -52,6 +68,14 @@ export function useUsersPage() {
 	};
 
 	const handleDelete = (user: User) => {
+		if (isAdminUser(user)) {
+			setFeedback({
+				type: "error",
+				message: "User dengan role admin tidak dapat dihapus",
+			});
+			return;
+		}
+
 		if (!confirm(`Yakin ingin menghapus user ${user.name}?`)) return;
 
 		setFeedback(null);

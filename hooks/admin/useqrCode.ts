@@ -1,24 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAPI } from "@/lib/api";
 
+type GenerateQrVariables = {
+  eventId: number;
+  data: {
+    valid_from: string;
+    timeout_minutes: number;
+  };
+};
+
 // POST generate QR Code untuk event tertentu
 export function useGenerateQR() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (eventId: number) =>
-      fetchAPI(`/events/${eventId}/generate-qr`, { method: "POST" }),
-    onSuccess: () => {
-      // refresh list events supaya qr_token & qr_code_image ikut terupdate
+    mutationFn: ({ eventId, data }: GenerateQrVariables) =>
+      fetchAPI(`/admin/events/${eventId}/qr/generate`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["qr-code", variables.eventId] });
     },
   });
 }
 
-// GET QR Code image untuk event tertentu (kalau ada endpoint khusus)
+// GET QR Code metadata untuk event tertentu
 export function useQRCode(eventId: number) {
   return useQuery({
     queryKey: ["qr-code", eventId],
-    queryFn: () => fetchAPI(`/events/${eventId}/qr-code`),
+    queryFn: () => fetchAPI(`/admin/events/${eventId}/qr`),
     enabled: !!eventId,
   });
 }
@@ -28,7 +39,7 @@ export function useResetQR() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: number) =>
-      fetchAPI(`/events/${eventId}/qr-code`, { method: "DELETE" }),
+      fetchAPI(`/admin/events/${eventId}/qr`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["qr-code"] });

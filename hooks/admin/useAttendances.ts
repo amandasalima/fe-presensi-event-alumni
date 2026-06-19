@@ -24,8 +24,6 @@ export interface AttendanceEvent {
 	start_time: string;
 	end_time: string;
 	qr_token?: string;
-	qr_code_image?: string;
-	qr_code_url?: string;
 	status_event: string;
 	created_at?: string;
 }

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { FormInput } from "@/app/components/FormControl";
 import { useChangePassword } from "@/hooks/alumni/useChangePassword";
+import { getApiErrorMessage } from "@/lib/api";
 
 export default function AlumniChangePasswordPage() {
   const router = useRouter();
@@ -74,16 +75,12 @@ export default function AlumniChangePasswordPage() {
           }, 2000);
         },
         onError: (error: unknown) => {
-          let msg = "Gagal mengubah password.";
-          if (
-            error &&
-            typeof error === "object" &&
-            "message" in error &&
-            typeof (error as Record<string, unknown>).message === "string"
-          ) {
-            msg = (error as Record<string, unknown>).message as string;
-          }
-          setFormError(msg);
+          setFormError(
+            getApiErrorMessage(
+              error,
+              "Kata sandi belum berhasil diubah. Periksa kembali kata sandi Anda."
+            )
+          );
         },
       }
     );
@@ -257,7 +254,10 @@ export default function AlumniChangePasswordPage() {
           <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-50 border border-red-100">
             <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-red-600 font-medium">
-              {(changePassword.error as Error)?.message || "Terjadi kesalahan saat mengubah password."}
+              {getApiErrorMessage(
+                changePassword.error,
+                "Kata sandi belum berhasil diubah. Periksa kembali kata sandi Anda."
+              )}
             </p>
           </div>
         )}

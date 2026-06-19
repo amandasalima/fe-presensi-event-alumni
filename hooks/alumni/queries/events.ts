@@ -6,6 +6,7 @@ export interface AlumniEventQuery {
 	id: number;
 	event_title: string;
 	event_description?: string;
+	description?: string;
 	event_date: string;
 	start_time: string;
 	end_time: string;
@@ -14,6 +15,7 @@ export interface AlumniEventQuery {
 	quota: number;
 	remaining_quota: number;
 	is_registered: boolean;
+	attendance_status?: string | null;
 	status_event?: string;
 	category?: {
 		id: number;
@@ -22,11 +24,40 @@ export interface AlumniEventQuery {
 	[key: string]: unknown;
 }
 
+function toNumber(value: unknown, fallback = 0) {
+	const numberValue = Number(value);
+	return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+function toBoolean(value: unknown) {
+	if (typeof value === "boolean") return value;
+	if (typeof value === "number") return value === 1;
+	if (typeof value === "string") {
+		return ["1", "true", "registered", "terdaftar"].includes(value.toLowerCase());
+	}
+
+	return false;
+}
+
 function withEventDateTime(event: AlumniEventQuery) {
 	const datePart = event.event_date ? event.event_date.split("T")[0] : "";
+	const eventDateTime =
+		event.event_datetime ||
+		(datePart && event.start_time ? `${datePart}T${event.start_time}` : event.event_date);
+	const quota = toNumber(event.quota);
+	const remainingQuota =
+		event.remaining_quota === undefined || event.remaining_quota === null
+			? quota
+			: toNumber(event.remaining_quota, quota);
+
 	return {
 		...event,
-		event_datetime: datePart && event.start_time ? `${datePart}T${event.start_time}` : event.event_date,
+		event_description: event.event_description || event.description || "",
+		description: event.description || event.event_description || "",
+		event_datetime: eventDateTime,
+		quota,
+		remaining_quota: Math.max(remainingQuota, 0),
+		is_registered: toBoolean(event.is_registered),
 	};
 }
 
@@ -57,11 +88,18 @@ export function useAlumniEventDetail(id: number) {
 		queryFn: async () => {
 			try {
 				const res = await fetchAPI(`/events/${id}`);
-				if (res?.data?.event) {
-					res.data.event = withEventDateTime(res.data.event);
+				const event = res?.data?.event || res?.data;
+
+				if (event?.id) {
+					return {
+						...res?.data,
+						event: withEventDateTime(event),
+						attendance_status:
+							res?.data?.attendance_status || event.attendance_status || null,
+					};
 				}
 
-				return res?.data;
+				return null;
 			} catch (error) {
 				console.warn(`Failed to fetch event detail for ID ${id}, returning null:`, error);
 				return null;

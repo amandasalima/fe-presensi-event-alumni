@@ -29,7 +29,7 @@ import {
 } from "@/hooks/alumni/useProfile";
 
 import type { UpdateProfilePayload } from "@/types/profile";
-import { clearAuthStorage, getImageUrl } from "@/lib/api";
+import { clearAuthStorage, getApiErrorMessage, getImageUrl } from "@/lib/api";
 
 /* ─── Skeleton loader ─────────────────────────────────────── */
 function ProfileSkeleton() {
@@ -240,25 +240,6 @@ function Toast({
   );
 }
 
-function getApiMessage(value: unknown) {
-  if (
-    value &&
-    typeof value === "object" &&
-    "response" in value &&
-    value.response &&
-    typeof value.response === "object" &&
-    "data" in value.response &&
-    value.response.data &&
-    typeof value.response.data === "object" &&
-    "message" in value.response.data &&
-    typeof value.response.data.message === "string"
-  ) {
-    return value.response.data.message;
-  }
-
-  return null;
-}
-
 /* ─── Main Profile Page ───────────────────────────────────── */
 export default function AlumniProfilePage() {
   const router = useRouter();
@@ -274,7 +255,9 @@ export default function AlumniProfilePage() {
 
   const [draft, setDraft] = useState<UpdateProfilePayload>({});
 
-  const serverError = getApiMessage(error) ?? (isError ? "Gagal memuat profil" : null);
+  const serverError = isError
+    ? getApiErrorMessage(error, "Profil belum berhasil dimuat. Silakan coba lagi.")
+    : null;
 
   function showToast(type: "success" | "error", message: string) {
     setToast({ type, message });
@@ -311,7 +294,10 @@ export default function AlumniProfilePage() {
         showToast("success", "Profil berhasil diperbarui!");
       },
       onError: (err: unknown) => {
-        const msg = getApiMessage(err) ?? "Gagal menyimpan perubahan";
+        const msg = getApiErrorMessage(
+          err,
+          "Profil belum berhasil disimpan. Silakan coba lagi."
+        );
         showToast("error", msg);
       },
     });

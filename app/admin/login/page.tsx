@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormInput } from "@/app/components/FormControl";
+import { toFriendlyErrorMessage } from "@/lib/api";
 
 type LoginResponse = {
 	success: boolean;
@@ -74,9 +75,14 @@ const AdminLogin = () => {
 			router.push("/admin/dashboard");
 		} catch (error) {
 			if (error instanceof Error) {
-				setErrorMessage(error.message);
+				setErrorMessage(
+					toFriendlyErrorMessage(
+						error.message,
+						"Masuk belum berhasil. Periksa kembali email dan kata sandi Anda.",
+					),
+				);
 			} else {
-				setErrorMessage("Terjadi kesalahan saat login");
+				setErrorMessage("Masuk belum berhasil. Silakan coba lagi.");
 			}
 		} finally {
 			setIsPending(false);

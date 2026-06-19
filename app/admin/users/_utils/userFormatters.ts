@@ -18,6 +18,10 @@ export function formatLabel(value: string) {
 	return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+export function isAdminUser(user: Pick<User, "role">) {
+	return user.role.toLowerCase() === "admin";
+}
+
 export function getStatusClass(status: string) {
 	const normalized = status.toLowerCase();
 
@@ -93,9 +97,7 @@ export function getUserStats(users: User[]) {
 	const activeUsers = users.filter((user) =>
 		["active", "aktif"].includes(user.status.toLowerCase()),
 	).length;
-	const adminUsers = users.filter(
-		(user) => user.role.toLowerCase() === "admin",
-	).length;
+	const adminUsers = users.filter(isAdminUser).length;
 	const monthUsers = users.filter((user) => {
 		const createdAt = new Date(user.created_at);
 		return (

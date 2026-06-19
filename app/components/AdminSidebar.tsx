@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { clearAuthStorage } from "@/lib/api";
 
 const menuItems = [
@@ -44,7 +44,6 @@ const menuItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const handleLogout = () => {
     clearAuthStorage();

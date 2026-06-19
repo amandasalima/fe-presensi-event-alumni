@@ -4,17 +4,62 @@ import { buildQueryParams } from "./params";
 import type {
 	ApiResponse,
 	CategoriesResponse,
+	EventAttendancesResponse,
+	EventDetailResponse,
+	EventListParams,
 	EventPayload,
+	EventMutationResponse,
 	EventQrCodeResponse,
+	EventRegistrationParams,
+	EventRegistrationsResponse,
 	EventsResponse,
 	GenerateQrPayload,
-	RawEvent,
 } from "./types";
 
-export async function getEvents(search = "", perPage = 10) {
+function appendEventFormData(data: Partial<EventPayload>) {
+	const formData = new FormData();
+
+	Object.entries(data).forEach(([key, value]) => {
+		if (value === undefined || value === null || value === "") return;
+
+		if (key === "poster" && value instanceof File) {
+			formData.append("poster", value);
+			return;
+		}
+
+		if (key !== "poster") {
+			formData.append(key, String(value));
+		}
+	});
+
+	return formData;
+}
+
+function hasPosterFile(data: Partial<EventPayload>) {
+	return typeof File !== "undefined" && data.poster instanceof File;
+}
+
+function unwrapEventResponse(response: EventDetailResponse) {
+	if ("event" in response.data) {
+		return response.data.event;
+	}
+
+	return response.data;
+}
+
+export async function getEvents(
+	searchOrParams: string | EventListParams = "",
+	perPage = 10,
+) {
+	const params =
+		typeof searchOrParams === "string"
+			? { search: searchOrParams, per_page: perPage }
+			: searchOrParams;
 	const query = buildQueryParams({
-		per_page: perPage,
-		search,
+		search: params.search,
+		status: params.status,
+		category_id: params.category_id,
+		per_page: params.per_page ?? perPage,
 	});
 
 	const response = (await fetchAPI(`/admin/events${query}`)) as EventsResponse;
@@ -23,9 +68,11 @@ export async function getEvents(search = "", perPage = 10) {
 }
 
 export async function getEvent(id: number) {
-	const response = (await fetchAPI(`/admin/events/${id}`)) as ApiResponse<RawEvent>;
+	const response = (await fetchAPI(
+		`/admin/events/${id}`,
+	)) as EventDetailResponse;
 
-	return normalizeEvent(response.data);
+	return normalizeEvent(unwrapEventResponse(response));
 }
 
 export async function getEventCategories() {
@@ -37,43 +84,61 @@ export async function getEventCategories() {
 }
 
 export async function createEvent(data: EventPayload) {
-	const formData = new FormData();
-	Object.keys(data).forEach((key) => {
-		if (key === "poster" && data.poster) {
-			formData.append("poster", data.poster);
-		} else if (key !== "poster" && data[key as keyof EventPayload] !== undefined && data[key as keyof EventPayload] !== null) {
-			formData.append(key, String(data[key as keyof EventPayload]));
-		}
-	});
+	const formData = appendEventFormData(data);
+	const response = await api.post("/admin/events", formData);
 
-	const response = await api.post("/admin/events", formData, {
-		headers: { "Content-Type": "multipart/form-data" },
-	});
-	return response.data as ApiResponse<RawEvent>;
+	return response.data as EventMutationResponse;
 }
 
 export async function updateEvent(id: number, data: Partial<EventPayload>) {
-	const formData = new FormData();
-	formData.append("_method", "PUT");
-	
-	Object.keys(data).forEach((key) => {
-		if (key === "poster" && data.poster) {
-			formData.append("poster", data.poster);
-		} else if (key !== "poster" && data[key as keyof Partial<EventPayload>] !== undefined && data[key as keyof Partial<EventPayload>] !== null) {
-			formData.append(key, String(data[key as keyof Partial<EventPayload>]));
-		}
-	});
+	if (hasPosterFile(data)) {
+		const formData = appendEventFormData(data);
+		const response = await api.post(`/admin/events/${id}`, formData);
 
-	const response = await api.post(`/admin/events/${id}`, formData, {
-		headers: { "Content-Type": "multipart/form-data" },
-	});
-	return response.data as ApiResponse<RawEvent>;
+		return response.data as EventMutationResponse;
+	}
+
+	return (await fetchAPI(`/admin/events/${id}`, {
+		method: "PUT",
+		body: JSON.stringify(data),
+	})) as EventMutationResponse;
 }
 
 export async function deleteEvent(id: number) {
 	return (await fetchAPI(`/admin/events/${id}`, {
 		method: "DELETE",
 	})) as ApiResponse<null>;
+}
+
+export async function toggleEvent(id: number) {
+	return (await fetchAPI(`/admin/events/${id}/toggle`, {
+		method: "PATCH",
+	})) as EventMutationResponse;
+}
+
+export async function getEventRegistrations(
+	id: number,
+	params: EventRegistrationParams = {},
+) {
+	const query = buildQueryParams({
+		status: params.status,
+		per_page: params.per_page,
+	});
+
+	const response = (await fetchAPI(
+		`/admin/events/${id}/registrations${query}`,
+	)) as EventRegistrationsResponse;
+
+	return response.data;
+}
+
+export async function getEventAttendances(id: number, perPage = 10) {
+	const query = buildQueryParams({ per_page: perPage });
+	const response = (await fetchAPI(
+		`/admin/events/${id}/attendances${query}`,
+	)) as EventAttendancesResponse;
+
+	return response.data;
 }
 
 export async function generateEventQr(

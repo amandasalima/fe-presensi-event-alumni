@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
+import Image from "next/image";
+import QRCode from "qrcode";
 import {
   AlertCircle,
   CalendarDays,
@@ -26,7 +28,7 @@ import {
   type Event,
   type EventQrCode,
 } from "@/hooks/admin/useEvents";
-import Image from "next/image";
+import { getApiErrorMessage } from "@/lib/api";
 
 // ─── QR Placeholder SVG ───────────────────────────────────────────────────────
 function QRPlaceholder({
@@ -156,92 +158,17 @@ function EventCardSkeleton() {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
-
-function getAuthToken() {
-  if (typeof window === "undefined") return null;
-
-  return (
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("admin_token") ||
-    localStorage.getItem("alumni_token") ||
-    localStorage.getItem("token")
-  );
-}
-
-async function downloadSvgAsImage({
-  svgUrl,
+function downloadDataUrl({
+  dataUrl,
   fileName,
-  type = "png",
 }: {
-  svgUrl: string;
+  dataUrl: string;
   fileName: string;
-  type?: "png" | "jpg";
 }) {
-  const response = await fetch(svgUrl);
-
-  if (!response.ok) {
-    throw new Error("Gagal mengambil SVG QR");
-  }
-
-  const svgBlob = await response.blob();
-  const svgObjectUrl = URL.createObjectURL(svgBlob);
-
-  const image = new window.Image();
-
-  image.crossOrigin = "anonymous";
-
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = () => reject(new Error("Gagal memuat SVG"));
-    image.src = svgObjectUrl;
-  });
-
-  const canvas = document.createElement("canvas");
-  const size = 1000;
-
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext("2d");
-
-  if (!ctx) {
-    URL.revokeObjectURL(svgObjectUrl);
-    throw new Error("Canvas tidak tersedia");
-  }
-
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, size, size);
-  ctx.drawImage(image, 0, 0, size, size);
-
-  const mimeType = type === "jpg" ? "image/jpeg" : "image/png";
-  const extension = type === "jpg" ? "jpg" : "png";
-
-  const outputBlob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          reject(new Error("Gagal membuat file gambar"));
-          return;
-        }
-
-        resolve(blob);
-      },
-      mimeType,
-      1,
-    );
-  });
-
-  const outputUrl = URL.createObjectURL(outputBlob);
-
   const link = document.createElement("a");
-  link.href = outputUrl;
-  link.download = `${fileName}.${extension}`;
+  link.href = dataUrl;
+  link.download = `${fileName}.png`;
   link.click();
-
-  URL.revokeObjectURL(svgObjectUrl);
-  URL.revokeObjectURL(outputUrl);
 }
 
 function formatEventDate(event: Event) {
@@ -287,6 +214,10 @@ function getDefaultValidFrom() {
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
 
   return now.toISOString().slice(0, 16);
+}
+
+function getQrPayload(qrCode?: EventQrCode | null) {
+  return qrCode?.qr_payload?.trim() || qrCode?.qr_token?.trim() || "";
 }
 
 // ─── Event List Card ──────────────────────────────────────────────────────────
@@ -351,8 +282,8 @@ export default function GenerateQRPage() {
   const [validFrom, setValidFrom] = useState(getDefaultValidFrom());
   const [timeoutMinutes, setTimeoutMinutes] = useState(60);
   const [generatedQr, setGeneratedQr] = useState<EventQrCode | null>(null);
-  const [qrImageObjectUrl, setQrImageObjectUrl] = useState<string | null>(null);
-  const [isLoadingQrImage, setIsLoadingQrImage] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [isGeneratingQrImage, setIsGeneratingQrImage] = useState(false);
 
   const {
     data: events = [],
@@ -372,56 +303,49 @@ export default function GenerateQRPage() {
   const selectedEvent = events.find((event) => event.id === selectedId) ?? null;
 
   const displayedQr = generatedQr ?? activeQr ?? null;
-  const displayedQrId = displayedQr?.id ?? null;
+  const qrPayload = getQrPayload(displayedQr);
 
   useEffect(() => {
-    if (!selectedId || !displayedQrId) {
+    if (!qrPayload) {
       return;
     }
 
-    let objectUrl: string | null = null;
+    let isMounted = true;
 
-    const fetchQrImage = async () => {
+    const generateQrDataUrl = async () => {
       try {
-        setIsLoadingQrImage(true);
-
-        const token = getAuthToken();
-
-        const response = await fetch(
-          `${API_BASE_URL}/admin/events/${selectedId}/qr-image`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "image/svg+xml",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
+        setIsGeneratingQrImage(true);
+        const dataUrl = await QRCode.toDataURL(qrPayload, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          scale: 12,
+          color: {
+            dark: "#111827",
+            light: "#ffffff",
           },
-        );
+        });
 
-        if (!response.ok) {
-          throw new Error("Gagal mengambil gambar QR");
+        if (isMounted) {
+          setQrDataUrl(dataUrl);
         }
-
-        const blob = await response.blob();
-        objectUrl = URL.createObjectURL(blob);
-
-        setQrImageObjectUrl(objectUrl);
       } catch (error) {
         console.error(error);
-        setQrImageObjectUrl(null);
+        if (isMounted) {
+          setQrDataUrl(null);
+        }
       } finally {
-        setIsLoadingQrImage(false);
+        if (isMounted) {
+          setIsGeneratingQrImage(false);
+        }
       }
     };
 
-    fetchQrImage();
+    generateQrDataUrl();
 
     return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+      isMounted = false;
     };
-  }, [selectedId, displayedQrId]);
+  }, [qrPayload]);
 
   const filteredEvents = useMemo(() => {
     return events;
@@ -430,7 +354,7 @@ export default function GenerateQRPage() {
   const handleSelectEvent = (event: Event) => {
     setSelectedId(event.id);
     setGeneratedQr(null);
-    setQrImageObjectUrl(null);
+    setQrDataUrl(null);
   };
 
   const handleGenerate = () => {
@@ -446,7 +370,7 @@ export default function GenerateQRPage() {
       },
       {
         onSuccess: (response) => {
-          setQrImageObjectUrl(null);
+          setQrDataUrl(null);
           setGeneratedQr(response.data.qr_code);
         },
       },
@@ -542,7 +466,7 @@ export default function GenerateQRPage() {
                     onChange={(e) => {
                       setSelectedId(Number(e.target.value) || null);
                       setGeneratedQr(null);
-                      setQrImageObjectUrl(null);
+                      setQrDataUrl(null);
                     }}
                     disabled={loadingEvents}
                     className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent cursor-pointer disabled:bg-gray-100"
@@ -660,9 +584,10 @@ export default function GenerateQRPage() {
               {generateQR.isError && (
                 <div className="p-3 bg-red-50 border border-red-100 text-red-500 rounded-xl text-xs flex items-center gap-2">
                   <AlertCircle size={15} />
-                  {generateQR.error instanceof Error
-                    ? generateQR.error.message
-                    : "Gagal generate QR Code"}
+                  {getApiErrorMessage(
+                    generateQR.error,
+                    "QR Code belum berhasil dibuat. Silakan coba lagi."
+                  )}
                 </div>
               )}
 
@@ -675,7 +600,7 @@ export default function GenerateQRPage() {
                 {generateQR.isPending ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Generating...
+                    Membuat...
                   </>
                 ) : (
                   <>
@@ -745,10 +670,10 @@ export default function GenerateQRPage() {
                 <div className="flex-1 flex flex-col items-center justify-center gap-6">
                   <div className="relative">
                     <div className="w-60 h-60 bg-white border-2 border-teal-200 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-300/70 p-4">
-                      {isLoadingQrImage ? (
+                      {isGeneratingQrImage ? (
                         <div className="w-full h-full bg-gray-100 rounded-xl animate-pulse" />
                       ) : (
-                        <QRDisplay src={qrImageObjectUrl} />
+                        <QRDisplay src={qrDataUrl} />
                       )}
                     </div>
 
@@ -812,12 +737,12 @@ export default function GenerateQRPage() {
                       <span className="text-gray-500">Token</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs text-gray-500 text-right truncate max-w-[180px]">
-                          {displayedQr.qr_token}
+                          {qrPayload}
                         </span>
                         <button
-                          onClick={() => handleCopyToken(displayedQr.qr_token)}
+                          onClick={() => handleCopyToken(qrPayload)}
                           className="text-gray-400 hover:text-[#2D7EA0] transition-colors p-1"
-                          title="Copy Token"
+                          title="Copy QR Payload"
                         >
                           {copySuccess ? (
                             <CheckCircle size={14} className="text-[#3EBDAF]" />
@@ -832,15 +757,14 @@ export default function GenerateQRPage() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => {
-                        if (!qrImageObjectUrl || !selectedEvent) return;
+                        if (!qrDataUrl || !selectedEvent) return;
 
-                        downloadSvgAsImage({
-                          svgUrl: qrImageObjectUrl,
+                        downloadDataUrl({
+                          dataUrl: qrDataUrl,
                           fileName: `QR-${selectedEvent.event_title}`,
-                          type: "png",
                         });
                       }}
-                      disabled={!qrImageObjectUrl}
+                      disabled={!qrDataUrl}
                       className="flex items-center gap-2 bg-[#2D7EA0] hover:bg-[#236175] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
                     >
                       <Download size={16} />
@@ -850,11 +774,11 @@ export default function GenerateQRPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (qrImageObjectUrl) {
-                          window.open(qrImageObjectUrl, "_blank");
+                        if (qrDataUrl) {
+                          window.open(qrDataUrl, "_blank");
                         }
                       }}
-                      disabled={!qrImageObjectUrl}
+                      disabled={!qrDataUrl}
                       className="flex items-center gap-2 border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
                     >
                       <ExternalLink size={16} />

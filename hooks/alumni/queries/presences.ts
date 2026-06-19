@@ -24,7 +24,7 @@ export function useScanQR() {
 		mutationFn: (qr_token: string) =>
 			fetchAPI("/presensi/scan", {
 				method: "POST",
-				body: JSON.stringify({ qr_token }),
+				body: JSON.stringify({ qr_token: qr_token.trim() }),
 			}).catch((error) => {
 				const isGeneric404 = error?.status === 404 && (!error.message || error.message.includes("404") || error.message.toLowerCase() === "not found");
 				if (isGeneric404) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 
 export default function TodayEvents() {
   // TODO: Replace with actual data from API

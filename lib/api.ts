@@ -63,9 +63,15 @@ const api = axios.create({
 // Request interceptor: attach token dari localStorage
 api.interceptors.request.use((config) => {
 	const token = getAuthToken();
+	const isFormData =
+		typeof FormData !== "undefined" && config.data instanceof FormData;
 
 	if (token) {
 		config.headers.Authorization = `Bearer ${token}`;
+	}
+
+	if (isFormData) {
+		delete config.headers["Content-Type"];
 	}
 
 	return config;
@@ -119,40 +125,173 @@ function formatValidationErrors(errors: unknown) {
 	return Object.values(errors)
 		.flatMap((value) => (Array.isArray(value) ? value : [value]))
 		.filter((value): value is string => typeof value === "string")
+		.map((value) => toFriendlyErrorMessage(value))
 		.join(" ");
 }
 
-export function getApiErrorMessage(error: unknown, fallback = "Request failed") {
-	if (!(error instanceof Error)) return fallback;
+function getErrorData(error: unknown) {
+	if (error instanceof ApiError) return error.data;
+	if (axios.isAxiosError(error)) return error.response?.data;
+	return null;
+}
 
-	if (error instanceof ApiError) {
-		const data = error.data as {
-			message?: unknown;
-			error?: unknown;
-			errors?: unknown;
-		} | null;
-		const message =
-			typeof data?.message === "string"
-				? data.message
-				: typeof data?.error === "string"
-					? data.error
-					: "";
-		const validation = formatValidationErrors(data?.errors);
+function getErrorStatus(error: unknown) {
+	if (error instanceof ApiError) return error.status;
+	if (axios.isAxiosError(error)) return error.response?.status;
+	return undefined;
+}
 
-		return [message, validation].filter(Boolean).join(" ") || error.message;
+const FIELD_LABELS: Record<string, string> = {
+	first_name: "nama depan",
+	last_name: "nama belakang",
+	name: "nama",
+	gender: "jenis kelamin",
+	email: "email",
+	phone: "nomor telepon",
+	graduation_year: "tahun lulus",
+	birth_date: "tanggal lahir",
+	password: "kata sandi",
+	password_confirmation: "konfirmasi kata sandi",
+	current_password: "kata sandi lama",
+	old_password: "kata sandi lama",
+	new_password: "kata sandi baru",
+	new_password_confirmation: "konfirmasi kata sandi baru",
+	event_title: "judul event",
+	description: "deskripsi",
+	location: "lokasi",
+	start_date: "tanggal mulai",
+	end_date: "tanggal selesai",
+	start_time: "jam mulai",
+	end_time: "jam selesai",
+	api_token: "token WhatsApp",
+	sender_number: "nomor pengirim",
+};
+
+const TECHNICAL_ERROR_PATTERNS: Array<[RegExp, string]> = [
+	[/network error/i, "Tidak dapat terhubung ke layanan. Periksa koneksi internet Anda, lalu coba lagi."],
+	[/failed to fetch/i, "Tidak dapat terhubung ke layanan. Periksa koneksi internet Anda, lalu coba lagi."],
+	[/load failed/i, "Tidak dapat memuat data. Periksa koneksi internet Anda, lalu coba lagi."],
+	[/request failed with status code 400/i, "Data yang dikirim belum sesuai. Periksa kembali isian Anda."],
+	[/request failed with status code 401/i, "Sesi Anda sudah berakhir. Silakan masuk kembali."],
+	[/request failed with status code 403/i, "Anda tidak memiliki izin untuk melakukan tindakan ini."],
+	[/request failed with status code 404/i, "Data yang dicari tidak ditemukan."],
+	[/request failed with status code 422/i, "Ada isian yang belum sesuai. Periksa kembali data Anda."],
+	[/request failed with status code 429/i, "Terlalu banyak percobaan. Tunggu sebentar, lalu coba lagi."],
+	[/request failed with status code 5\d\d/i, "Layanan sedang mengalami gangguan. Silakan coba lagi beberapa saat lagi."],
+	[/request failed/i, "Permintaan belum berhasil diproses. Silakan coba lagi."],
+	[/unauthorized|unauthenticated/i, "Sesi Anda sudah berakhir. Silakan masuk kembali."],
+	[/forbidden/i, "Anda tidak memiliki izin untuk melakukan tindakan ini."],
+	[/not found/i, "Data yang dicari tidak ditemukan."],
+	[/internal server error|server error/i, "Layanan sedang mengalami gangguan. Silakan coba lagi beberapa saat lagi."],
+	[/timeout|timed out/i, "Koneksi terlalu lama merespons. Silakan coba lagi."],
+	[/sqlstate|constraint|foreign key|duplicate entry|query exception|base table|column .* not found|undefined index|undefined property/i, "Data belum dapat diproses karena ada gangguan pada layanan. Silakan coba lagi atau hubungi admin."],
+	[/invalid credentials|credentials/i, "Email atau kata sandi salah."],
+	[/password confirmation/i, "Konfirmasi kata sandi belum sama."],
+	[/email has already been taken/i, "Email ini sudah terdaftar."],
+	[/phone has already been taken/i, "Nomor telepon ini sudah terdaftar."],
+	[/token (expired|invalid)|invalid token|expired token/i, "Kode atau sesi sudah tidak berlaku. Silakan coba lagi."],
+];
+
+function replaceFieldNames(message: string) {
+	return Object.entries(FIELD_LABELS).reduce((result, [field, label]) => {
+		const spacedField = field.replaceAll("_", " ");
+		return result
+			.replace(new RegExp(`\\b${field}\\b`, "gi"), label)
+			.replace(new RegExp(`\\b${spacedField}\\b`, "gi"), label);
+	}, message);
+}
+
+export function toFriendlyErrorMessage(message: string, fallback = "Terjadi kesalahan. Silakan coba lagi.") {
+	const cleaned = message.trim();
+	if (!cleaned) return fallback;
+
+	const lower = cleaned.toLowerCase();
+	for (const [pattern, friendlyMessage] of TECHNICAL_ERROR_PATTERNS) {
+		if (pattern.test(lower)) return friendlyMessage;
 	}
 
-	return error.message || fallback;
+	return replaceFieldNames(cleaned)
+		.replace(/^the /i, "")
+		.replace(/ field is required\.?$/i, " wajib diisi.")
+		.replace(/ is required\.?$/i, " wajib diisi.")
+		.replace(/ must be a valid email address\.?$/i, " harus berisi alamat email yang benar.")
+		.replace(/ must be at least (\d+) characters\.?$/i, " minimal $1 karakter.")
+		.replace(/ may not be greater than (\d+) characters\.?$/i, " maksimal $1 karakter.")
+		.replace(/ has already been taken\.?$/i, " sudah terdaftar.")
+		.replace(/ does not match\.?$/i, " belum sesuai.")
+		.replace(/ is invalid\.?$/i, " belum sesuai.")
+		.replace(/\bbackend\b/gi, "layanan")
+		.replace(/\bserver\b/gi, "layanan")
+		.replace(/\buser\b/gi, "pengguna")
+		.replace(/\brole\b/gi, "hak akses")
+		.replace(/\bgenerate\b/gi, "membuat")
+		.replace(/\blogin\b/gi, "masuk");
+}
+
+export function getApiErrorMessage(error: unknown, fallback = "Terjadi kesalahan. Silakan coba lagi.") {
+	if (!(error instanceof Error)) return fallback;
+
+	const data = getErrorData(error) as {
+		message?: unknown;
+		error?: unknown;
+		errors?: unknown;
+	} | null;
+
+	const message =
+		typeof data?.message === "string"
+			? data.message
+			: typeof data?.error === "string"
+				? data.error
+				: "";
+	const validation = formatValidationErrors(data?.errors);
+
+	if (message || validation) {
+		return toFriendlyErrorMessage(
+			[message, validation].filter(Boolean).join(" "),
+			fallback,
+		);
+	}
+
+	const status = getErrorStatus(error);
+	if (status === 400) return "Data yang dikirim belum sesuai. Periksa kembali isian Anda.";
+	if (status === 401) return "Sesi Anda sudah berakhir. Silakan masuk kembali.";
+	if (status === 403) return "Anda tidak memiliki izin untuk melakukan tindakan ini.";
+	if (status === 404) return "Data yang dicari tidak ditemukan.";
+	if (status === 422) return "Ada isian yang belum sesuai. Periksa kembali data Anda.";
+	if (status === 429) return "Terlalu banyak percobaan. Tunggu sebentar, lalu coba lagi.";
+	if (status && status >= 500) return "Layanan sedang mengalami gangguan. Silakan coba lagi beberapa saat lagi.";
+
+	return toFriendlyErrorMessage(error.message || fallback, fallback);
+}
+
+export function getApiFieldErrors(error: unknown) {
+	const data = getErrorData(error) as { errors?: unknown } | null;
+	const errors = data?.errors;
+
+	if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
+		return {} as Record<string, string[]>;
+	}
+
+	return Object.fromEntries(
+		Object.entries(errors).map(([key, value]) => [
+			key,
+			(Array.isArray(value) ? value : [value])
+				.filter((item): item is string => typeof item === "string")
+				.map((item) => toFriendlyErrorMessage(item)),
+		]),
+	);
 }
 
 // Helper function untuk fetch-style API calls
 export async function fetchAPI(endpoint: string, options?: RequestInit) {
 	const token = getAuthToken();
+	const isFormData =
+		typeof FormData !== "undefined" && options?.body instanceof FormData;
 
 	const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 		...options,
 		headers: {
-			"Content-Type": "application/json",
+			...(isFormData ? {} : { "Content-Type": "application/json" }),
 			Accept: "application/json",
 			...(token ? { Authorization: `Bearer ${token}` } : {}),
 			...options?.headers,

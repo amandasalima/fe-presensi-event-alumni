@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createEvent, deleteEvent, generateEventQr, updateEvent } from "./api";
+import {
+	createEvent,
+	deleteEvent,
+	generateEventQr,
+	toggleEvent,
+	updateEvent,
+} from "./api";
 import { adminEventQueryKeys } from "./queryKeys";
 import type { EventPayload, GenerateQrPayload } from "./types";
 
@@ -36,6 +42,20 @@ export function useDeleteEvent() {
 		mutationFn: deleteEvent,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: adminEventQueryKeys.lists });
+		},
+	});
+}
+
+export function useToggleEvent() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: toggleEvent,
+		onSuccess: (_data, id) => {
+			queryClient.invalidateQueries({ queryKey: adminEventQueryKeys.lists });
+			queryClient.invalidateQueries({
+				queryKey: adminEventQueryKeys.detail(id),
+			});
 		},
 	});
 }

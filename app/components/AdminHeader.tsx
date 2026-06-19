@@ -1,7 +1,3 @@
-"use client";
-
-import { FormInput } from "./FormControl";
-
 export default function AdminHeader({ title }: { title: string }) {
 	return (
 		<header className="h-14 bg-white flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm">

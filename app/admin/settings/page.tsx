@@ -210,7 +210,11 @@ export default function SettingsPage() {
 									)}
 									{updateProfile.isError && (
 										<p className="text-sm text-red-500 flex items-center gap-2">
-											<span>⚠️</span> {(updateProfile.error as Error)?.message}
+											<span>⚠️</span>{" "}
+											{getApiErrorMessage(
+												updateProfile.error,
+												"Profil belum berhasil diperbarui. Silakan coba lagi.",
+											)}
 										</p>
 									)}
 
@@ -279,7 +283,11 @@ export default function SettingsPage() {
 									)}
 									{updatePassword.isError && (
 										<p className="text-sm text-red-500 flex items-center gap-2">
-											<span>⚠️</span> {(updatePassword.error as Error)?.message}
+											<span>⚠️</span>{" "}
+											{getApiErrorMessage(
+												updatePassword.error,
+												"Kata sandi belum berhasil diperbarui. Periksa kembali kata sandi Anda.",
+											)}
 										</p>
 									)}
 

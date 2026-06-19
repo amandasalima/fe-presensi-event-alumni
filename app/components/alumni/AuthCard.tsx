@@ -7,6 +7,7 @@ import { useLogin } from "@/hooks/alumni/useLogin";
 import { useRegister } from "@/hooks/alumni/useRegister";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
+import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 import SuccessModal from "./SuccessModal";
 
 type Tab = "masuk" | "daftar";
@@ -46,6 +47,22 @@ function Input({
   );
 }
 
+const fieldLabels: Record<string, string> = {
+  first_name: "Nama depan",
+  last_name: "Nama belakang",
+  gender: "Jenis kelamin",
+  email: "Email",
+  phone: "Nomor telepon",
+  graduation_year: "Tahun lulus",
+  birth_date: "Tanggal lahir",
+  password: "Kata sandi",
+  password_confirmation: "Konfirmasi kata sandi",
+};
+
+function getFieldLabel(field: string) {
+  return fieldLabels[field] ?? field.replaceAll("_", " ");
+}
+
 /* ─── Login Form ──────────────────────────────────────────── */
 function LoginForm() {
   const [form, setForm] = useState<LoginPayload>({
@@ -56,8 +73,9 @@ function LoginForm() {
   const [showPass, setShowPass] = useState(false);
   const { mutate: login, isPending, error } = useLogin();
 
-  const serverError =
-    error?.response?.data?.message ?? (error ? "Terjadi kesalahan" : null);
+  const serverError = error
+    ? getApiErrorMessage(error, "Email atau kata sandi salah.")
+    : null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -149,9 +167,10 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { mutate: register, isPending, error } = useRegister();
 
-  const serverError =
-    error?.response?.data?.message ?? (error ? "Terjadi kesalahan" : null);
-  const fieldErrors = error?.response?.data?.errors ?? {};
+  const serverError = error
+    ? getApiErrorMessage(error, "Pendaftaran belum berhasil. Periksa kembali data Anda.")
+    : null;
+  const fieldErrors = getApiFieldErrors(error);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -178,7 +197,8 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               <ul className="list-disc list-inside text-xs mt-2 space-y-1">
                 {Object.entries(fieldErrors).map(([field, errors]) => (
                   <li key={field}>
-                    <strong>{field}:</strong> {(errors as string[]).join(", ")}
+                    <strong>{getFieldLabel(field)}:</strong>{" "}
+                    {(errors as string[]).join(", ")}
                   </li>
                 ))}
               </ul>

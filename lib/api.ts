@@ -8,7 +8,7 @@ const getBaseUrl = () => {
 	return "http://localhost:3000/api";
 };
 
-const API_BASE_URL = getBaseUrl();
+export const API_BASE_URL = getBaseUrl();
 const BACKEND_HOST = API_BASE_URL.replace("/api", "");
 
 export function getImageUrl(path?: string | null) {

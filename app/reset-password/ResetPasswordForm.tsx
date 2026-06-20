@@ -12,7 +12,7 @@ import {
   Lock,
 } from "lucide-react";
 import { FormInput } from "@/app/components/FormControl";
-import { getApiErrorMessage } from "@/lib/api";
+import { API_BASE_URL, getApiErrorMessage } from "@/lib/api";
 
 /* ─── Password strength (reused from AuthCard pattern) ─── */
 function getPasswordStrength(password: string) {
@@ -154,7 +154,7 @@ function ResetPasswordInner() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

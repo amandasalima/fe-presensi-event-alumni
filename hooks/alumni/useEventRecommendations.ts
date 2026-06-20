@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/lib/api";
 
 export interface RecommendedEvent {
 	id: number;
@@ -41,9 +42,7 @@ async function fetchEventRecommendations(): Promise<RecommendedEvent[]> {
 		throw new Error("Token tidak ditemukan");
 	}
 
-	const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-
-	const response = await fetch(`${baseUrl}/alumni/recommendations`, {
+	const response = await fetch(`${API_BASE_URL}/alumni/recommendations`, {
 		method: "GET",
 		headers: {
 			Accept: "application/json",

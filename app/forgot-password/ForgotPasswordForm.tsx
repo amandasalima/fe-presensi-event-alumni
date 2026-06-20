@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
 import { FormInput } from "@/app/components/FormControl";
-import { getApiErrorMessage } from "@/lib/api";
+import { API_BASE_URL, getApiErrorMessage } from "@/lib/api";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -31,7 +31,7 @@ export default function ForgotPasswordForm() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

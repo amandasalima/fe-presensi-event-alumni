@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormInput } from "@/app/components/FormControl";
-import { toFriendlyErrorMessage } from "@/lib/api";
+import { API_BASE_URL, toFriendlyErrorMessage } from "@/lib/api";
 
 type LoginResponse = {
 	success: boolean;
@@ -43,7 +43,7 @@ const AdminLogin = () => {
 		setErrorMessage("");
 
 		try {
-			const response = await fetch("http://localhost:8000/api/auth/login", {
+			const response = await fetch(`${API_BASE_URL}/auth/login`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

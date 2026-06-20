@@ -1,0 +1,102 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to VPS
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+      BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+      RELEASE_ID: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate deployment secrets
+        run: |
+          test -n "$NEXT_PUBLIC_API_URL"
+          test -n "$BACKEND_URL"
+          test -n "$DEPLOY_PATH"
+          test -n "$SERVICE_NAME"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Prepare standalone package
+        run: |
+          mkdir -p deploy-package
+          cp -R .next/standalone/. deploy-package/
+          mkdir -p deploy-package/.next
+          cp -R .next/static deploy-package/.next/static
+          cp -R public deploy-package/public
+          tar -czf frontend-release.tar.gz -C deploy-package .
+
+      - name: Upload release archive
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: frontend-release.tar.gz
+          target: /tmp
+          overwrite: true
+
+      - name: Activate release
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script_stop: true
+          envs: DEPLOY_PATH,SERVICE_NAME,RELEASE_ID,NEXT_PUBLIC_API_URL,BACKEND_URL
+          script: |
+            set -euo pipefail
+
+            RELEASE_DIR="$DEPLOY_PATH/releases/$RELEASE_ID"
+            mkdir -p "$DEPLOY_PATH/releases" "$DEPLOY_PATH/shared"
+            rm -rf "$RELEASE_DIR"
+            mkdir -p "$RELEASE_DIR"
+            tar -xzf /tmp/frontend-release.tar.gz -C "$RELEASE_DIR"
+
+            cat > "$RELEASE_DIR/.env.production" <<EOF
+            NODE_ENV=production
+            PORT=3000
+            HOSTNAME=127.0.0.1
+            NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+            BACKEND_URL=$BACKEND_URL
+            EOF
+
+            ln -sfn "$RELEASE_DIR" "$DEPLOY_PATH/current"
+            sudo systemctl restart "$SERVICE_NAME"
+            sudo systemctl is-active --quiet "$SERVICE_NAME"
+
+            find "$DEPLOY_PATH/releases" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5 | xargs -r rm -rf

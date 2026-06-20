@@ -14,13 +14,11 @@ import {
   ExternalLink,
   MapPin,
   QrCode,
-  Search,
   TimerReset,
   Zap,
 } from "lucide-react";
 import AdminHeader from "@/app/components/AdminHeader";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
-import SearchInput from "@/app/components/SearchInput";
 import {
   useEvents,
   useGenerateQR,
@@ -277,7 +275,6 @@ function EventListCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function GenerateQRPage() {
-  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [validFrom, setValidFrom] = useState(getDefaultValidFrom());
   const [timeoutMinutes, setTimeoutMinutes] = useState(60);
@@ -289,7 +286,7 @@ export default function GenerateQRPage() {
     data: events = [],
     isLoading: loadingEvents,
     isError: eventsError,
-  } = useEvents(search, 10);
+  } = useEvents("", 10);
   const [copySuccess, setCopySuccess] = useState(false);
 
   const {
@@ -424,7 +421,7 @@ export default function GenerateQRPage() {
         <AdminHeader title="Generate QR" />
 
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
-          
+
           {/* ── Two Column ── */}
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
             {/* Left: Pilih Event + Form */}
@@ -436,22 +433,6 @@ export default function GenerateQRPage() {
                 <p className="text-xs text-gray-400 mt-0.5">
                   Pilih event dan tentukan masa berlaku QR
                 </p>
-              </div>
-
-              {/* Search */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cari Event
-                </label>
-
-                <SearchInput
-                  leadingIcon={<Search size={16} className="text-gray-400" />}
-                  wrapperClassName="flex items-center bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 gap-2"
-                  placeholder="Cari nama event..."
-                  value={search}
-                  onValueChange={setSearch}
-                  className="bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400"
-                />
               </div>
 
               {/* Event Select */}

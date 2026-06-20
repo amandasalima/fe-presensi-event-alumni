@@ -1,7 +1,21 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { Activity, CalendarCheck, CalendarDays, CalendarX, ChartColumn, ClipboardCheck, Database, Eye, QrCode, Server, Users, Wifi, X, } from "lucide-react";
+import {
+	Activity,
+	CalendarCheck,
+	CalendarDays,
+	CalendarX,
+	ChartColumn,
+	ClipboardCheck,
+	Database,
+	Eye,
+	QrCode,
+	Server,
+	Users,
+	Wifi,
+	X,
+} from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import { useAlumni } from "@/hooks/admin/useAlumni";
@@ -347,6 +361,29 @@ export default function DashboardPage() {
 
 				<main className="flex-1 overflow-y-auto p-5">
 
+					{/* ── Stat Cards ── */}
+					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+						{isLoading
+							? [1, 2, 3, 4].map((i) => <StatSkeleton key={i} />)
+							: stats.map((item) => (
+								<div
+									key={item.title}
+									className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
+								>
+									<p className="text-gray-500 text-xs">{item.title}</p>
+									<div className="flex items-center gap-3 mt-1">
+										<Icon3D variant={item.variant} size="md">
+											{item.icon}
+										</Icon3D>
+										<h2 className="text-3xl font-bold text-gray-800">
+											{item.value}
+										</h2>
+									</div>
+									<p className="text-gray-400 text-xs mt-1">{item.desc}</p>
+								</div>
+							))}
+					</div>
+
 					{/* ── Chart + Informasi Sistem ── */}
 					<div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
 						{/* Chart - lebih lebar */}
@@ -509,7 +546,6 @@ export default function DashboardPage() {
 											onClick={() => setShowAllLogs(true)}
 											className="w-full mt-3 py-2 text-center text-xs font-bold text-[#2D7EA0] hover:text-[#236175] transition-colors border border-dashed border-teal-200 hover:border-[#A8D5D5] rounded-xl bg-[#7AB2B2]/10/20 hover:bg-[#7AB2B2]/10/55 flex items-center justify-center gap-2"
 										>
-											<Eye size={14} />
 											Lihat Lainnya
 										</button>
 									)}

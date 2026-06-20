@@ -226,7 +226,7 @@ export default function ReportsPage() {
 										</p>
 									</div>
 									<div className="flex gap-2">
-										{(["PDF", "Excel", "CSV"] as const).map((f) => (
+										{(["PDF", "Excel"] as const).map((f) => (
 											<button
 												key={f}
 												onClick={() => handleDownload(f)}

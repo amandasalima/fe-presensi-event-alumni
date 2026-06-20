@@ -1909,7 +1909,7 @@ export default function KelolEventPage() {
 						<SearchInput
 							leadingIcon={<Search size={16} className="text-gray-400" />}
 							wrapperClassName="flex items-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-4 focus-within:border-[#3EBDAF] bg-white"
-							placeholder="Cari nama atau email..."
+							placeholder="Cari event..."
 							value={search}
 							onValueChange={setSearch}
 							className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"

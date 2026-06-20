@@ -27,9 +27,9 @@ function StatCard({
 	sub: string;
 }) {
 	return (
-		<div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-			<p className="text-sm text-gray-500">{label}</p>
-			<p className="mt-2 text-3xl font-bold text-gray-800">{value}</p>
+		<div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+			<p className="text-xs text-gray-500">{label}</p>
+			<p className="mt-1 text-3xl font-bold text-gray-800">{value}</p>
 			<p className="mt-1 text-xs text-gray-400">{sub}</p>
 		</div>
 	);
@@ -236,22 +236,22 @@ export default function BroadcastPage() {
 	};
 
 	return (
-		<div className="flex min-h-screen bg-gray-50">
+		<div className="h-screen bg-gray-100 flex overflow-hidden">
 			<AdminSidebar />
 
-			<div className="ml-72 flex min-h-screen flex-1 flex-col">
+			<div className="flex-1 ml-56 flex flex-col h-screen">
 				<AdminHeader title="Broadcast WhatsApp" />
 
-				<main className="flex-1 space-y-6 p-8">
-					<div className="grid grid-cols-1 gap-5 md:grid-cols-4">
+				<main className="flex-1 overflow-y-auto p-5">
+					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 						<StatCard
-							label="Alumni Ber-HP"
+							label="Alumni dengan no HP"
 							value={
 								preview.isLoading
 									? "..."
 									: (previewData?.breakdown.total_all ?? 0)
 							}
-							sub="Total dari backend"
+							sub="Alumni dengan nomor HP valid"
 						/>
 						<StatCard
 							label="Terdaftar Event"
@@ -278,13 +278,13 @@ export default function BroadcastPage() {
 						/>
 					</div>
 
-					<div className="rounded-xl border border-gray-100 bg-white shadow-sm">
-						<div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+					<div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+						<div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
 							<div>
-								<h2 className="text-xl font-semibold text-gray-800">
+								<h2 className="text-base font-bold text-gray-800">
 									Kirim Broadcast Event
 								</h2>
-								<p className="text-sm text-gray-400">
+								<p className="text-xs text-gray-400">
 									Preview dan pengiriman memakai endpoint admin event.
 								</p>
 							</div>
@@ -305,8 +305,8 @@ export default function BroadcastPage() {
 							</button>
 						</div>
 
-						<div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-2">
-							<div className="space-y-5">
+						<div className="grid grid-cols-1 gap-4 p-5 xl:grid-cols-2">
+							<div className="space-y-4">
 								<div>
 									<label className="mb-2 block text-sm font-medium text-gray-700">
 										Event
@@ -534,7 +534,7 @@ export default function BroadcastPage() {
 						</div>
 					</div>
 
-					<p className="pb-4 text-center text-xs text-gray-400">
+					<p className="mt-6 pb-4 text-center text-xs text-gray-400">
 						© 2026 QR Event Attendance System - Pesantren
 					</p>
 				</main>

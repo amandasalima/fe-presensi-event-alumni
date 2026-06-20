@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
 import type { UpdateUserPayload, User } from "@/hooks/admin/users";
@@ -22,11 +24,38 @@ import { useUsersPage } from "./_hooks/useUsersPage";
 import {
 	formatDate,
 	formatLabel,
+	getUserPhone,
 	getStatusClass,
 } from "./_utils/userFormatters";
 
 const ROLE_OPTIONS = ["alumni", "user"];
 const STATUS_OPTIONS = ["active", "inactive"];
+const GENDER_OPTIONS = ["Laki-laki", "Perempuan"];
+
+type EditUserForm = {
+	name: string;
+	email: string;
+	phone: string;
+	gender: string;
+	graduation_year: string;
+	birth_date: string;
+	role: string;
+	status: string;
+};
+
+function getInputValue(value?: string | null) {
+	return value ?? "";
+}
+
+function getDateInputValue(value?: string | null) {
+	if (!value) return "";
+	if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+
+	return date.toISOString().slice(0, 10);
+}
 
 function Icon3D({
 	children,
@@ -68,7 +97,7 @@ function TableSkeleton() {
 		<>
 			{[1, 2, 3, 4, 5].map((i) => (
 				<tr key={i} className="border-b animate-pulse">
-					{[1, 2, 3, 4, 5, 6].map((j) => (
+					{[1, 2, 3, 4, 5, 6, 7].map((j) => (
 						<td key={j} className="p-5">
 							<div className="h-4 bg-gray-100 rounded w-3/4" />
 						</td>
@@ -92,12 +121,19 @@ function EditUserModal({
 	onSubmit,
 	loading,
 }: EditUserModalProps) {
-	const [form, setForm] = useState<UpdateUserPayload>({
-		name: initial.name ?? "",
-		email: initial.email ?? "",
-		role: initial.role ?? "user",
-		status: initial.status ?? "active",
+	const [form, setForm] = useState<EditUserForm>({
+		name: getInputValue(initial.name),
+		email: getInputValue(initial.email),
+		phone: getInputValue(initial.phone),
+		gender: getInputValue(initial.gender),
+		graduation_year: getInputValue(initial.graduation_year),
+		birth_date: getDateInputValue(initial.birth_date),
+		role: getInputValue(initial.role) || "user",
+		status: getInputValue(initial.status) || "active",
 	});
+	const genderOptions = Array.from(
+		new Set([...GENDER_OPTIONS, getInputValue(initial.gender)]),
+	).filter(Boolean);
 	const roleOptions = Array.from(
 		new Set([...ROLE_OPTIONS, initial.role]),
 	).filter(Boolean);
@@ -109,7 +145,7 @@ function EditUserModal({
 
 	return (
 		<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-			<div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+			<div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 				<div className="p-6 border-b border-gray-100 flex items-center justify-between">
 					<h3 className="font-semibold text-gray-800 text-lg">Edit User</h3>
 					<button
@@ -139,6 +175,57 @@ function EditUserModal({
 							type="email"
 							value={form.email}
 							onChange={(e) => set("email", e.target.value)}
+							className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+						/>
+					</div>
+					<div>
+						<label className="text-xs font-medium text-gray-600 mb-1 block">
+							No Telp
+						</label>
+						<FormInput
+							value={form.phone}
+							onChange={(e) => set("phone", e.target.value)}
+							className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+						/>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Jenis Kelamin
+							</label>
+							<FormSelect
+								value={form.gender}
+								onChange={(e) => set("gender", e.target.value)}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white"
+							>
+								<option value="">Pilih jenis kelamin</option>
+								{genderOptions.map((gender) => (
+									<option key={gender} value={gender}>
+										{gender}
+									</option>
+								))}
+							</FormSelect>
+						</div>
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Tahun Lulus / Angkatan
+							</label>
+							<FormInput
+								value={form.graduation_year}
+								onChange={(e) => set("graduation_year", e.target.value)}
+								inputMode="numeric"
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+							/>
+						</div>
+					</div>
+					<div>
+						<label className="text-xs font-medium text-gray-600 mb-1 block">
+							Tanggal Lahir
+						</label>
+						<FormInput
+							type="date"
+							value={form.birth_date}
+							onChange={(e) => set("birth_date", e.target.value)}
 							className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 						/>
 					</div>
@@ -202,7 +289,10 @@ function EditUserModal({
 
 export default function UsersPage() {
 	const {
+		cancelDelete,
+		confirmDelete,
 		deleteUser,
+		deleteTarget,
 		feedback,
 		filtered,
 		handleDelete,
@@ -285,14 +375,19 @@ export default function UsersPage() {
 									</p>
 								</div>
 							</div>
-							<button
-								onClick={handleExport}
-								disabled={isLoading || filtered.length === 0}
-								className="px-4 py-2 border-2 border-[#3EBDAF] rounded-xl text-[#2D7EA0] text-sm font-semibold hover:bg-[#7AB2B2]/10 disabled:opacity-50 disabled:hover:bg-transparent transition-colors flex items-center gap-2"
-							>
-								<Download size={15} strokeWidth={2.5} />
-								Export Data
-							</button>
+							<div className="flex items-center gap-2">
+								{(["excel", "pdf"] as const).map((format) => (
+									<button
+										key={format}
+										onClick={() => handleExport(format)}
+										disabled={isLoading || filtered.length === 0}
+										className="px-4 py-2 border-2 border-[#3EBDAF] rounded-xl text-[#2D7EA0] text-sm font-semibold hover:bg-[#7AB2B2]/10 disabled:opacity-50 disabled:hover:bg-transparent transition-colors flex items-center gap-2"
+									>
+										<Download size={15} strokeWidth={2.5} />
+										{format === "excel" ? "Excel" : "PDF"}
+									</button>
+								))}
+							</div>
 						</div>
 
 						<div className="p-5">
@@ -304,18 +399,6 @@ export default function UsersPage() {
 								onValueChange={setSearch}
 								className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
 							/>
-
-							{feedback && (
-								<div
-									className={`mb-4 rounded-xl px-4 py-3 text-xs font-medium ${
-										feedback.type === "success"
-											? "bg-green-50 text-green-700 border border-green-100"
-											: "bg-red-50 text-red-600 border border-red-100"
-									}`}
-								>
-									{feedback.message}
-								</div>
-							)}
 
 							{isError && (
 								<div className="text-center py-8">
@@ -341,6 +424,7 @@ export default function UsersPage() {
 												{[
 													"Nama",
 													"Email",
+													"No Telp",
 													"Role",
 													"Status",
 													"Tanggal Dibuat",
@@ -361,7 +445,7 @@ export default function UsersPage() {
 											) : filtered.length === 0 ? (
 												<tr>
 													<td
-														colSpan={6}
+														colSpan={7}
 														className="text-center py-8 text-gray-400"
 													>
 														<div className="flex justify-center mb-3">
@@ -394,6 +478,9 @@ export default function UsersPage() {
 														</td>
 														<td className="p-3 text-gray-500 text-xs">
 															{user.email}
+														</td>
+														<td className="p-3 text-gray-500 text-xs">
+															{getUserPhone(user)}
 														</td>
 														<td className="p-3">
 															<span className="px-2.5 py-1 bg-[#7AB2B2]/20 text-cyan-700 rounded-lg text-xs font-medium">
@@ -473,6 +560,24 @@ export default function UsersPage() {
 					onSubmit={handleSubmit}
 					loading={updateUser.isPending}
 				/>
+			)}
+
+			<ConfirmDialog
+				isOpen={!!deleteTarget}
+				title="Hapus user?"
+				message={
+					deleteTarget
+						? `User "${deleteTarget.name}" akan dihapus permanen dari daftar.`
+						: "User ini akan dihapus permanen dari daftar."
+				}
+				confirmLabel="Hapus"
+				loading={deleteUser.isPending}
+				onCancel={cancelDelete}
+				onConfirm={confirmDelete}
+			/>
+
+			{feedback && (
+				<FeedbackToast type={feedback.type} message={feedback.message} />
 			)}
 		</div>
 	);

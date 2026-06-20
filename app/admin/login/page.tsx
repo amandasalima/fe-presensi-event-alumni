@@ -304,7 +304,17 @@ const AdminLogin = () => {
 							</div>
 						</div>
 
-						{/* Error dari API */}
+						{/* Lupa kata sandi */}
+					<div className="flex justify-end">
+						<Link
+							href="/forgot-password"
+							className="text-xs font-medium text-[#2D7EA0] hover:text-[#236175] hover:underline transition-colors"
+						>
+							Lupa kata sandi?
+						</Link>
+					</div>
+
+					{/* Error dari API */}
 						{errorMessage && (
 							<div className="p-2.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs flex items-center gap-2">
 								<svg

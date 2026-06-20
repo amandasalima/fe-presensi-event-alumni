@@ -18,6 +18,10 @@ export function formatLabel(value: string) {
 	return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+export function getUserPhone(user: User) {
+	return user.phone ?? "";
+}
+
 export function isAdminUser(user: Pick<User, "role">) {
 	return user.role.toLowerCase() === "admin";
 }
@@ -44,16 +48,37 @@ function escapeExcelValue(value: unknown) {
 		.replace(/"/g, "&quot;");
 }
 
+function getExportRows(users: User[]) {
+	return users.map((user, index) => ({
+		no: index + 1,
+		name: user.name,
+		email: user.email,
+		phone: getUserPhone(user) || "-",
+		role: formatLabel(user.role),
+		status: formatLabel(user.status),
+		createdAt: formatDate(user.created_at),
+	}));
+}
+
+function getExportDate() {
+	return new Date().toLocaleDateString("id-ID", {
+		day: "2-digit",
+		month: "long",
+		year: "numeric",
+	});
+}
+
 export function exportUsersToExcel(users: User[]) {
-	const rows = users.map(
-		(user, index) => `
+	const rows = getExportRows(users).map(
+		(user) => `
 		<tr>
-			<td>${index + 1}</td>
+			<td class="center">${user.no}</td>
 			<td>${escapeExcelValue(user.name)}</td>
 			<td>${escapeExcelValue(user.email)}</td>
+			<td>${escapeExcelValue(user.phone)}</td>
 			<td>${escapeExcelValue(user.role)}</td>
 			<td>${escapeExcelValue(user.status)}</td>
-			<td>${escapeExcelValue(formatDate(user.created_at))}</td>
+			<td>${escapeExcelValue(user.createdAt)}</td>
 		</tr>
 	`,
 	);
@@ -61,14 +86,33 @@ export function exportUsersToExcel(users: User[]) {
 		<html>
 			<head>
 				<meta charset="UTF-8" />
+				<style>
+					body { font-family: Arial, sans-serif; color: #1f2937; }
+					.report-title { font-size: 20px; font-weight: 700; color: #236175; }
+					.report-meta { color: #6b7280; margin: 4px 0 16px; }
+					table { border-collapse: collapse; width: 100%; }
+					th {
+						background: #2D7EA0;
+						color: #ffffff;
+						font-weight: 700;
+						padding: 10px;
+						border: 1px solid #1f6a84;
+					}
+					td { padding: 9px; border: 1px solid #d1d5db; vertical-align: top; }
+					tr:nth-child(even) td { background: #f8fafc; }
+					.center { text-align: center; }
+				</style>
 			</head>
 			<body>
-				<table border="1">
+				<div class="report-title">Data User Alumni</div>
+				<div class="report-meta">Dicetak ${escapeExcelValue(getExportDate())} - Total ${users.length} user</div>
+				<table>
 					<thead>
 						<tr>
 							<th>No</th>
 							<th>Nama</th>
 							<th>Email</th>
+							<th>No Telp</th>
 							<th>Role</th>
 							<th>Status</th>
 							<th>Tanggal Dibuat</th>
@@ -90,6 +134,102 @@ export function exportUsersToExcel(users: User[]) {
 	link.click();
 	document.body.removeChild(link);
 	URL.revokeObjectURL(url);
+}
+
+export function exportUsersToPdf(users: User[]) {
+	const rows = getExportRows(users).map(
+		(user) => `
+		<tr>
+			<td class="center">${user.no}</td>
+			<td>${escapeExcelValue(user.name)}</td>
+			<td>${escapeExcelValue(user.email)}</td>
+			<td>${escapeExcelValue(user.phone)}</td>
+			<td>${escapeExcelValue(user.role)}</td>
+			<td>${escapeExcelValue(user.status)}</td>
+			<td>${escapeExcelValue(user.createdAt)}</td>
+		</tr>
+	`,
+	);
+	const printWindow = window.open("", "_blank", "width=1120,height=800");
+
+	if (!printWindow) return false;
+
+	printWindow.document.write(`
+		<!doctype html>
+		<html>
+			<head>
+				<meta charset="UTF-8" />
+				<title>Data User Alumni</title>
+				<style>
+					@page { size: A4 landscape; margin: 14mm; }
+					* { box-sizing: border-box; }
+					body { font-family: Arial, sans-serif; color: #111827; margin: 0; }
+					.header {
+						display: flex;
+						justify-content: space-between;
+						align-items: flex-start;
+						gap: 20px;
+						padding-bottom: 14px;
+						border-bottom: 3px solid #7AB2B2;
+						margin-bottom: 16px;
+					}
+					h1 { color: #236175; font-size: 22px; margin: 0 0 6px; }
+					.meta { color: #6b7280; font-size: 12px; line-height: 1.6; }
+					.badge {
+						background: #e8f6f5;
+						color: #236175;
+						border: 1px solid #b8dada;
+						border-radius: 999px;
+						font-weight: 700;
+						padding: 8px 12px;
+						white-space: nowrap;
+					}
+					table { width: 100%; border-collapse: collapse; font-size: 11px; }
+					th {
+						background: #2D7EA0;
+						color: white;
+						text-align: left;
+						padding: 9px;
+						border: 1px solid #236175;
+					}
+					td { padding: 8px 9px; border: 1px solid #d1d5db; vertical-align: top; }
+					tr:nth-child(even) td { background: #f8fafc; }
+					.center { text-align: center; }
+				</style>
+			</head>
+			<body>
+				<div class="header">
+					<div>
+						<h1>Data User Alumni</h1>
+						<div class="meta">Tanggal export: ${escapeExcelValue(getExportDate())}<br />Sumber data: halaman Manajemen User</div>
+					</div>
+					<div class="badge">${users.length} User</div>
+				</div>
+				<table>
+					<thead>
+						<tr>
+							<th>No</th>
+							<th>Nama</th>
+							<th>Email</th>
+							<th>No Telp</th>
+							<th>Role</th>
+							<th>Status</th>
+							<th>Tanggal Dibuat</th>
+						</tr>
+					</thead>
+					<tbody>${rows.join("")}</tbody>
+				</table>
+				<script>
+					window.onload = () => {
+						window.print();
+						window.onafterprint = () => window.close();
+					};
+				</script>
+			</body>
+		</html>
+	`);
+	printWindow.document.close();
+	return true;
 }
 
 export function getUserStats(users: User[]) {

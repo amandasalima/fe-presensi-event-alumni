@@ -143,6 +143,38 @@ export function useAlumniEventDetail(id: number) {
 
 export function useRegisterEvent() {
 	const queryClient = useQueryClient();
+	const setRegistrationState = (id: number, isRegistered: boolean, eventUpdate = {}) => {
+		queryClient.setQueryData<AlumniEventQuery[]>(
+			alumniQueryKeys.events,
+			(events) =>
+				events?.map((event) =>
+					event.id === id
+						? withEventDateTime({
+								...event,
+								...eventUpdate,
+								is_registered: isRegistered,
+							} as AlumniEventQuery)
+						: event,
+				) ?? events,
+		);
+		queryClient.setQueryData(
+			alumniQueryKeys.eventDetail(id),
+			(current: unknown) => {
+				if (!current || typeof current !== "object") return current;
+				const detail = current as { event?: AlumniEventQuery; [key: string]: unknown };
+				if (!detail.event) return current;
+
+				return {
+					...detail,
+					event: withEventDateTime({
+						...detail.event,
+						...eventUpdate,
+						is_registered: isRegistered,
+					} as AlumniEventQuery),
+				};
+			},
+		);
+	};
 
 	return useMutation({
 		mutationFn: async (id: number) => {
@@ -153,37 +185,9 @@ export function useRegisterEvent() {
 		onSuccess: (response, id) => {
 			const quotaUpdate = response?.data?.quota;
 			const eventUpdate = response?.data?.event;
-			const nextEvent = quotaUpdate || eventUpdate
-				? { ...(eventUpdate ?? {}), ...(quotaUpdate ?? {}), is_registered: true }
-				: null;
+			const nextEvent = { ...(eventUpdate ?? {}), ...(quotaUpdate ?? {}) };
 
-			if (nextEvent) {
-				queryClient.setQueryData<AlumniEventQuery[]>(
-					alumniQueryKeys.events,
-					(events) =>
-						events?.map((event) =>
-							event.id === id
-								? withEventDateTime({ ...event, ...nextEvent } as AlumniEventQuery)
-								: event,
-						) ?? events,
-				);
-				queryClient.setQueryData(
-					alumniQueryKeys.eventDetail(id),
-					(current: unknown) => {
-						if (!current || typeof current !== "object") return current;
-						const detail = current as { event?: AlumniEventQuery; [key: string]: unknown };
-						if (!detail.event) return current;
-
-						return {
-							...detail,
-							event: withEventDateTime({
-								...detail.event,
-								...nextEvent,
-							} as AlumniEventQuery),
-						};
-					},
-				);
-			}
+			setRegistrationState(id, true, nextEvent);
 
 			queryClient.invalidateQueries({ queryKey: alumniQueryKeys.events });
 			queryClient.invalidateQueries({
@@ -196,6 +200,36 @@ export function useRegisterEvent() {
 
 export function useCancelRegistration() {
 	const queryClient = useQueryClient();
+	const setRegistrationState = (id: number, isRegistered: boolean) => {
+		queryClient.setQueryData<AlumniEventQuery[]>(
+			alumniQueryKeys.events,
+			(events) =>
+				events?.map((event) =>
+					event.id === id
+						? withEventDateTime({
+								...event,
+								is_registered: isRegistered,
+							} as AlumniEventQuery)
+						: event,
+				) ?? events,
+		);
+		queryClient.setQueryData(
+			alumniQueryKeys.eventDetail(id),
+			(current: unknown) => {
+				if (!current || typeof current !== "object") return current;
+				const detail = current as { event?: AlumniEventQuery; [key: string]: unknown };
+				if (!detail.event) return current;
+
+				return {
+					...detail,
+					event: withEventDateTime({
+						...detail.event,
+						is_registered: isRegistered,
+					} as AlumniEventQuery),
+				};
+			},
+		);
+	};
 
 	return useMutation({
 		mutationFn: async (id: number) => {
@@ -204,6 +238,7 @@ export function useCancelRegistration() {
 			});
 		},
 		onSuccess: (_, id) => {
+			setRegistrationState(id, false);
 			queryClient.invalidateQueries({ queryKey: alumniQueryKeys.events });
 			queryClient.invalidateQueries({
 				queryKey: alumniQueryKeys.eventDetail(id),

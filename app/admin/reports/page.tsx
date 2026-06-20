@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormSelect } from "@/app/components/FormControl";
 import { useReportsPage } from "./_hooks/useReportsPage";
 import {
@@ -80,6 +81,7 @@ export default function ReportsPage() {
 		avgRate,
 		attendances,
 		events,
+		feedback,
 		getHadir,
 		getRate,
 		handleDownload,
@@ -438,6 +440,10 @@ export default function ReportsPage() {
 					</p>
 				</main>
 			</div>
+
+			{feedback && (
+				<FeedbackToast type={feedback.type} message={feedback.message} />
+			)}
 		</div>
 	);
 }

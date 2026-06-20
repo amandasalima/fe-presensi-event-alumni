@@ -13,12 +13,13 @@ import {
   X,
   Camera,
   Loader2,
-  CheckCircle,
   AlertCircle,
   LogOut,
   ChevronRight,
   Trash2,
 } from "lucide-react";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 
 import {
@@ -61,13 +62,16 @@ function ProfileSkeleton() {
 function AvatarSection({
   name,
   avatarUrl,
+  onToast,
 }: {
   name: string;
   avatarUrl?: string | null;
+  onToast: (type: "success" | "error", message: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutate: uploadAvatar, isPending } = useUploadAvatar();
   const { mutate: deleteAvatar, isPending: isDeleting } = useDeleteAvatar();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const initials =
     name
@@ -80,13 +84,37 @@ function AvatarSection({
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) uploadAvatar(file);
+    if (!file) return;
+
+    uploadAvatar(file, {
+      onSuccess: () => onToast("success", "Foto profil berhasil diperbarui"),
+      onError: (err: unknown) => {
+        onToast(
+          "error",
+          getApiErrorMessage(err, "Foto profil belum berhasil diperbarui.")
+        );
+      },
+    });
   }
 
   function handleDeleteAvatar() {
-    if (confirm("Hapus foto profil?")) {
-      deleteAvatar();
-    }
+    setIsDeleteConfirmOpen(true);
+  }
+
+  function confirmDeleteAvatar() {
+    deleteAvatar(undefined, {
+      onSuccess: () => {
+        setIsDeleteConfirmOpen(false);
+        onToast("success", "Foto profil berhasil dihapus");
+      },
+      onError: (err: unknown) => {
+        setIsDeleteConfirmOpen(false);
+        onToast(
+          "error",
+          getApiErrorMessage(err, "Foto profil belum berhasil dihapus.")
+        );
+      },
+    });
   }
 
   return (
@@ -145,6 +173,16 @@ function AvatarSection({
           onChange={handleFileChange}
         />
       </div>
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="Hapus foto profil?"
+        message="Foto profil Anda akan dihapus dari akun alumni."
+        confirmLabel="Hapus"
+        loading={isDeleting}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteAvatar}
+      />
 
       <div className="text-center">
         <p className="font-bold text-slate-800 text-lg leading-tight">
@@ -213,30 +251,6 @@ function EditInput({
       placeholder={placeholder}
       className="w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition"
     />
-  );
-}
-
-/* ─── Toast ───────────────────────────────────────────────── */
-function Toast({
-  type,
-  message,
-}: {
-  type: "success" | "error";
-  message: string;
-}) {
-  return (
-    <div
-      className={`fixed bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all ${
-        type === "success" ? "bg-[#41A07E]" : "bg-red-500"
-      }`}
-    >
-      {type === "success" ? (
-        <CheckCircle size={16} />
-      ) : (
-        <AlertCircle size={16} />
-      )}
-      {message}
-    </div>
   );
 }
 
@@ -429,6 +443,7 @@ export default function AlumniProfilePage() {
         <AvatarSection
           name={fullName || "Alumni"}
           avatarUrl={profile.avatar_url}
+          onToast={showToast}
         />
 
         <InfoRow
@@ -576,7 +591,13 @@ export default function AlumniProfilePage() {
           : "—"}
       </p>
 
-      {toast && <Toast type={toast.type} message={toast.message} />}
+      {toast && (
+        <FeedbackToast
+          type={toast.type}
+          message={toast.message}
+          variant="mobile"
+        />
+      )}
     </div>
   );
 }

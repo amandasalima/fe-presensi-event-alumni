@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import AdminHeader from "@/app/components/AdminHeader";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import {
   useEvents,
@@ -281,6 +282,10 @@ export default function GenerateQRPage() {
   const [generatedQr, setGeneratedQr] = useState<EventQrCode | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [isGeneratingQrImage, setIsGeneratingQrImage] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const {
     data: events = [],
@@ -381,12 +386,22 @@ export default function GenerateQRPage() {
     timeoutMinutes > 1440 ||
     generateQR.isPending;
 
+  const showFeedback = (type: "success" | "error", message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const markCopySuccess = () => {
+    setCopySuccess(true);
+    showFeedback("success", "Token berhasil disalin");
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
   const handleCopyToken = async (token: string) => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(token);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
+        markCopySuccess();
       } else {
         const textArea = document.createElement("textarea");
         textArea.value = token;
@@ -401,15 +416,14 @@ export default function GenerateQRPage() {
         document.body.removeChild(textArea);
 
         if (successful) {
-          setCopySuccess(true);
-          setTimeout(() => setCopySuccess(false), 2000);
+          markCopySuccess();
         } else {
-          alert("Gagal menyalin token secara otomatis. Silakan salin manual.");
+          showFeedback("error", "Gagal menyalin token otomatis. Silakan salin manual.");
         }
       }
     } catch (error) {
       console.error("Copy error:", error);
-      alert("Gagal menyalin token.");
+      showFeedback("error", "Gagal menyalin token.");
     }
   };
 
@@ -820,6 +834,10 @@ export default function GenerateQRPage() {
           </p>
         </main>
       </div>
+
+      {feedback && (
+        <FeedbackToast type={feedback.type} message={feedback.message} />
+      )}
     </div>
   );
 }

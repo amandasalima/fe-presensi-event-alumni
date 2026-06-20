@@ -59,6 +59,7 @@ export function useEventBroadcastForm(event: Event | null) {
 	const [customMessage, setCustomMessage] = useState("");
 	const [successMessage, setSuccessMessage] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
+	const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
 	const [sendDetail, setSendDetail] = useState<{
 		totalSent: number;
 		fonnte?: unknown;
@@ -139,11 +140,11 @@ export function useEventBroadcastForm(event: Event | null) {
 			return;
 		}
 
-		const confirmed = confirm(
-			`Kirim broadcast WhatsApp?\n\nTarget: ${targetLabels[target]}\nJumlah penerima: ${estimatedTargets}\nEvent: ${event.event_title}`,
-		);
+		setIsSendConfirmOpen(true);
+	};
 
-		if (!confirmed) {
+	const confirmSubmit = () => {
+		if (!event || isSubmitDisabled) {
 			return;
 		}
 
@@ -160,6 +161,7 @@ export function useEventBroadcastForm(event: Event | null) {
 			},
 			{
 				onSuccess: (response) => {
+					setIsSendConfirmOpen(false);
 					const message = response.message || "Broadcast berhasil dikirim";
 					setSuccessMessage(
 						`${message} Total terkirim: ${response.data?.total_sent ?? 0}.`,
@@ -174,6 +176,7 @@ export function useEventBroadcastForm(event: Event | null) {
 					});
 				},
 				onError: (error) => {
+					setIsSendConfirmOpen(false);
 					setErrorMessage(getApiErrorMessage(error, "Gagal mengirim broadcast"));
 					const detail = getBroadcastDebugDetail(error);
 					if (detail) {
@@ -193,6 +196,7 @@ export function useEventBroadcastForm(event: Event | null) {
 		customMessage,
 		successMessage,
 		errorMessage,
+		isSendConfirmOpen,
 		sendDetail,
 		preview,
 		previewData,
@@ -207,5 +211,8 @@ export function useEventBroadcastForm(event: Event | null) {
 		setCustomMessage,
 		handleTargetChange,
 		handleSubmit,
+		confirmSubmit,
+		cancelConfirmSubmit: () => setIsSendConfirmOpen(false),
+		targetLabel: targetLabels[target],
 	};
 }

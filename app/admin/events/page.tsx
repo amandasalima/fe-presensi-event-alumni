@@ -5,8 +5,6 @@ import {
 	Info,
 	Plus,
 	Trash2,
-	CheckCircle,
-	AlertCircle,
 	X,
 	CalendarDays,
 	MapPin,
@@ -24,6 +22,8 @@ import {
 	FormSelect,
 	FormTextarea,
 } from "@/app/components/FormControl";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import SearchInput from "@/app/components/SearchInput";
 import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 import {
@@ -196,21 +196,6 @@ function buildChangedEventPayload(form: EventFormState, event: Event) {
 
 	return payload;
 }
-
-/* ─── Toast Component ───────────────────────────────────────────────── */
-function Toast({ type, message }: { type: "success" | "error"; message: string }) {
-	return (
-		<div
-			className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all animate-in slide-in-from-bottom-5 fade-in duration-300 ${
-				type === "success" ? "bg-[#3EBDAF]" : "bg-red-500"
-			}`}
-		>
-			{type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-			{message}
-		</div>
-	);
-}
-
 
 // ─── 3D Icon ─────────────────────────────────────────────────────────────────
 function Icon3D({
@@ -794,6 +779,7 @@ function BroadcastModal({
 		customMessage,
 		successMessage,
 		errorMessage,
+		isSendConfirmOpen,
 		sendDetail,
 		preview,
 		previewData,
@@ -808,6 +794,9 @@ function BroadcastModal({
 		setCustomMessage,
 		handleTargetChange,
 		handleSubmit,
+		confirmSubmit,
+		cancelConfirmSubmit,
+		targetLabel,
 	} = useEventBroadcastForm(event);
 	const previewMessage = sanitizeBroadcastMessage(previewData?.message) || "";
 
@@ -1095,6 +1084,17 @@ function BroadcastModal({
 					</div>
 				</form>
 			</div>
+
+			<ConfirmDialog
+				isOpen={isSendConfirmOpen}
+				title="Kirim broadcast WhatsApp?"
+				message={`Target: ${targetLabel}. Jumlah penerima: ${estimatedTargets}. Event: ${event.event_title}.`}
+				confirmLabel="Kirim"
+				tone="default"
+				loading={sendEventBroadcast.isPending}
+				onCancel={cancelConfirmSubmit}
+				onConfirm={confirmSubmit}
+			/>
 		</div>
 	);
 }
@@ -1781,6 +1781,7 @@ export default function KelolEventPage() {
 	const [detailEvent, setDetailEvent] = useState<Event | null>(null);
 	const [registrationsEvent, setRegistrationsEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
 	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 	const [activeTab, setActiveTab] = useState<"upcoming" | "done">("upcoming");
 
@@ -1824,9 +1825,26 @@ export default function KelolEventPage() {
 	};
 
 	const handleDelete = (id: number) => {
-		if (confirm("Yakin ingin menghapus event ini?")) {
-			deleteEvent.mutate(id);
-		}
+		const event = events.find((item) => item.id === id) ?? null;
+		setDeleteTarget(event);
+	};
+
+	const handleConfirmDelete = () => {
+		if (!deleteTarget) return;
+
+		deleteEvent.mutate(deleteTarget.id, {
+			onSuccess: () => {
+				setDeleteTarget(null);
+				showToast("Event berhasil dihapus");
+			},
+			onError: (error) => {
+				setDeleteTarget(null);
+				showToast(
+					getApiErrorMessage(error, "Event belum berhasil dihapus. Silakan coba lagi."),
+					"error",
+				);
+			},
+		});
 	};
 
 	const handleOpenBroadcast = (event: Event) => {
@@ -2066,7 +2084,21 @@ export default function KelolEventPage() {
 				/>
 			)}
 
-			{toast && <Toast type={toast.type} message={toast.message} />}
+			<ConfirmDialog
+				isOpen={!!deleteTarget}
+				title="Hapus event?"
+				message={
+					deleteTarget
+						? `Event "${deleteTarget.event_title}" akan dihapus permanen dari daftar.`
+						: "Event ini akan dihapus permanen dari daftar."
+				}
+				confirmLabel="Hapus"
+				loading={deleteEvent.isPending}
+				onCancel={() => setDeleteTarget(null)}
+				onConfirm={handleConfirmDelete}
+			/>
+
+			{toast && <FeedbackToast type={toast.type} message={toast.message} />}
 		</div>
 	);
 }

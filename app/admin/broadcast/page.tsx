@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Info, Plus, Trash2 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { FormInput, FormSelect, FormTextarea } from "@/app/components/FormControl";
 import { ApiError, getApiErrorMessage } from "@/lib/api";
 import {
@@ -115,6 +116,7 @@ export default function BroadcastPage() {
 	const [customMessage, setCustomMessage] = useState("");
 	const [successMessage, setSuccessMessage] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
+	const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
 	const [sendDetail, setSendDetail] = useState<{
 		totalSent: number;
 		fonnte?: unknown;
@@ -187,14 +189,13 @@ export default function BroadcastPage() {
 
 		if (!selectedEventId || isSubmitDisabled) return;
 
-		const confirmed = confirm(
-			`Kirim broadcast WhatsApp?\n\nTarget: ${targetDescriptions[target].label}\nJumlah penerima: ${estimatedTargets}\nEvent: ${
-				selectedEvent?.event_title ?? "-"
-			}`,
-		);
+		setIsSendConfirmOpen(true);
+	};
 
-		if (!confirmed) return;
+	const confirmSendBroadcast = () => {
+		if (!selectedEventId || isSubmitDisabled) return;
 
+		resetResult();
 		sendBroadcast.mutate(
 			{
 				eventId: selectedEventId,
@@ -208,6 +209,7 @@ export default function BroadcastPage() {
 			},
 			{
 				onSuccess: (response) => {
+					setIsSendConfirmOpen(false);
 					const totalSent = response.data?.total_sent ?? 0;
 					setSuccessMessage(
 						`${response.message || "Broadcast berhasil dikirim"} Total terkirim: ${totalSent}.`,
@@ -222,6 +224,7 @@ export default function BroadcastPage() {
 					});
 				},
 				onError: (error) => {
+					setIsSendConfirmOpen(false);
 					setErrorMessage(getApiErrorMessage(error, "Gagal mengirim broadcast"));
 					const detail = getBroadcastDebugDetail(error);
 					if (detail) {
@@ -541,6 +544,19 @@ export default function BroadcastPage() {
 					</p>
 				</main>
 			</div>
+
+			<ConfirmDialog
+				isOpen={isSendConfirmOpen}
+				title="Kirim broadcast WhatsApp?"
+				message={`Target: ${targetDescriptions[target].label}. Jumlah penerima: ${estimatedTargets}. Event: ${
+					selectedEvent?.event_title ?? "-"
+				}.`}
+				confirmLabel="Kirim"
+				tone="default"
+				loading={sendBroadcast.isPending}
+				onCancel={() => setIsSendConfirmOpen(false)}
+				onConfirm={confirmSendBroadcast}
+			/>
 		</div>
 	);
 }

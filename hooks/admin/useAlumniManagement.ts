@@ -29,6 +29,7 @@ export function getAlumniFullName(alumni: Alumni) {
 export function useAlumniManagement() {
   const [modal, setModal] = useState<AlumniModalMode | null>(null);
   const [selected, setSelected] = useState<Alumni | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const { data: alumni = [], isLoading, isError } = useAlumni();
   const createAlumni = useCreateAlumni();
@@ -96,18 +97,31 @@ export function useAlumniManagement() {
 
   const handleDelete = useCallback(
     (id: number) => {
-      if (confirm("Yakin ingin menghapus alumni ini?")) {
-        deleteAlumni.mutate(id);
-      }
+      setDeleteTargetId(id);
     },
-    [deleteAlumni]
+    []
   );
+
+  const cancelDelete = useCallback(() => {
+    setDeleteTargetId(null);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteTargetId) return;
+
+    deleteAlumni.mutate(deleteTargetId, {
+      onSettled: () => setDeleteTargetId(null),
+    });
+  }, [deleteAlumni, deleteTargetId]);
 
   return {
     alumni,
     closeModal,
+    cancelDelete,
+    confirmDelete,
     createAlumni,
     deleteAlumni,
+    deleteTargetId,
     filtered,
     handleDelete,
     handleEdit,

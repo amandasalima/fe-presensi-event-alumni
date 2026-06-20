@@ -2,12 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Phone } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Phone } from "lucide-react";
 import { useLogin } from "@/hooks/alumni/useLogin";
 import { useRegister } from "@/hooks/alumni/useRegister";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
-import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api";
 import SuccessModal from "./SuccessModal";
 
 type Tab = "masuk" | "daftar";
@@ -21,27 +21,46 @@ function Field({
   label,
   children,
   error,
+  success,
 }: {
   label: string;
   children: React.ReactNode;
   error?: string;
+  success?: string;
 }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-medium text-slate-600">{label}</label>
       {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && (
+        <p className="flex items-center gap-1 text-xs font-medium text-red-500">
+          <AlertCircle size={12} />
+          {error}
+        </p>
+      )}
+      {!error && success && (
+        <p className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+          <CheckCircle2 size={12} />
+          {success}
+        </p>
+      )}
     </div>
   );
 }
 
 function Input({
   className = "",
+  hasError = false,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+}: React.InputHTMLAttributes<HTMLInputElement> & { hasError?: boolean }) {
   return (
     <FormInput
-      className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 ${className}`}
+      aria-invalid={hasError || undefined}
+      className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
+        hasError
+          ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+          : "border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30"
+      } ${className}`}
       {...props}
     />
   );
@@ -63,6 +82,121 @@ function getFieldLabel(field: string) {
   return fieldLabels[field] ?? field.replaceAll("_", " ");
 }
 
+type RegisterField = keyof RegisterPayload;
+type RegisterErrors = Partial<Record<RegisterField, string>>;
+type LoginErrors = Partial<Record<keyof LoginPayload, string>>;
+
+const registerErrorFields = [
+  "first_name",
+  "last_name",
+  "gender",
+  "email",
+  "phone",
+  "graduation_year",
+  "birth_date",
+  "password",
+  "password_confirmation",
+] as const satisfies readonly RegisterField[];
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phonePattern = /^[0-9+\-\s()]{8,20}$/;
+
+function getPasswordStrength(password: string) {
+  const checks = [
+    password.length >= 8,
+    /[a-z]/.test(password),
+    /[A-Z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ];
+  const score = checks.filter(Boolean).length;
+
+  if (!password) {
+    return {
+      score: 0,
+      label: "Belum diisi",
+      color: "bg-slate-200",
+      textColor: "text-slate-500",
+    };
+  }
+  if (score <= 2) {
+    return {
+      score,
+      label: "Lemah",
+      color: "bg-red-400",
+      textColor: "text-red-500",
+    };
+  }
+  if (score === 3) {
+    return {
+      score,
+      label: "Cukup",
+      color: "bg-amber-400",
+      textColor: "text-amber-500",
+    };
+  }
+  if (score === 4) {
+    return {
+      score,
+      label: "Kuat",
+      color: "bg-[#41A07E]",
+      textColor: "text-[#357f65]",
+    };
+  }
+  return {
+    score,
+    label: "Sangat kuat",
+    color: "bg-emerald-600",
+    textColor: "text-emerald-600",
+  };
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  const strength = getPasswordStrength(password);
+  const requirements = [
+    { met: password.length >= 8, label: "8 karakter" },
+    { met: /[A-Z]/.test(password), label: "huruf besar" },
+    { met: /\d/.test(password), label: "angka" },
+    { met: /[^A-Za-z0-9]/.test(password), label: "simbol" },
+  ];
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="grid flex-1 grid-cols-5 gap-1">
+          {Array.from({ length: 5 }, (_, index) => (
+            <span
+              key={index}
+              className={`h-1.5 rounded-full ${
+                index < strength.score ? strength.color : "bg-slate-100"
+              }`}
+            />
+          ))}
+        </div>
+        <span className={`w-20 text-right text-xs font-semibold ${strength.textColor}`}>
+          {strength.label}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {requirements.map((item) => (
+          <span
+            key={item.label}
+            className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+              item.met
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Login Form ──────────────────────────────────────────── */
 function LoginForm() {
   const [form, setForm] = useState<LoginPayload>({
@@ -70,6 +204,7 @@ function LoginForm() {
     password: "",
     remember: false,
   });
+  const [submitted, setSubmitted] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const { mutate: login, isPending, error } = useLogin();
 
@@ -77,37 +212,48 @@ function LoginForm() {
     ? getApiErrorMessage(error, "Email atau kata sandi salah.")
     : null;
 
+  const loginErrors: LoginErrors = {
+    email: !form.email.trim()
+      ? "Email wajib diisi."
+      : !emailPattern.test(form.email)
+        ? "Email harus berisi alamat yang benar."
+        : undefined,
+    password: !form.password ? "Kata sandi wajib diisi." : undefined,
+  };
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitted(true);
+    if (loginErrors.email || loginErrors.password) return;
     login(form);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       {serverError && (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-100">
           {serverError}
         </div>
       )}
 
-      <Field label="Email">
+      <Field label="Email" error={submitted ? loginErrors.email : undefined}>
         <Input
           type="email"
           placeholder="masukkan alamat email Anda"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
+          hasError={submitted && Boolean(loginErrors.email)}
         />
       </Field>
 
-      <Field label="Kata Sandi">
+      <Field label="Kata Sandi" error={submitted ? loginErrors.password : undefined}>
         <div className="relative">
           <Input
             type={showPass ? "text" : "password"}
             placeholder="masukkan kata sandi Anda"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
+            hasError={submitted && Boolean(loginErrors.password)}
             className="pr-11"
           />
           <button
@@ -165,16 +311,40 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [touched, setTouched] = useState<Partial<Record<RegisterField, boolean>>>({});
   const { mutate: register, isPending, error } = useRegister();
 
-  const serverError = error
-    ? getApiErrorMessage(error, "Pendaftaran belum berhasil. Periksa kembali data Anda.")
-    : null;
-  const fieldErrors = getApiFieldErrors(error);
+  const registerErrorData = error?.response?.data;
+  const serverError =
+    typeof registerErrorData?.message === "string" && registerErrorData.message.trim()
+      ? registerErrorData.message
+      : error
+        ? getApiErrorMessage(error, "Pendaftaran belum berhasil. Periksa kembali data Anda.")
+        : null;
+  const fieldErrors = getRegisterFieldErrors(registerErrorData?.errors);
+
+  const localErrors = getRegisterErrors(form);
+
+  function setField<K extends RegisterField>(field: K, value: RegisterPayload[K]) {
+    setForm({ ...form, [field]: value });
+    setTouched((current) => ({ ...current, [field]: true }));
+  }
+
+  function showFieldError(field: RegisterField) {
+    return submitted || touched[field];
+  }
+
+  function getError(field: RegisterField) {
+    if (showFieldError(field) && localErrors[field]) return localErrors[field];
+    return fieldErrors[field];
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    console.log("Register payload:", form);
+    setSubmitted(true);
+    if (Object.values(localErrors).some(Boolean)) return;
+
     register(form, {
       onSuccess: () => {
         setShowSuccessModal(true);
@@ -189,7 +359,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         {serverError && (
           <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-100">
             <p className="font-semibold mb-1">{serverError}</p>
@@ -198,7 +368,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
                 {Object.entries(fieldErrors).map(([field, errors]) => (
                   <li key={field}>
                     <strong>{getFieldLabel(field)}:</strong>{" "}
-                    {(errors as string[]).join(", ")}
+                    {errors}
                   </li>
                 ))}
               </ul>
@@ -207,56 +377,65 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         )}
 
         <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3">
-          <Field label="Nama Depan" error={fieldErrors.first_name?.[0]}>
+          <Field label="Nama Depan" error={getError("first_name")}>
             <Input
               type="text"
               placeholder="nama depan anda"
               value={form.first_name}
-              onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-              required
+              onChange={(e) => setField("first_name", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, first_name: true }))}
+              hasError={Boolean(getError("first_name"))}
             />
           </Field>
-          <Field label="Nama Belakang" error={fieldErrors.last_name?.[0]}>
+          <Field label="Nama Belakang" error={getError("last_name")}>
             <Input
               type="text"
               placeholder="nama belakang anda"
               value={form.last_name}
-              onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-              required
+              onChange={(e) => setField("last_name", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, last_name: true }))}
+              hasError={Boolean(getError("last_name"))}
             />
           </Field>
         </div>
 
-        <Field label="Jenis Kelamin" error={fieldErrors.gender?.[0]}>
+        <Field label="Jenis Kelamin" error={getError("gender")}>
           <FormSelect
             value={form.gender}
-            onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30"
-            required
+            onChange={(e) => setField("gender", e.target.value)}
+            onBlur={() => setTouched((current) => ({ ...current, gender: true }))}
+            aria-invalid={Boolean(getError("gender")) || undefined}
+            className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 ${
+              getError("gender")
+                ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                : "border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30"
+            }`}
           >
             <option value="Laki-laki">Laki-laki</option>
             <option value="Perempuan">Perempuan</option>
           </FormSelect>
         </Field>
 
-        <Field label="Email" error={fieldErrors.email?.[0]}>
+        <Field label="Email" error={getError("email")}>
           <Input
             type="email"
             placeholder="masukkan alamat email Anda"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
+            onChange={(e) => setField("email", e.target.value)}
+            onBlur={() => setTouched((current) => ({ ...current, email: true }))}
+            hasError={Boolean(getError("email"))}
           />
         </Field>
 
-        <Field label="No Telp" error={fieldErrors.phone?.[0]}>
+        <Field label="No Telp" error={getError("phone")}>
           <div className="relative">
             <Input
               type="tel"
               placeholder="masukkan no telp Anda"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required
+              onChange={(e) => setField("phone", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
+              hasError={Boolean(getError("phone"))}
               className="pl-10"
             />
             <Phone
@@ -266,12 +445,17 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           </div>
         </Field>
 
-        <Field label="Angkatan (Tahun Lulus)" error={fieldErrors.graduation_year?.[0]}>
+        <Field label="Angkatan (Tahun Lulus)" error={getError("graduation_year")}>
           <FormSelect
             value={form.graduation_year}
-            onChange={(e) => setForm({ ...form, graduation_year: e.target.value })}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30"
-            required
+            onChange={(e) => setField("graduation_year", e.target.value)}
+            onBlur={() => setTouched((current) => ({ ...current, graduation_year: true }))}
+            aria-invalid={Boolean(getError("graduation_year")) || undefined}
+            className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 ${
+              getError("graduation_year")
+                ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                : "border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30"
+            }`}
           >
             <option value="">Pilih Tahun Lulus</option>
             {Array.from({ length: 50 }, (_, i) => {
@@ -285,28 +469,30 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           </FormSelect>
         </Field>
 
-        <Field label="Tanggal Lahir" error={fieldErrors.birth_date?.[0]}>
+        <Field label="Tanggal Lahir" error={getError("birth_date")}>
           <div className="relative">
             <Input
               type="date"
               value={form.birth_date}
-              onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
-              required
-              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setField("birth_date", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, birth_date: true }))}
+              max={new Date().toISOString().split("T")[0]}
+              hasError={Boolean(getError("birth_date"))}
               className="pr-4"
             />
           </div>
         </Field>
 
-        <Field label="Kata Sandi" error={fieldErrors.password?.[0]}>
+        <Field label="Kata Sandi" error={getError("password")}>
           <div className="relative">
             <Input
               type={showPass ? "text" : "password"}
               placeholder="masukkan kata sandi Anda (min. 8 karakter)"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
+              onChange={(e) => setField("password", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, password: true }))}
               minLength={8}
+              hasError={Boolean(getError("password"))}
               className="pr-11"
             />
             <button
@@ -317,17 +503,27 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          <PasswordStrength password={form.password} />
         </Field>
 
-        <Field label="Konfirmasi Kata Sandi" error={fieldErrors.password_confirmation?.[0]}>
+        <Field
+          label="Konfirmasi Kata Sandi"
+          error={getError("password_confirmation")}
+          success={
+            form.password_confirmation && !getError("password_confirmation")
+              ? "Kata sandi sudah sama."
+              : undefined
+          }
+        >
           <div className="relative">
             <Input
               type={showConfirmPass ? "text" : "password"}
               placeholder="ulangi kata sandi Anda"
               value={form.password_confirmation}
-              onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
-              required
+              onChange={(e) => setField("password_confirmation", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, password_confirmation: true }))}
               minLength={8}
+              hasError={Boolean(getError("password_confirmation"))}
               className="pr-11"
             />
             <button
@@ -341,12 +537,12 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         </Field>
 
         <button
-        type="submit"
-        disabled={isPending}
-        className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        {isPending ? "Memproses..." : "Daftar"}
-      </button>
+          type="submit"
+          disabled={isPending}
+          className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isPending ? "Memproses..." : "Daftar"}
+        </button>
       </form>
 
       {/* Success Modal - rendered outside form so the fixed overlay covers entire viewport */}
@@ -358,6 +554,75 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
       />
     </>
   );
+}
+
+function getRegisterErrors(form: RegisterPayload): RegisterErrors {
+  const errors: RegisterErrors = {};
+  const currentYear = new Date().getFullYear();
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!form.first_name.trim()) errors.first_name = "Nama depan wajib diisi.";
+  if (!form.last_name.trim()) errors.last_name = "Nama belakang wajib diisi.";
+  if (!form.gender) errors.gender = "Jenis kelamin wajib dipilih.";
+  if (!form.email.trim()) {
+    errors.email = "Email wajib diisi.";
+  } else if (!emailPattern.test(form.email)) {
+    errors.email = "Email harus berisi alamat yang benar.";
+  }
+  if (!form.phone.trim()) {
+    errors.phone = "Nomor telepon wajib diisi.";
+  } else if (!phonePattern.test(form.phone.trim())) {
+    errors.phone = "Nomor telepon belum sesuai.";
+  }
+  if (!form.graduation_year) {
+    errors.graduation_year = "Tahun lulus wajib dipilih.";
+  } else {
+    const graduationYear = Number(form.graduation_year);
+    if (
+      Number.isNaN(graduationYear) ||
+      graduationYear < currentYear - 49 ||
+      graduationYear > currentYear
+    ) {
+      errors.graduation_year = "Tahun lulus belum sesuai.";
+    }
+  }
+  if (!form.birth_date) {
+    errors.birth_date = "Tanggal lahir wajib diisi.";
+  } else if (form.birth_date > today) {
+    errors.birth_date = "Tanggal lahir tidak boleh melebihi hari ini.";
+  }
+  if (!form.password) {
+    errors.password = "Kata sandi wajib diisi.";
+  } else if (form.password.length < 8) {
+    errors.password = `Kata sandi minimal 8 karakter (${8 - form.password.length} lagi).`;
+  }
+  if (!form.password_confirmation) {
+    errors.password_confirmation = "Konfirmasi kata sandi wajib diisi.";
+  } else if (form.password !== form.password_confirmation) {
+    errors.password_confirmation = "Konfirmasi kata sandi tidak sama.";
+  }
+
+  return errors;
+}
+
+function getRegisterFieldErrors(errors: unknown): RegisterErrors {
+  if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
+    return {};
+  }
+
+  return registerErrorFields.reduce<RegisterErrors>((result, field) => {
+    const value = (errors as Record<string, unknown>)[field];
+    const messages = Array.isArray(value) ? value : [value];
+    const message = messages
+      .filter((item): item is string => typeof item === "string")
+      .join(", ");
+
+    if (message) {
+      result[field] = message;
+    }
+
+    return result;
+  }, {});
 }
 
 

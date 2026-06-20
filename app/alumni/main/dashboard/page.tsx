@@ -18,6 +18,7 @@ interface Event {
   event_datetime: string;
   location: string;
   category?: unknown;
+  category_name?: string;
   status_event?: string;
 }
 
@@ -42,7 +43,9 @@ function isToday(datetime: string) {
   return datePart === nowDateStr;
 }
 
-function formatDate(datetime: string) {
+function formatDate(datetime?: string) {
+  if (!datetime) return "-";
+
   return new Date(datetime).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "long",
@@ -50,7 +53,9 @@ function formatDate(datetime: string) {
   });
 }
 
-function formatTime(datetime: string) {
+function formatTime(datetime?: string) {
+  if (!datetime) return "";
+
   return (
     new Date(datetime).toLocaleTimeString("id-ID", {
       hour: "2-digit",
@@ -72,6 +77,19 @@ function formatShort(datetime: string) {
 
 function getDayNum(datetime: string) {
   return new Date(datetime).getDate();
+}
+
+function getCategoryName(event: Pick<Event, "category" | "category_name">) {
+  if (event.category && typeof event.category === "object") {
+    const category = event.category as {
+      category_name?: string;
+      name?: string;
+    };
+
+    return category.category_name ?? category.name ?? event.category_name ?? "";
+  }
+
+  return event.category_name ?? "";
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -107,7 +125,7 @@ export default function AlumniDashboard() {
     })
     .slice(0, 3);
 
-  const topRecommendation = recommendations[0] ?? null;
+  const recommendedEvents = recommendations.slice(0, 3);
   const recentPresences = presences.slice(0, 3);
 
   const unreadNotification = notifications.filter(
@@ -196,57 +214,80 @@ export default function AlumniDashboard() {
 
       {/* Rekomendasi Event */}
       {loadingRec ? (
-        <Skeleton className="h-44 w-full rounded-2xl" />
-      ) : topRecommendation ? (
-        <div
-          className="rounded-2xl p-5 space-y-3"
-          style={{
-            background: "#41A07E",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs bg-white/20 text-white px-3 py-1 rounded-full font-medium">
-              Rekomendasi Event
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-44" />
+          <Skeleton className="h-24 w-full rounded-2xl" />
+        </div>
+      ) : recommendedEvents.length > 0 ? (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-gray-900">
+              Rekomendasi Untuk Anda
+            </h2>
+            <span className="text-[11px] bg-[#B2DE96] text-[#41A07E] px-2.5 py-1 rounded-full font-semibold">
+              Berdasarkan minat
             </span>
           </div>
 
-          <h3 className="text-white font-bold text-lg leading-tight">
-            {topRecommendation.event_title}
-          </h3>
-
-          <div className="space-y-1.5">
-            {[
-              {
-                icon: "calendar" as const,
-                text: formatDate(topRecommendation.event_datetime),
-              },
-              {
-                icon: "clock" as const,
-                text: formatTime(topRecommendation.event_datetime),
-              },
-              {
-                icon: "pin" as const,
-                text: topRecommendation.location,
-              },
-            ].map((item, index) => (
+          <div className="space-y-2">
+            {recommendedEvents.map((event: Event) => (
               <div
-                key={index}
-                className="flex items-center gap-2 text-[#B2DE96] text-sm"
+                key={event.id}
+                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50"
               >
-                <Icon name={item.icon} className="w-4 h-4 flex-shrink-0" />
-                <span>{item.text}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] bg-green-50 text-[#41A07E] border border-green-100 px-2 py-0.5 rounded font-semibold">
+                        Rekomendasi
+                      </span>
+                      {getCategoryName(event) && (
+                        <span className="min-w-0 text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium truncate">
+                          {getCategoryName(event)}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">
+                      {event.event_title}
+                    </p>
+
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                        <Icon
+                          name="calendar"
+                          className="w-3.5 h-3.5 flex-shrink-0 text-[#41A07E]"
+                        />
+                        <span className="truncate">
+                          {formatDate(event.event_datetime)}
+                          {formatTime(event.event_datetime)
+                            ? ` • ${formatTime(event.event_datetime)}`
+                            : ""}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                        <Icon
+                          name="pin"
+                          className="w-3.5 h-3.5 flex-shrink-0 text-[#41A07E]"
+                        />
+                        <span className="truncate">{event.location}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => router.push(`/alumni/main/events/${event.id}`)}
+                    className="text-xs text-white px-3 py-1.5 rounded-lg font-medium flex-shrink-0"
+                    style={{
+                      background: "#41A07E",
+                    }}
+                  >
+                    Detail
+                  </button>
+                </div>
               </div>
             ))}
           </div>
-
-          <button
-            onClick={() =>
-              router.push(`/alumni/main/events/${topRecommendation.id}`)
-            }
-            className="w-full bg-white text-[#41A07E] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#B2DE96] transition-colors"
-          >
-            Lihat Detail & Daftar
-          </button>
         </div>
       ) : null}
 

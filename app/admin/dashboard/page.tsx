@@ -2,6 +2,17 @@
 
 import { ReactNode, useState } from "react";
 import {
+	Chart as ChartJS,
+	CategoryScale,
+	LinearScale,
+	BarElement,
+	Title,
+	Tooltip,
+	Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+import {
 	Activity,
 	CalendarCheck,
 	CalendarDays,
@@ -9,7 +20,6 @@ import {
 	ChartColumn,
 	ClipboardCheck,
 	Database,
-	Eye,
 	QrCode,
 	Server,
 	Users,
@@ -20,8 +30,10 @@ import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import { useAlumni } from "@/hooks/admin/useAlumni";
 import { useEvents } from "@/hooks/admin/useEvents";
-import { usePresences } from "@/hooks/admin/usePresences";
+import { useAttendanceChart } from "@/hooks/admin/useAttendanceChart";
 import { useActivityLogs, ActivityLog } from "@/hooks/admin/useActivityLogs";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Event {
@@ -32,12 +44,23 @@ interface Event {
 	status_event: "Mendatang" | "Selesai" | "active" | "inactive";
 }
 
-interface Presence {
-	id: number;
-	scanned_at: string;
-}
-
 type IconVariant = "teal" | "blue" | "green" | "red" | "gray" | "yellow";
+type ChartRange = "3" | "6" | "12";
+
+const MONTH_LABELS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"Mei",
+	"Jun",
+	"Jul",
+	"Agu",
+	"Sep",
+	"Okt",
+	"Nov",
+	"Des",
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getValidDate(dateValue?: string | null) {
@@ -190,6 +213,8 @@ function getCollectionCount(value: unknown) {
 	return 0;
 }
 
+
+
 function Icon3D({
 	children,
 	variant = "teal",
@@ -254,37 +279,114 @@ function EventSkeleton() {
 	);
 }
 
-// ─── Chart Bar (simple, no library) ──────────────────────────────────────────
-function SimpleChart({ presences }: { presences: Presence[] }) {
-	const months = [
-		"Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-		"Jul", "Agt", "Sep", "Okt", "Nov", "Des",
-	];
+// ─── Chart Bar (Chart.js) ────────────────────────────────────────────────────
+function AttendanceChart({
+	data,
+	total,
+}: {
+	data: { label: string; count: number }[];
+	total: number;
+}) {
+	if (total === 0) {
+		return (
+			<div className="h-56 rounded-xl border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-center px-4">
+				<p className="text-xs text-gray-400">
+					Belum ada data kehadiran pada filter yang dipilih.
+				</p>
+			</div>
+		);
+	}
 
-	const counts = months.map(
-		(_, i) =>
-			presences.filter((p) => getValidDate(p.scanned_at)?.getMonth() === i).length,
-	);
+	const chartJsData = {
+		labels: data.map((item) => item.label),
+		datasets: [
+			{
+				label: "Kehadiran",
+				data: data.map((item) => item.count),
+				backgroundColor: data.map((_, i) => {
+					const hue = 180 + (i * 8);
+					return `hsla(${hue}, 55%, 45%, 0.85)`;
+				}),
+				hoverBackgroundColor: data.map((_, i) => {
+					const hue = 180 + (i * 8);
+					return `hsla(${hue}, 60%, 40%, 1)`;
+				}),
+				borderColor: data.map((_, i) => {
+					const hue = 180 + (i * 8);
+					return `hsla(${hue}, 55%, 40%, 1)`;
+				}),
+				borderWidth: 1,
+				borderRadius: 6,
+				borderSkipped: false as const,
+				barPercentage: 0.7,
+				categoryPercentage: 0.8,
+			},
+		],
+	};
 
-	const max = Math.max(...counts, 1);
+	const chartOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		animation: {
+			duration: 800,
+			easing: "easeOutQuart" as const,
+		},
+		plugins: {
+			legend: {
+				display: false,
+			},
+			tooltip: {
+				backgroundColor: "rgba(30, 41, 59, 0.95)",
+				titleColor: "#e2e8f0",
+				bodyColor: "#ffffff",
+				titleFont: { size: 12, weight: "bold" as const },
+				bodyFont: { size: 13 },
+				padding: 12,
+				cornerRadius: 10,
+				displayColors: false,
+				callbacks: {
+					title: (items: { label: string }[]) =>
+						`Bulan ${items[0]?.label ?? ""}`,
+					label: (item: { raw: unknown }) =>
+						`${item.raw} kehadiran`,
+				},
+			},
+		},
+		scales: {
+			x: {
+				grid: {
+					display: false,
+				},
+				border: {
+					display: false,
+				},
+				ticks: {
+					color: "#9ca3af",
+					font: { size: 11 },
+				},
+			},
+			y: {
+				beginAtZero: true,
+				grid: {
+					color: "rgba(229, 231, 235, 0.5)",
+				},
+				border: {
+					display: false,
+					dash: [4, 4],
+				},
+				ticks: {
+					color: "#9ca3af",
+					font: { size: 11 },
+					stepSize: 1,
+					precision: 0,
+				},
+			},
+		},
+	};
 
 	return (
-		<div className="flex items-end gap-2 h-40 w-full">
-			{counts.map((count, i) => (
-				<div key={i} className="flex-1 flex flex-col items-center gap-1">
-					<span className="text-[10px] text-gray-400">
-						{count > 0 ? count : ""}
-					</span>
-					<div
-						className="w-full rounded-t-lg bg-gradient-to-t from-[#2D7EA0] to-[#3EBDAF] shadow-sm shadow-gray-300/60 transition-all duration-500"
-						style={{
-							height: `${(count / max) * 100}%`,
-							minHeight: count > 0 ? "8px" : "2px",
-						}}
-					/>
-					<span className="text-[10px] text-gray-400">{months[i]}</span>
-				</div>
-			))}
+		<div className="h-56 w-full">
+			<Bar data={chartJsData} options={chartOptions} />
 		</div>
 	);
 }
@@ -293,17 +395,40 @@ function SimpleChart({ presences }: { presences: Presence[] }) {
 export default function DashboardPage() {
 	// ── TanStack Query ──
 	const { data: alumni = [], isLoading: loadingAlumni } = useAlumni();
-	const { data: events = [], isLoading: loadingEvents } = useEvents();
-	const { data: presences = [], isLoading: loadingPresences } = usePresences();
+	const { data: events = [], isLoading: loadingEvents } = useEvents("", 100);
 	const { data: activityLogs = [], isLoading: loadingActivityLogs } = useActivityLogs();
 	const [showAllLogs, setShowAllLogs] = useState(false);
+	const [chartYear, setChartYear] = useState(new Date().getFullYear());
+	const [chartRange, setChartRange] = useState<ChartRange>("12");
+	const [chartEventId, setChartEventId] = useState("all");
 
-	const isLoading = loadingAlumni || loadingEvents || loadingPresences;
+	// Fetch chart data from the dedicated backend endpoint
+	const { data: chartResponse, isLoading: loadingChart } = useAttendanceChart(
+		chartYear,
+		Number(chartRange),
+		chartEventId,
+	);
+
+	const isLoading = loadingAlumni || loadingEvents || loadingChart;
+
+	// Derive chart display data from backend response
+	const chartData = {
+		bars: (chartResponse?.monthly ?? []).map((m) => ({
+			label: m.label,
+			count: m.total,
+		})),
+		total: chartResponse?.total ?? 0,
+		startLabel: chartResponse?.monthly?.[0]?.label ?? MONTH_LABELS[0],
+		endLabel: chartResponse?.monthly?.[chartResponse.monthly.length - 1]?.label ?? MONTH_LABELS[Number(chartRange) - 1],
+	};
+
+	// Available years for the year filter dropdown
+	const chartYears = [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2];
 
 	// ── Computed Stats ──
 	const totalAlumni = getCollectionCount(alumni);
 	const totalEvents = events.length;
-	const totalPresences = presences.length;
+	const totalPresences = chartResponse?.total ?? 0;
 
 	const upcomingEvents = events
 		.filter((event: Event) => isUpcomingEvent(event))
@@ -311,9 +436,8 @@ export default function DashboardPage() {
 
 	const activeEvents = upcomingEvents.length;
 
-	const todayScan = presences.filter((p: Presence) =>
-		isToday(p.scanned_at),
-	).length;
+	// Today's scan count — for now show 0 since the chart endpoint doesn't provide daily breakdown
+	const todayScan = 0;
 
 	const stats: {
 		title: string;
@@ -401,10 +525,60 @@ export default function DashboardPage() {
 									</p>
 								</div>
 							</div>
-							{loadingPresences ? (
+							<div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+								<select
+									value={String(chartYear)}
+									onChange={(event) => setChartYear(Number(event.target.value))}
+									className="h-9 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20"
+									aria-label="Filter tahun grafik"
+								>
+									{chartYears.map((year) => (
+										<option key={year} value={year}>
+											{year}
+										</option>
+									))}
+								</select>
+								<select
+									value={chartRange}
+									onChange={(event) => setChartRange(event.target.value as ChartRange)}
+									className="h-9 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20"
+									aria-label="Filter rentang bulan grafik"
+								>
+									<option value="3">3 bulan terakhir</option>
+									<option value="6">6 bulan terakhir</option>
+									<option value="12">12 bulan terakhir</option>
+								</select>
+								<select
+									value={chartEventId}
+									onChange={(event) => setChartEventId(event.target.value)}
+									className="h-9 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20"
+									aria-label="Filter event grafik"
+								>
+									<option value="all">Semua event</option>
+									{events.map((event: Event) => (
+										<option key={event.id} value={event.id}>
+											{event.event_title}
+										</option>
+									))}
+								</select>
+							</div>
+							{loadingChart ? (
 								<div className="h-40 rounded-xl bg-gray-50 animate-pulse" />
 							) : (
-								<SimpleChart presences={presences} />
+								<>
+									<AttendanceChart data={chartData.bars} total={chartData.total} />
+									<div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+										<span>
+											Total {chartData.total} kehadiran pada periode {chartData.startLabel} - {chartData.endLabel} {chartYear}
+										</span>
+										<span className="font-semibold text-[#2D7EA0]">
+											{chartEventId === "all"
+												? "Semua event"
+												: events.find((event: Event) => String(event.id) === chartEventId)
+														?.event_title ?? "Event dipilih"}
+										</span>
+									</div>
+								</>
 							)}
 						</section>
 

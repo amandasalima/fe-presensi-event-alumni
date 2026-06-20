@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useEventAttendances } from "@/hooks/admin/useAttendances";
 import { useEvents } from "@/hooks/admin/useEvents";
 import { fetchAPI } from "@/lib/api";
 import {
+	exportAttendancesToExcel,
+	exportAttendancesToPdf,
 	type ReportEvent,
 } from "../_utils/reportFormatters";
 
@@ -29,6 +31,11 @@ function getAttendanceTotal(data?: AttendanceSummaryData) {
 export function useReportsPage() {
 	const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
+	const [feedback, setFeedback] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
+	const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const {
 		data: attendanceData,
@@ -89,14 +96,58 @@ export function useReportsPage() {
 					) / typedEvents.length,
 				)
 			: 0;
-	const handleDownload = (format: "PDF" | "Excel" | "CSV") => {
-		const reportEventId = selectedEventId ?? selectedId;
-		if (!reportEventId) return;
+	const clearFeedbackTimeout = () => {
+		if (feedbackTimeoutRef.current) {
+			clearTimeout(feedbackTimeoutRef.current);
+			feedbackTimeoutRef.current = null;
+		}
+	};
+	const showFeedback = (nextFeedback: {
+		type: "success" | "error";
+		message: string;
+	}) => {
+		clearFeedbackTimeout();
+		setFeedback(nextFeedback);
+		feedbackTimeoutRef.current = setTimeout(() => setFeedback(null), 3000);
+	};
 
-		window.open(
-			`${process.env.NEXT_PUBLIC_API_URL}/Reports/${reportEventId}/download?format=${format.toLowerCase()}`,
-			"_blank",
-		);
+	useEffect(() => clearFeedbackTimeout, []);
+
+	const handleDownload = (format: "PDF" | "Excel" | "CSV") => {
+		if (!selectedAttendanceEvent) return;
+
+		if (format === "PDF") {
+			const opened = exportAttendancesToPdf(
+				selectedAttendanceEvent,
+				attendances,
+				attendanceData?.summary,
+			);
+
+			if (!opened) {
+				showFeedback({
+					type: "error",
+					message: "Popup PDF diblokir browser. Izinkan popup lalu coba lagi.",
+				});
+			} else {
+				showFeedback({
+					type: "success",
+					message: "Data kehadiran siap dicetak atau disimpan sebagai PDF",
+				});
+			}
+			return;
+		}
+
+		if (format === "Excel") {
+			exportAttendancesToExcel(
+				selectedAttendanceEvent,
+				attendances,
+				attendanceData?.summary,
+			);
+			showFeedback({
+				type: "success",
+				message: "Data kehadiran berhasil diexport ke Excel",
+			});
+		}
 	};
 
 	return {
@@ -104,6 +155,7 @@ export function useReportsPage() {
 		attendances,
 		avgRate,
 		events: typedEvents,
+		feedback,
 		getHadir,
 		getRate,
 		handleDownload,

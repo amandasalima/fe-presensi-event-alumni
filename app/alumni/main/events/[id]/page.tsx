@@ -18,6 +18,8 @@ import {
   useRegisterEvent,
   useCancelRegistration,
 } from "@/hooks/alumni/queries/events";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import { getApiErrorMessage, getImageUrl } from "@/lib/api";
 
 function formatDate(dateStr: string) {
@@ -56,29 +58,6 @@ function Skeleton({ className }: { className: string }) {
   return <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />;
 }
 
-function Toast({
-  type,
-  message,
-}: {
-  type: "success" | "error";
-  message: string;
-}) {
-  return (
-    <div
-      className={`fixed bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl shadow-xl text-sm font-medium text-white transition-all ${
-        type === "success" ? "bg-[#41A07E]" : "bg-red-500"
-      }`}
-    >
-      {type === "success" ? (
-        <CheckCircle size={16} />
-      ) : (
-        <AlertCircle size={16} />
-      )}
-      {message}
-    </div>
-  );
-}
-
 export default function EventDetailPage({
   params,
 }: {
@@ -96,6 +75,8 @@ export default function EventDetailPage({
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [currentTime] = useState(() => Date.now());
 
 
   const event = data?.event;
@@ -118,19 +99,17 @@ export default function EventDetailPage({
   }
 
   function handleCancelRegistration() {
-    if (
-      !confirm(
-        "Apakah Anda yakin ingin membatalkan pendaftaran event ini?"
-      )
-    ) {
-      return;
-    }
+    setIsCancelConfirmOpen(true);
+  }
 
+  function confirmCancelRegistration() {
     cancelRegistration.mutate(eventId, {
       onSuccess: () => {
+        setIsCancelConfirmOpen(false);
         showToast("success", "Pendaftaran berhasil dibatalkan");
       },
       onError: (error: unknown) => {
+        setIsCancelConfirmOpen(false);
         showToast("error", getApiErrorMessage(error, "Pendaftaran belum berhasil dibatalkan. Silakan coba lagi."));
       },
     });
@@ -214,9 +193,9 @@ export default function EventDetailPage({
     const endTimeFormatted = endParts.length >= 2 ? `${endParts[0]}:${endParts[1]}` : endTime;
     // "YYYY-MM-DDThh:mm" format is parsed as LOCAL time (not UTC)
     const eventEnd = new Date(`${datePart}T${endTimeFormatted}`);
-    return !isNaN(eventEnd.getTime()) && eventEnd.getTime() < Date.now();
+    return !isNaN(eventEnd.getTime()) && eventEnd.getTime() < currentTime;
   })();
-  const registerDisabled = registerEvent.isPending || quotaFull || isEventDone;
+  const registerDisabled = registerEvent.isPending || isRegistered || quotaFull || isEventDone;
 
   return (
     <div className="space-y-5 pb-6">
@@ -418,26 +397,31 @@ export default function EventDetailPage({
 
           {/* Action Buttons */}
           <div className="border-t border-gray-50 pt-4 space-y-2">
-            {!isRegistered ? (
-              <button
-                onClick={handleRegister}
-                disabled={registerDisabled}
-                className="w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {registerEvent.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Memproses...
-                  </>
-                ) : isEventDone ? (
-                  "Event Selesai"
-                ) : quotaFull ? (
-                  "Kuota Penuh"
-                ) : (
-                  "Daftar Event"
-                )}
-              </button>
-            ) : (
+            <button
+              onClick={isRegistered ? undefined : handleRegister}
+              disabled={registerDisabled}
+              className="w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {registerEvent.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Memproses...
+                </>
+              ) : isRegistered ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Sudah Terdaftar
+                </>
+              ) : isEventDone ? (
+                "Event Selesai"
+              ) : quotaFull ? (
+                "Kuota Penuh"
+              ) : (
+                "Daftar Event"
+              )}
+            </button>
+
+            {isRegistered && (
               <>
                 {!isAttended && !isEventDone && (
                   <button
@@ -461,7 +445,23 @@ export default function EventDetailPage({
         </div>
       </div>
 
-      {toast && <Toast type={toast.type} message={toast.message} />}
+      <ConfirmDialog
+        isOpen={isCancelConfirmOpen}
+        title="Batalkan pendaftaran?"
+        message="Anda perlu mendaftar ulang jika ingin mengikuti event ini lagi."
+        confirmLabel="Batalkan"
+        loading={cancelRegistration.isPending}
+        onCancel={() => setIsCancelConfirmOpen(false)}
+        onConfirm={confirmCancelRegistration}
+      />
+
+      {toast && (
+        <FeedbackToast
+          type={toast.type}
+          message={toast.message}
+          variant="mobile"
+        />
+      )}
     </div>
   );
 }

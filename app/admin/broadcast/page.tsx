@@ -305,8 +305,8 @@ export default function BroadcastPage() {
 							</button>
 						</div>
 
-						<div className="grid grid-cols-1 gap-4 p-5 xl:grid-cols-2">
-							<div className="space-y-4">
+						<div className="space-y-5 p-5">
+							<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 								<div>
 									<label className="mb-2 block text-sm font-medium text-gray-700">
 										Event
@@ -366,59 +366,61 @@ export default function BroadcastPage() {
 										</div>
 									</div>
 								</div>
+							</div>
 
-								{target === "custom" && (
-									<div>
-										<div className="mb-2 flex items-center justify-between gap-3">
-											<label className="block text-sm font-medium text-gray-700">
-												Nomor HP Tujuan
-											</label>
-											<button
-												type="button"
-												onClick={addManualNumber}
-												className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-[#7AB2B2]/10 px-3 py-1.5 text-xs font-medium text-[#236175] transition-colors hover:bg-[#7AB2B2]/20"
-											>
-												<Plus className="h-3.5 w-3.5" />
-												Tambah
-											</button>
-										</div>
-										<div className="space-y-2">
-											{manualNumbers.map((number, index) => (
-												<div
-													key={`manual-number-${index}`}
-													className="flex items-center gap-2"
-												>
-													<FormInput
-														type="tel"
-														value={number}
-														onChange={(event) =>
-															updateManualNumber(index, event.target.value)
-														}
-														placeholder={`Nomor ${index + 1}, contoh: 081234567890`}
-														className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
-													/>
-													<button
-														type="button"
-														onClick={() => removeManualNumber(index)}
-														aria-label={`Hapus nomor ${index + 1}`}
-														className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-100 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-														disabled={manualNumbers.length === 1 && !number.trim()}
-													>
-														<Trash2 className="h-4 w-4" />
-													</button>
-												</div>
-											))}
-										</div>
-										<p className="mt-1 text-xs text-gray-400">
-											Nomor valid: {parsedNumbers.validNumbers.length}
-											{parsedNumbers.invalidCount > 0
-												? `, tidak valid: ${parsedNumbers.invalidCount}`
-												: ""}
-										</p>
-									</div>
-								)}
-
+							{target === "custom" && (
 								<div>
+									<div className="mb-2 flex items-center justify-between gap-3">
+										<label className="block text-sm font-medium text-gray-700">
+											Nomor HP Tujuan
+										</label>
+										<button
+											type="button"
+											onClick={addManualNumber}
+											className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-[#7AB2B2]/10 px-3 py-1.5 text-xs font-medium text-[#236175] transition-colors hover:bg-[#7AB2B2]/20"
+										>
+											<Plus className="h-3.5 w-3.5" />
+											Tambah
+										</button>
+									</div>
+									<div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+										{manualNumbers.map((number, index) => (
+											<div
+												key={`manual-number-${index}`}
+												className="flex items-center gap-2"
+											>
+												<FormInput
+													type="tel"
+													value={number}
+													onChange={(event) =>
+														updateManualNumber(index, event.target.value)
+													}
+													placeholder={`Nomor ${index + 1}, contoh: 081234567890`}
+													className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+												/>
+												<button
+													type="button"
+													onClick={() => removeManualNumber(index)}
+													aria-label={`Hapus nomor ${index + 1}`}
+													className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-100 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+													disabled={manualNumbers.length === 1 && !number.trim()}
+												>
+													<Trash2 className="h-4 w-4" />
+												</button>
+											</div>
+										))}
+									</div>
+									<p className="mt-1 text-xs text-gray-400">
+										Nomor valid: {parsedNumbers.validNumbers.length}
+										{parsedNumbers.invalidCount > 0
+											? `, tidak valid: ${parsedNumbers.invalidCount}`
+											: ""}
+									</p>
+								</div>
+							)}
+
+							<div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:items-start">
+								<div className="flex h-full min-h-[430px] flex-col">
 									<div className="mb-2 flex items-center justify-between">
 										<label className="block text-sm font-medium text-gray-700">
 											Custom Message
@@ -437,9 +439,9 @@ export default function BroadcastPage() {
 											resetResult();
 											setCustomMessage(event.target.value);
 										}}
-										placeholder="Kosongkan jika ingin memakai template default backend"
-										rows={7}
-										className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+										placeholder="Kosongkan jika ingin memakai template default"
+										rows={12}
+										className="min-h-[360px] w-full flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									/>
 									{isMessageTooLong && (
 										<p className="mt-1 text-xs text-red-500">
@@ -447,89 +449,89 @@ export default function BroadcastPage() {
 										</p>
 									)}
 								</div>
-							</div>
 
-							<div className="space-y-4">
-								<div>
-									<div className="mb-2 flex items-center justify-between">
-										<label className="block text-sm font-medium text-gray-700">
-											Preview Pesan
-										</label>
-										<span className="rounded-full border border-teal-200 bg-[#7AB2B2]/10 px-2 py-0.5 text-xs font-medium text-[#2D7EA0]">
-											{target}
-										</span>
+								<div className="space-y-4">
+									<div className="flex h-full min-h-[430px] flex-col">
+										<div className="mb-2 flex items-center justify-between">
+											<label className="block text-sm font-medium text-gray-700">
+												Preview Pesan
+											</label>
+											<span className="rounded-full border border-teal-200 bg-[#7AB2B2]/10 px-2 py-0.5 text-xs font-medium text-[#2D7EA0]">
+												{target}
+											</span>
+										</div>
+										<div className="min-h-[360px] flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+											{!selectedEventId
+												? "Pilih event untuk melihat preview."
+												: target === "custom" &&
+														parsedNumbers.validNumbers.length === 0
+													? "Masukkan nomor manual untuk menghitung target custom."
+													: preview.isLoading
+														? "Memuat preview..."
+														: preview.isError
+															? getApiErrorMessage(
+																	preview.error,
+																	"Gagal memuat preview",
+																)
+															: previewMessage || "Preview belum tersedia"}
+										</div>
 									</div>
-									<div className="min-h-[360px] whitespace-pre-wrap rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-										{!selectedEventId
-											? "Pilih event untuk melihat preview."
-											: target === "custom" &&
-													parsedNumbers.validNumbers.length === 0
-												? "Masukkan nomor manual untuk menghitung target custom."
-												: preview.isLoading
-													? "Memuat preview..."
-													: preview.isError
-														? getApiErrorMessage(
-																preview.error,
-																"Gagal memuat preview",
-															)
-														: previewMessage || "Preview belum tersedia"}
-									</div>
+
+									{successMessage && (
+										<div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+											<p>{successMessage}</p>
+											<p className="text-xs">
+												Total sent: {sendDetail?.totalSent ?? 0}
+											</p>
+											{sendDetail?.fonnte !== undefined && (
+												<details className="text-xs">
+													<summary className="cursor-pointer font-medium">
+														Detail teknis Fonnte
+													</summary>
+													<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
+														{JSON.stringify(sendDetail.fonnte, null, 2)}
+													</pre>
+												</details>
+											)}
+											{sendDetail?.senderStatus !== undefined && (
+												<p className="text-xs">
+													Sender status: {String(sendDetail.senderStatus)}
+												</p>
+											)}
+											{sendDetail?.blockedReason !== undefined && (
+												<p className="text-xs">
+													Blocked reason: {String(sendDetail.blockedReason)}
+												</p>
+											)}
+										</div>
+									)}
+
+									{errorMessage && (
+										<div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+											<p>{errorMessage}</p>
+											{sendDetail?.senderStatus !== undefined && (
+												<p className="text-xs">
+													Sender status: {String(sendDetail.senderStatus)}
+												</p>
+											)}
+											{sendDetail?.blockedReason !== undefined && (
+												<p className="text-xs">
+													Blocked reason: {String(sendDetail.blockedReason)}
+												</p>
+											)}
+											{sendDetail?.fonnte !== undefined && (
+												<details className="text-xs">
+													<summary className="cursor-pointer font-medium">
+														Detail teknis Fonnte
+													</summary>
+													<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
+														{JSON.stringify(sendDetail.fonnte, null, 2)}
+													</pre>
+												</details>
+											)}
+										</div>
+									)}
 								</div>
-
-								{successMessage && (
-									<div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-										<p>{successMessage}</p>
-										<p className="text-xs">
-											Total sent: {sendDetail?.totalSent ?? 0}
-										</p>
-										{sendDetail?.fonnte !== undefined && (
-											<details className="text-xs">
-												<summary className="cursor-pointer font-medium">
-													Detail teknis Fonnte
-												</summary>
-												<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
-													{JSON.stringify(sendDetail.fonnte, null, 2)}
-												</pre>
-											</details>
-										)}
-										{sendDetail?.senderStatus !== undefined && (
-											<p className="text-xs">
-												Sender status: {String(sendDetail.senderStatus)}
-											</p>
-										)}
-										{sendDetail?.blockedReason !== undefined && (
-											<p className="text-xs">
-												Blocked reason: {String(sendDetail.blockedReason)}
-											</p>
-										)}
-									</div>
-								)}
-
-								{errorMessage && (
-									<div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-										<p>{errorMessage}</p>
-										{sendDetail?.senderStatus !== undefined && (
-											<p className="text-xs">
-												Sender status: {String(sendDetail.senderStatus)}
-											</p>
-										)}
-										{sendDetail?.blockedReason !== undefined && (
-											<p className="text-xs">
-												Blocked reason: {String(sendDetail.blockedReason)}
-											</p>
-										)}
-										{sendDetail?.fonnte !== undefined && (
-											<details className="text-xs">
-												<summary className="cursor-pointer font-medium">
-													Detail teknis Fonnte
-												</summary>
-												<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
-													{JSON.stringify(sendDetail.fonnte, null, 2)}
-												</pre>
-											</details>
-										)}
-									</div>
-								)}
 							</div>
 						</div>
 					</div>

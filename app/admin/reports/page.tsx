@@ -106,38 +106,38 @@ export default function ReportsPage() {
 					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 						{[
 							{
-								icon: (
-									<Icon3D variant="teal" size="md">
-										<CalendarDays size={21} strokeWidth={2.5} />
-									</Icon3D>
-								),
 								label: "Total",
 								accent: "border-[#7AB2B2]",
 								value: loadingEvents ? "..." : selesai,
 								sub: "Event Terlaksana",
-							},
-							{
 								icon: (
-									<Icon3D variant="blue" size="md">
-										<Users size={21} strokeWidth={2.5} />
+									<Icon3D variant="teal" size="md">
+										<CalendarDays size={20} strokeWidth={2.5} />
 									</Icon3D>
 								),
+							},
+							{
 								label: "Peserta",
 								accent: "border-blue-400",
 								value: loadingAttendanceSummaries ? "..." : totalHadir,
 								sub: "Total Kehadiran",
-							},
-							{
 								icon: (
-									<Icon3D variant="green" size="md">
-										<TrendingUp size={21} strokeWidth={2.5} />
+									<Icon3D variant="blue" size="md">
+										<Users size={20} strokeWidth={2.5} />
 									</Icon3D>
 								),
+							},
+							{
 								label: "Rate",
 								accent: "border-emerald-400",
 								value:
 									loadingEvents || loadingAttendanceSummaries ? "..." : `${avgRate}%`,
 								sub: "Rata-rata Kehadiran",
+								icon: (
+									<Icon3D variant="green" size="md">
+										<TrendingUp size={20} strokeWidth={2.5} />
+									</Icon3D>
+								),
 							},
 						].map((s, i) => (
 							<div

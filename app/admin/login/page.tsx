@@ -187,7 +187,7 @@ const AdminLogin = () => {
 						<div className="mx-auto w-11 h-11 bg-[#2D7EA0] rounded-xl flex items-center justify-center text-white shadow-md">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								className="h-6 w-6"
+								className="h-5 w-5"
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
@@ -196,7 +196,7 @@ const AdminLogin = () => {
 									strokeLinecap="round"
 									strokeLinejoin="round"
 									strokeWidth={2}
-									d="M12 11c0-1.657-1.343-3-3-3s-3 1.343-3 3 1.343 3 3 3 3-1.343 3-3zm0 0v6m0 0h6m-6 0H6"
+									d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
 								/>
 							</svg>
 						</div>

@@ -1,21 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import {
-	Activity,
-	CalendarCheck,
-	CalendarDays,
-	CalendarX,
-	ChartColumn,
-	ClipboardCheck,
-	Database,
-	Eye,
-	QrCode,
-	Server,
-	Users,
-	Wifi,
-	X,
-} from "lucide-react";
+import { Activity, CalendarCheck, CalendarDays, CalendarX, ChartColumn, ClipboardCheck, Database, Eye, QrCode, Server, Users, Wifi, X, } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import { useAlumni } from "@/hooks/admin/useAlumni";
@@ -229,10 +215,12 @@ function Icon3D({
 function StatSkeleton() {
 	return (
 		<div className="bg-white rounded-2xl p-4 shadow-sm shadow-gray-200/70 border border-gray-100 animate-pulse">
-			<div className="w-10 h-10 rounded-xl bg-gray-100 mb-4" />
-			<div className="h-2.5 bg-gray-100 rounded w-1/2 mb-2" />
-			<div className="h-6 bg-gray-200 rounded w-1/3 mb-2" />
-			<div className="h-2.5 bg-gray-100 rounded w-2/3" />
+			<div className="h-2.5 bg-gray-100 rounded w-1/2 mb-3" />
+			<div className="flex items-center gap-3">
+				<div className="w-10 h-10 rounded-xl bg-gray-100" />
+				<div className="h-6 bg-gray-200 rounded w-1/3" />
+			</div>
+			<div className="h-2.5 bg-gray-100 rounded w-2/3 mt-2" />
 		</div>
 	);
 }
@@ -359,50 +347,73 @@ export default function DashboardPage() {
 
 				<main className="flex-1 overflow-y-auto p-5">
 
-					{/* ── Stat Cards ── */}
-					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-						{isLoading
-							? [1, 2, 3, 4].map((i) => <StatSkeleton key={i} />)
-							: stats.map((item, index) => (
-									<div
-										key={index}
-										className="bg-white rounded-2xl p-4 shadow-sm shadow-gray-200/70 border border-gray-100 hover:shadow-md hover:shadow-gray-300/60 transition-shadow"
-									>
-										<div className="mb-4">
-											<Icon3D variant={item.variant} size="md">
+					{/* ── Chart + Informasi Sistem ── */}
+					<div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+						{/* Chart - lebih lebar */}
+						<section className="xl:col-span-2 bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
+							<div className="flex items-center gap-3 mb-4">
+								<Icon3D variant="teal" size="md">
+									<ChartColumn size={20} strokeWidth={2.5} />
+								</Icon3D>
+								<div>
+									<h2 className="text-base font-bold text-gray-800 mb-1">
+										Grafik Kehadiran Alumni
+									</h2>
+									<p className="text-gray-500 text-xs">
+										Tren kehadiran alumni per bulan
+									</p>
+								</div>
+							</div>
+							{loadingPresences ? (
+								<div className="h-40 rounded-xl bg-gray-50 animate-pulse" />
+							) : (
+								<SimpleChart presences={presences} />
+							)}
+						</section>
+
+						{/* Informasi Sistem */}
+						<div className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
+							<div className="flex items-center gap-3 mb-4">
+								<Icon3D variant="green" size="md">
+									<Server size={20} strokeWidth={2.5} />
+								</Icon3D>
+								<div>
+									<h2 className="text-base font-bold text-gray-800 mb-1">
+										Informasi Sistem
+									</h2>
+									<p className="text-gray-500 text-xs">
+										Status dan aktivitas sistem
+									</p>
+								</div>
+							</div>
+							<div className="bg-[#7AB2B2]/10 rounded-xl p-4 space-y-2">
+								<div className="flex justify-between items-center">
+									<span className="text-gray-600 text-sm">Status Sistem</span>
+									<span className="text-green-600 font-semibold text-sm flex items-center gap-1.5">
+										<span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" />
+										Online
+									</span>
+								</div>
+								{[
+									{ label: "QR Generator", status: "Active", icon: <QrCode size={14} /> },
+									{ label: "WhatsApp API", status: "Connected", icon: <Wifi size={14} /> },
+									{ label: "Database", status: "Running", icon: <Database size={14} /> },
+								].map((item, i) => (
+									<div key={i} className="flex justify-between items-center gap-3">
+										<span className="text-gray-500 text-xs flex items-center gap-2">
+											<span className="w-6 h-6 rounded-lg bg-white text-[#2D7EA0] shadow-sm shadow-gray-300/60 flex items-center justify-center">
 												{item.icon}
-											</Icon3D>
-										</div>
-										<h3 className="text-gray-500 text-xs">{item.title}</h3>
-										<h2 className="text-3xl font-bold text-gray-800 mt-1">
-											{item.value}
-										</h2>
-										<p className="text-[#2D7EA0] text-xs mt-2">{item.desc}</p>
+											</span>
+											{item.label}
+										</span>
+										<span className="text-xs font-medium text-[#2D7EA0]">
+											{item.status}
+										</span>
 									</div>
 								))}
-					</div>
-
-					{/* ── Chart ── */}
-					<section className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100 mb-5">
-						<div className="flex items-center gap-3 mb-4">
-							<Icon3D variant="teal" size="md">
-								<ChartColumn size={20} strokeWidth={2.5} />
-							</Icon3D>
-							<div>
-								<h2 className="text-base font-bold text-gray-800 mb-1">
-									Grafik Kehadiran Alumni
-								</h2>
-								<p className="text-gray-500 text-xs">
-									Tren kehadiran alumni per bulan
-								</p>
 							</div>
 						</div>
-						{loadingPresences ? (
-							<div className="h-40 rounded-xl bg-gray-50 animate-pulse" />
-						) : (
-							<SimpleChart presences={presences} />
-						)}
-					</section>
+					</div>
 
 					{/* ── Bottom Section ── */}
 					<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -464,92 +475,46 @@ export default function DashboardPage() {
 							</div>
 						</div>
 
-						{/* Right Column */}
-						<div className="space-y-4">
-							{/* Informasi Sistem */}
-							<div className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
-								<div className="flex items-center gap-3 mb-4">
-									<Icon3D variant="green" size="md">
-										<Server size={20} strokeWidth={2.5} />
-									</Icon3D>
-									<div>
-										<h2 className="text-base font-bold text-gray-800 mb-1">
-											Informasi Sistem
-										</h2>
-										<p className="text-gray-500 text-xs">
-											Status dan aktivitas sistem
-										</p>
-									</div>
-								</div>
-								<div className="bg-[#7AB2B2]/10 rounded-xl p-4 space-y-2">
-									<div className="flex justify-between items-center">
-										<span className="text-gray-600 text-sm">Status Sistem</span>
-										<span className="text-green-600 font-semibold text-sm flex items-center gap-1.5">
-											<span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" />
-											Online
-										</span>
-									</div>
-									{[
-										{ label: "QR Generator", status: "Active", icon: <QrCode size={14} /> },
-										{ label: "WhatsApp API", status: "Connected", icon: <Wifi size={14} /> },
-										{ label: "Database", status: "Running", icon: <Database size={14} /> },
-									].map((item, i) => (
-										<div key={i} className="flex justify-between items-center gap-3">
-											<span className="text-gray-500 text-xs flex items-center gap-2">
-												<span className="w-6 h-6 rounded-lg bg-white text-[#2D7EA0] shadow-sm shadow-gray-300/60 flex items-center justify-center">
-													{item.icon}
-												</span>
-												{item.label}
-											</span>
-											<span className="text-xs font-medium text-[#2D7EA0]">
-												{item.status}
-											</span>
-										</div>
+						{/* Aktivitas Terbaru */}
+						<div className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
+							<div className="flex items-center gap-3 mb-4">
+								<Icon3D variant="yellow" size="md">
+									<Activity size={20} strokeWidth={2.5} />
+								</Icon3D>
+								<h2 className="text-base font-bold text-gray-800">
+									Aktivitas Terbaru
+								</h2>
+							</div>
+							{loadingActivityLogs ? (
+								<div className="space-y-2">
+									{[1, 2, 3].map((i) => (
+										<div
+											key={i}
+											className="h-8 bg-gray-100 rounded-lg animate-pulse"
+										/>
 									))}
 								</div>
-							</div>
-
-							{/* Aktivitas Terbaru */}
-							<div className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
-								<div className="flex items-center gap-3 mb-4">
-									<Icon3D variant="yellow" size="md">
-										<Activity size={20} strokeWidth={2.5} />
-									</Icon3D>
-									<h2 className="text-base font-bold text-gray-800">
-										Aktivitas Terbaru
-									</h2>
+							) : (
+								<div className="flex flex-col">
+									{activityLogs
+										.slice(0, 4)
+										.map((log: ActivityLog, i: number) => renderLogItem(log, i))}
+									{activityLogs.length === 0 && (
+										<p className="text-xs text-gray-400 text-center py-3">
+											Belum ada aktivitas
+										</p>
+									)}
+									{activityLogs.length > 4 && (
+										<button
+											onClick={() => setShowAllLogs(true)}
+											className="w-full mt-3 py-2 text-center text-xs font-bold text-[#2D7EA0] hover:text-[#236175] transition-colors border border-dashed border-teal-200 hover:border-[#A8D5D5] rounded-xl bg-[#7AB2B2]/10/20 hover:bg-[#7AB2B2]/10/55 flex items-center justify-center gap-2"
+										>
+											<Eye size={14} />
+											Lihat Lainnya
+										</button>
+									)}
 								</div>
-								{loadingActivityLogs ? (
-									<div className="space-y-2">
-										{[1, 2, 3].map((i) => (
-											<div
-												key={i}
-												className="h-8 bg-gray-100 rounded-lg animate-pulse"
-											/>
-										))}
-									</div>
-								) : (
-									<div className="flex flex-col">
-										{activityLogs
-											.slice(0, 4)
-											.map((log: ActivityLog, i: number) => renderLogItem(log, i))}
-										{activityLogs.length === 0 && (
-											<p className="text-xs text-gray-400 text-center py-3">
-												Belum ada aktivitas
-											</p>
-										)}
-										{activityLogs.length > 4 && (
-											<button
-												onClick={() => setShowAllLogs(true)}
-												className="w-full mt-3 py-2 text-center text-xs font-bold text-[#2D7EA0] hover:text-[#236175] transition-colors border border-dashed border-teal-200 hover:border-[#A8D5D5] rounded-xl bg-[#7AB2B2]/10/20 hover:bg-[#7AB2B2]/10/55 flex items-center justify-center gap-2"
-											>
-												<Eye size={14} />
-												Lihat Lainnya
-											</button>
-										)}
-									</div>
-								)}
-							</div>
+							)}
 						</div>
 					</div>
 

@@ -47,7 +47,7 @@ export default function AdminSidebar() {
 
   const handleLogout = () => {
     clearAuthStorage();
-    window.location.href = "/auth/login";
+    window.location.href = "/admin/login";
   };
 
   return (

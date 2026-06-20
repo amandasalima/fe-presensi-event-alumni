@@ -63,7 +63,6 @@ function Icon3D({
 	);
 }
 
-
 function TableSkeleton() {
 	return (
 		<>
@@ -255,19 +254,18 @@ export default function UsersPage() {
 						].map((item) => (
 							<div
 								key={item.title}
-								className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-4"
+								className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
 							>
-								<div>
-									<p className="text-gray-500 text-sm">{item.title}</p>
-									<h2 className="text-3xl font-bold mt-1 text-gray-800">
+								<p className="text-gray-500 text-xs">{item.title}</p>
+								<div className="flex items-center gap-3 mt-1">
+									<Icon3D variant={item.variant} size="md">
+										{item.icon}
+									</Icon3D>
+									<h2 className="text-3xl font-bold text-gray-800">
 										{item.value}
 									</h2>
-									<p className="text-gray-400 text-xs mt-1">{item.desc}</p>
 								</div>
-
-								<Icon3D variant={item.variant} size="md">
-									{item.icon}
-								</Icon3D>
+								<p className="text-gray-400 text-xs mt-1">{item.desc}</p>
 							</div>
 						))}
 					</div>
@@ -278,7 +276,6 @@ export default function UsersPage() {
 								<Icon3D variant="teal" size="md">
 									<UserCog size={20} strokeWidth={2.5} />
 								</Icon3D>
-
 								<div>
 									<h2 className="text-gray-800 text-xl font-bold">
 										Manajemen User

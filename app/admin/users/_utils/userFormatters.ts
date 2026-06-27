@@ -26,14 +26,37 @@ export function isAdminUser(user: Pick<User, "role">) {
 	return user.role.toLowerCase() === "admin";
 }
 
-export function getStatusClass(status: string) {
-	const normalized = status.toLowerCase();
+export function getStatusLabel(status?: string | null) {
+	switch (status?.toLowerCase()) {
+		case "pending":
+			return "Menunggu Approval";
+		case "active":
+			return "Aktif";
+		case "inactive":
+			return "Nonaktif";
+		case "rejected":
+			return "Ditolak";
+		default:
+			return "Status tidak diketahui";
+	}
+}
 
-	if (["active", "aktif", "verified"].includes(normalized)) {
+export function getStatusClass(status?: string | null) {
+	const normalized = status?.toLowerCase();
+
+	if (normalized === "active") {
 		return "bg-green-100 text-green-700";
 	}
 
-	if (["inactive", "nonaktif", "blocked", "suspended"].includes(normalized)) {
+	if (normalized === "pending") {
+		return "bg-amber-100 text-amber-700";
+	}
+
+	if (normalized === "inactive") {
+		return "bg-gray-100 text-gray-600";
+	}
+
+	if (normalized === "rejected") {
 		return "bg-red-100 text-red-600";
 	}
 
@@ -55,7 +78,7 @@ function getExportRows(users: User[]) {
 		email: user.email,
 		phone: getUserPhone(user) || "-",
 		role: formatLabel(user.role),
-		status: formatLabel(user.status),
+		status: getStatusLabel(user.status),
 		createdAt: formatDate(user.created_at),
 	}));
 }
@@ -234,9 +257,10 @@ export function exportUsersToPdf(users: User[]) {
 
 export function getUserStats(users: User[]) {
 	const now = new Date();
-	const activeUsers = users.filter((user) =>
-		["active", "aktif"].includes(user.status.toLowerCase()),
-	).length;
+	const activeUsers = users.filter((user) => user.status === "active").length;
+	const pendingUsers = users.filter((user) => user.status === "pending").length;
+	const inactiveUsers = users.filter((user) => user.status === "inactive").length;
+	const rejectedUsers = users.filter((user) => user.status === "rejected").length;
 	const adminUsers = users.filter(isAdminUser).length;
 	const monthUsers = users.filter((user) => {
 		const createdAt = new Date(user.created_at);
@@ -246,5 +270,12 @@ export function getUserStats(users: User[]) {
 		);
 	}).length;
 
-	return { activeUsers, adminUsers, monthUsers };
+	return {
+		activeUsers,
+		adminUsers,
+		inactiveUsers,
+		monthUsers,
+		pendingUsers,
+		rejectedUsers,
+	};
 }

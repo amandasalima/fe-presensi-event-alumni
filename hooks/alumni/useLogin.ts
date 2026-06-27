@@ -1,22 +1,25 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import type { LoginPayload, AuthResponse } from "@/types/auth";
-import type { AxiosError } from "axios";
+import type { LoginPayload, LoginAuthResponse } from "@/types/auth";
 
-async function loginFn(payload: LoginPayload): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>("/auth/login", payload);
+async function loginFn(payload: LoginPayload): Promise<LoginAuthResponse> {
+  const { data } = await api.post<LoginAuthResponse>("/auth/login", payload);
+
+  if (!data.data?.access_token) {
+    throw new Error("Token login tidak tersedia.");
+  }
+
   return data;
 }
 
 export function useLogin() {
   const router = useRouter();
 
-  return useMutation<AuthResponse, AxiosError<{ message: string }>, LoginPayload>(
+  return useMutation<LoginAuthResponse, Error, LoginPayload>(
     {
       mutationFn: loginFn,
       onSuccess: (response, variables) => {
-        // Persist token from response.data.access_token
         const token = response.data.access_token;
         if (variables.remember) {
           localStorage.setItem("alumni_token", token);

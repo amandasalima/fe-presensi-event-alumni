@@ -97,6 +97,15 @@ function toInputDate(value?: string | null) {
 	return `${year}-${month}-${day}`;
 }
 
+function getTodayDateInput() {
+	const today = new Date();
+	const year = today.getFullYear();
+	const month = String(today.getMonth() + 1).padStart(2, "0");
+	const day = String(today.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
+}
+
 function toInputTime(value?: string | null) {
 	if (!value) return "";
 
@@ -794,6 +803,7 @@ function EventFormModal({
 		e.preventDefault();
 
 		const nextErrors: EventFormErrors = {};
+		const today = getTodayDateInput();
 
 		if (!form.category_id) {
 			nextErrors.category_id = ["Kategori wajib dipilih."];
@@ -801,6 +811,10 @@ function EventFormModal({
 
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(form.event_date)) {
 			nextErrors.event_date = ["Tanggal event harus berformat YYYY-MM-DD."];
+		} else if (form.event_date < today) {
+			nextErrors.event_date = [
+				"Tanggal event tidak boleh lebih awal dari hari ini.",
+			];
 		}
 
 		if (form.start_time && form.end_time && form.end_time <= form.start_time) {
@@ -1035,6 +1049,7 @@ function EventFormModal({
 									name="event_date"
 									value={form.event_date}
 									onChange={handleChange}
+									min={getTodayDateInput()}
 									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									required
 								/>

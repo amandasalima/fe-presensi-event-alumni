@@ -4,6 +4,8 @@ import { buildQueryParams } from "./params";
 import type {
 	ApiResponse,
 	CategoriesResponse,
+	EventCategoryPayload,
+	EventCategoryResponse,
 	EventAttendancesResponse,
 	EventDetailResponse,
 	EventListParams,
@@ -81,6 +83,37 @@ export async function getEventCategories() {
 	)) as CategoriesResponse;
 
 	return response.data.categories ?? [];
+}
+
+export async function getEventCategory(id: number) {
+	const response = (await fetchAPI(
+		`/admin/event-categories/${id}`,
+	)) as EventCategoryResponse;
+
+	return response.data.category;
+}
+
+export async function createEventCategory(data: EventCategoryPayload) {
+	return (await fetchAPI("/admin/event-categories", {
+		method: "POST",
+		body: JSON.stringify(data),
+	})) as EventCategoryResponse;
+}
+
+export async function updateEventCategory(
+	id: number,
+	data: EventCategoryPayload,
+) {
+	return (await fetchAPI(`/admin/event-categories/${id}`, {
+		method: "PUT",
+		body: JSON.stringify(data),
+	})) as EventCategoryResponse;
+}
+
+export async function deleteEventCategory(id: number) {
+	return (await fetchAPI(`/admin/event-categories/${id}`, {
+		method: "DELETE",
+	})) as ApiResponse<null>;
 }
 
 export async function createEvent(data: EventPayload) {

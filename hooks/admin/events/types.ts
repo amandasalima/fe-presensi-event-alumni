@@ -49,7 +49,14 @@ export interface EventPayload {
 export interface EventCategory {
 	id: number;
 	category_name: string;
-	description: string;
+	description?: string | null;
+	created_at?: string;
+	updated_at?: string;
+}
+
+export interface EventCategoryPayload {
+	category_name: string;
+	description?: string | null;
 }
 
 export type RawEvent = {
@@ -108,6 +115,10 @@ export type CategoriesData = {
 };
 
 export type CategoriesResponse = ApiResponse<CategoriesData>;
+
+export type EventCategoryResponse = ApiResponse<{
+	category: EventCategory;
+}>;
 
 export interface EventQrCode {
 	id: number;

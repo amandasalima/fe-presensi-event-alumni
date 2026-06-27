@@ -3,6 +3,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import {
 	getEvent,
 	getEventAttendances,
+	getEventCategory,
 	getEventCategories,
 	getEventQr,
 	getEvents,
@@ -55,6 +56,14 @@ export function useEventCategories() {
 		queryKey: adminEventQueryKeys.categories,
 		queryFn: getEventCategories,
 		staleTime: 5 * 60 * 1000,
+	});
+}
+
+export function useEventCategory(id: number | null) {
+	return useQuery({
+		queryKey: adminEventQueryKeys.category(id as number),
+		queryFn: () => getEventCategory(id as number),
+		enabled: !!id,
 	});
 }
 

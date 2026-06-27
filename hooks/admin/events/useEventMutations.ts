@@ -1,13 +1,58 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+	createEventCategory,
 	createEvent,
+	deleteEventCategory,
 	deleteEvent,
 	generateEventQr,
 	toggleEvent,
+	updateEventCategory,
 	updateEvent,
 } from "./api";
 import { adminEventQueryKeys } from "./queryKeys";
-import type { EventPayload, GenerateQrPayload } from "./types";
+import type {
+	EventCategoryPayload,
+	EventPayload,
+	GenerateQrPayload,
+} from "./types";
+
+function invalidateCategoryData(queryClient: ReturnType<typeof useQueryClient>) {
+	queryClient.invalidateQueries({ queryKey: adminEventQueryKeys.categories });
+	queryClient.invalidateQueries({ queryKey: adminEventQueryKeys.lists });
+}
+
+export function useCreateEventCategory() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: createEventCategory,
+		onSuccess: () => invalidateCategoryData(queryClient),
+	});
+}
+
+export function useUpdateEventCategory() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, data }: { id: number; data: EventCategoryPayload }) =>
+			updateEventCategory(id, data),
+		onSuccess: (_data, variables) => {
+			invalidateCategoryData(queryClient);
+			queryClient.invalidateQueries({
+				queryKey: adminEventQueryKeys.category(variables.id),
+			});
+		},
+	});
+}
+
+export function useDeleteEventCategory() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: deleteEventCategory,
+		onSuccess: () => invalidateCategoryData(queryClient),
+	});
+}
 
 export function useCreateEvent() {
 	const queryClient = useQueryClient();

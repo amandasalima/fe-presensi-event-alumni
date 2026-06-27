@@ -11,6 +11,7 @@ import {
 	MapPin,
 	Clock3,
 	Pencil,
+	Power,
 	Megaphone,
 	Search,
 	Eye,
@@ -33,15 +34,17 @@ import {
 	useCreateEventCategory,
 	useUpdateEvent,
 	useUpdateEventCategory,
-	useDeleteEvent,
 	useDeleteEventCategory,
+	useToggleEvent,
 	useEventCategories,
 	useEvent,
 	useEventRegistrations,
 	type CategoryObject,
 	type Event,
+	type EventActiveStatus,
 	type EventCategory,
 	type EventPayload,
+	type EventStatus,
 } from "@/hooks/admin/useEvents";
 import type { EventBroadcastTarget } from "@/hooks/admin/useBroadcast";
 import { useEventBroadcastForm } from "./_hooks/useEventBroadcastForm";
@@ -97,6 +100,15 @@ function toInputDate(value?: string | null) {
 	return `${year}-${month}-${day}`;
 }
 
+function getTodayDateInput() {
+	const today = new Date();
+	const year = today.getFullYear();
+	const month = String(today.getMonth() + 1).padStart(2, "0");
+	const day = String(today.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
+}
+
 function toInputTime(value?: string | null) {
 	if (!value) return "";
 
@@ -121,7 +133,11 @@ function getQuotaPercent(event: Event) {
 }
 
 function getQuotaLabel(event: Event) {
-	if (event.quota === null || event.quota === undefined || event.quota_status === "unlimited") {
+	if (
+		event.quota === null ||
+		event.quota === undefined ||
+		event.quota_status === "unlimited"
+	) {
 		return "Tidak terbatas";
 	}
 
@@ -131,6 +147,20 @@ function getQuotaLabel(event: Event) {
 function getRemainingQuotaLabel(event: Event) {
 	const remainingQuota = getRemainingQuota(event);
 	return remainingQuota === null ? "Tidak terbatas" : remainingQuota;
+}
+
+function getEventPublicationStatus(event: Event): EventActiveStatus {
+	const status = event.raw_status_event ?? event.status_event;
+
+	return status === "inactive" ? "inactive" : "active";
+}
+
+function getEventTimeStatus(event: Event): EventStatus {
+	return event.status_event === "Selesai" ? "Selesai" : "Mendatang";
+}
+
+function isEventPublished(event: Event) {
+	return getEventPublicationStatus(event) === "active";
 }
 
 function formatDateTimeIndonesia(value?: string | null) {
@@ -150,7 +180,8 @@ function formatDateTimeIndonesia(value?: string | null) {
 		hour12: false,
 	}).formatToParts(date);
 	const hour = timeParts.find((part) => part.type === "hour")?.value ?? "00";
-	const minute = timeParts.find((part) => part.type === "minute")?.value ?? "00";
+	const minute =
+		timeParts.find((part) => part.type === "minute")?.value ?? "00";
 
 	return `${datePart}, ${hour}:${minute}`;
 }
@@ -167,7 +198,8 @@ function hasEventValueChanged(
 	event: Event,
 ) {
 	if (key === "poster") return nextValue instanceof File;
-	if (key === "category_id") return Number(nextValue) !== (event.category_id ?? 0);
+	if (key === "category_id")
+		return Number(nextValue) !== (event.category_id ?? 0);
 	if (key === "quota") {
 		const currentQuota = event.quota ?? "";
 		return nextValue !== currentQuota;
@@ -218,17 +250,21 @@ function eventUsesCategory(
 	}
 
 	if (typeof event.category === "string") {
-		return event.category.trim().toLowerCase() ===
-			category.category_name.trim().toLowerCase();
+		return (
+			event.category.trim().toLowerCase() ===
+			category.category_name.trim().toLowerCase()
+		);
 	}
 
 	if (event.category && typeof event.category === "object") {
 		const eventCategoryName = event.category.category_name;
 
-		return event.category.id === category.id ||
+		return (
+			event.category.id === category.id ||
 			(typeof eventCategoryName === "string" &&
 				eventCategoryName.trim().toLowerCase() ===
-					category.category_name.trim().toLowerCase());
+					category.category_name.trim().toLowerCase())
+		);
 	}
 
 	return false;
@@ -254,8 +290,7 @@ function Icon3D({
 	const variants = {
 		teal: "from-[#D8F3F0] via-[#7AB2B2] to-[#2D7EA0] text-white",
 		blue: "from-blue-100 via-blue-400 to-blue-600 text-white",
-		green:
-			"from-emerald-100 via-emerald-400 to-emerald-600 text-white",
+		green: "from-emerald-100 via-emerald-400 to-emerald-600 text-white",
 		red: "from-red-100 via-red-400 to-red-600 text-white",
 		gray: "from-gray-100 via-gray-300 to-gray-500 text-white",
 	};
@@ -412,103 +447,105 @@ function EventCategorySection({
 					</div>
 
 					{actionError && (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-					{actionError}
-				</div>
-			)}
+						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+							{actionError}
+						</div>
+					)}
 
-			{isLoading && (
-				<div className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
-					Memuat kategori...
-				</div>
-			)}
+					{isLoading && (
+						<div className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+							Memuat kategori...
+						</div>
+					)}
 
-			{isError && (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-4 text-sm text-red-600">
-					<p>Gagal memuat kategori event.</p>
-					<button
-						type="button"
-						onClick={onRetry}
-						className="mt-2 font-semibold text-[#2D7EA0] hover:underline"
-					>
-						Coba lagi
-					</button>
-				</div>
-			)}
+					{isError && (
+						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-4 text-sm text-red-600">
+							<p>Gagal memuat kategori event.</p>
+							<button
+								type="button"
+								onClick={onRetry}
+								className="mt-2 font-semibold text-[#2D7EA0] hover:underline"
+							>
+								Coba lagi
+							</button>
+						</div>
+					)}
 
-			{!isLoading && !isError && categories.length === 0 && (
-				<div className="rounded-xl bg-gray-50 px-4 py-8 text-center text-sm text-gray-400">
-					Belum ada kategori event
-				</div>
-			)}
+					{!isLoading && !isError && categories.length === 0 && (
+						<div className="rounded-xl bg-gray-50 px-4 py-8 text-center text-sm text-gray-400">
+							Belum ada kategori event
+						</div>
+					)}
 
-			{!isLoading && !isError && categories.length > 0 && (
-				<div className="overflow-x-auto rounded-xl border border-gray-100">
-					<table className="min-w-full divide-y divide-gray-100 text-left">
-						<thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
-							<tr>
-								<th className="px-4 py-3">Nama kategori</th>
-								<th className="px-4 py-3">Deskripsi</th>
-								<th className="px-4 py-3 text-center">Jumlah event</th>
-								<th className="px-4 py-3 text-right">Aksi</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-gray-100">
-							{categories.map((category) => {
-								const usageCount = getCategoryUsageCount(category, events);
-								const deleteDisabled =
-									isUsageLoading || isUsageUnavailable || usageCount > 0;
-								const deleteTitle = isUsageLoading
-									? "Sedang memeriksa penggunaan kategori"
-									: isUsageUnavailable
-										? "Penggunaan kategori belum dapat diverifikasi"
-										: usageCount > 0
-											? "Kategori masih digunakan oleh event"
-											: "Hapus kategori";
-
-								return (
-									<tr key={category.id} className="text-sm text-gray-600">
-										<td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-800">
-											{category.category_name}
-										</td>
-										<td className="max-w-md px-4 py-3 text-gray-500">
-											{category.description || "-"}
-										</td>
-										<td className="px-4 py-3 text-center">
-											{isUsageLoading || isUsageUnavailable ? "..." : usageCount}
-										</td>
-										<td className="px-4 py-3">
-											<div className="flex justify-end gap-2">
-												<button
-													type="button"
-													onClick={() => onEdit(category)}
-													className="inline-flex items-center gap-1.5 rounded-lg border border-[#7AB2B2]/30 px-3 py-1.5 text-xs font-semibold text-[#2D7EA0] transition hover:bg-[#7AB2B2]/10"
-												>
-													<Pencil size={13} /> Edit
-												</button>
-												<button
-													type="button"
-													onClick={() => onDelete(category)}
-													disabled={deleteDisabled}
-													title={deleteTitle}
-													className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-300"
-												>
-													<Trash2 size={13} /> Hapus
-												</button>
-											</div>
-											{usageCount > 0 && !isUsageLoading && (
-												<p className="mt-1 text-right text-[11px] text-gray-400">
-													Kategori masih digunakan oleh event
-												</p>
-											)}
-										</td>
+					{!isLoading && !isError && categories.length > 0 && (
+						<div className="overflow-x-auto rounded-xl border border-gray-100">
+							<table className="min-w-full divide-y divide-gray-100 text-left">
+								<thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+									<tr>
+										<th className="px-4 py-3">Nama kategori</th>
+										<th className="px-4 py-3">Deskripsi</th>
+										<th className="px-4 py-3 text-center">Jumlah event</th>
+										<th className="px-4 py-3 text-right">Aksi</th>
 									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				</div>
-			)}
+								</thead>
+								<tbody className="divide-y divide-gray-100">
+									{categories.map((category) => {
+										const usageCount = getCategoryUsageCount(category, events);
+										const deleteDisabled =
+											isUsageLoading || isUsageUnavailable || usageCount > 0;
+										const deleteTitle = isUsageLoading
+											? "Sedang memeriksa penggunaan kategori"
+											: isUsageUnavailable
+												? "Penggunaan kategori belum dapat diverifikasi"
+												: usageCount > 0
+													? "Kategori masih digunakan oleh event"
+													: "Hapus kategori";
+
+										return (
+											<tr key={category.id} className="text-sm text-gray-600">
+												<td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-800">
+													{category.category_name}
+												</td>
+												<td className="max-w-md px-4 py-3 text-gray-500">
+													{category.description || "-"}
+												</td>
+												<td className="px-4 py-3 text-center">
+													{isUsageLoading || isUsageUnavailable
+														? "..."
+														: usageCount}
+												</td>
+												<td className="px-4 py-3">
+													<div className="flex justify-end gap-2">
+														<button
+															type="button"
+															onClick={() => onEdit(category)}
+															className="inline-flex items-center gap-1.5 rounded-lg border border-[#7AB2B2]/30 px-3 py-1.5 text-xs font-semibold text-[#2D7EA0] transition hover:bg-[#7AB2B2]/10"
+														>
+															<Pencil size={13} /> Edit
+														</button>
+														<button
+															type="button"
+															onClick={() => onDelete(category)}
+															disabled={deleteDisabled}
+															title={deleteTitle}
+															className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-300"
+														>
+															<Trash2 size={13} /> Hapus
+														</button>
+													</div>
+													{usageCount > 0 && !isUsageLoading && (
+														<p className="mt-1 text-right text-[11px] text-gray-400">
+															Kategori masih digunakan oleh event
+														</p>
+													)}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+					)}
 				</div>
 			)}
 		</div>
@@ -742,12 +779,11 @@ function EventFormModal({
 	const isPending = createEvent.isPending || updateEvent.isPending;
 	const isError = createEvent.isError || updateEvent.isError;
 
-	const errorMessage =
-		createEvent.isError
-			? getApiErrorMessage(createEvent.error, "Gagal menyimpan event")
-			: updateEvent.isError
-				? getApiErrorMessage(updateEvent.error, "Gagal menyimpan event")
-				: "Gagal menyimpan event";
+	const errorMessage = createEvent.isError
+		? getApiErrorMessage(createEvent.error, "Gagal menyimpan event")
+		: updateEvent.isError
+			? getApiErrorMessage(updateEvent.error, "Gagal menyimpan event")
+			: "Gagal menyimpan event";
 
 	const getFieldError = (field: keyof EventFormState) =>
 		formErrors[field]?.[0] ?? "";
@@ -794,6 +830,7 @@ function EventFormModal({
 		e.preventDefault();
 
 		const nextErrors: EventFormErrors = {};
+		const today = getTodayDateInput();
 
 		if (!form.category_id) {
 			nextErrors.category_id = ["Kategori wajib dipilih."];
@@ -801,6 +838,10 @@ function EventFormModal({
 
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(form.event_date)) {
 			nextErrors.event_date = ["Tanggal event harus berformat YYYY-MM-DD."];
+		} else if (form.event_date < today) {
+			nextErrors.event_date = [
+				"Tanggal event tidak boleh lebih awal dari hari ini.",
+			];
 		}
 
 		if (form.start_time && form.end_time && form.end_time <= form.start_time) {
@@ -808,7 +849,9 @@ function EventFormModal({
 		}
 
 		if (form.poster && !isValidPoster(form.poster)) {
-			nextErrors.poster = ["Poster harus JPG, JPEG, PNG, atau WebP dan maksimal 5MB."];
+			nextErrors.poster = [
+				"Poster harus JPG, JPEG, PNG, atau WebP dan maksimal 5MB.",
+			];
 		}
 
 		if (Object.keys(nextErrors).length > 0) {
@@ -1035,6 +1078,7 @@ function EventFormModal({
 									name="event_date"
 									value={form.event_date}
 									onChange={handleChange}
+									min={getTodayDateInput()}
 									className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 									required
 								/>
@@ -1519,9 +1563,12 @@ function EventRegistrationsModal({
 	const registrations = data?.registrations ?? [];
 	const quotaFull = summary?.is_quota_full ?? event.is_quota_full;
 	const quotaMessage =
-		summary?.quota_message || event.quota_message || "Kuota penuh, segera hubungi penyelenggara";
+		summary?.quota_message ||
+		event.quota_message ||
+		"Kuota penuh, segera hubungi penyelenggara";
 	const quotaValue = summary?.quota ?? event.quota;
-	const quotaUsed = summary?.quota_used ?? event.quota_used ?? event.registered ?? 0;
+	const quotaUsed =
+		summary?.quota_used ?? event.quota_used ?? event.registered ?? 0;
 	const remainingQuota = summary?.remaining_quota ?? event.remaining_quota;
 
 	return (
@@ -1561,13 +1608,21 @@ function EventRegistrationsModal({
 						/>
 						<StatCard
 							label="Kuota"
-							value={quotaValue === null || quotaValue === undefined ? "Tidak terbatas" : `${quotaUsed}/${quotaValue}`}
+							value={
+								quotaValue === null || quotaValue === undefined
+									? "Tidak terbatas"
+									: `${quotaUsed}/${quotaValue}`
+							}
 							sub="Terpakai/kapasitas"
 							accent="border-[#7AB2B2]"
 						/>
 						<StatCard
 							label="Sisa Kuota"
-							value={remainingQuota === null || remainingQuota === undefined ? "Tidak terbatas" : remainingQuota}
+							value={
+								remainingQuota === null || remainingQuota === undefined
+									? "Tidak terbatas"
+									: remainingQuota
+							}
 							sub="Dari backend"
 							accent="border-[#7AB2B2]"
 						/>
@@ -1610,7 +1665,10 @@ function EventRegistrationsModal({
 							<tbody>
 								{isLoading ? (
 									[1, 2, 3].map((item) => (
-										<tr key={item} className="border-b border-gray-50 animate-pulse">
+										<tr
+											key={item}
+											className="border-b border-gray-50 animate-pulse"
+										>
 											{Array.from({ length: 7 }).map((_, index) => (
 												<td key={index} className="px-4 py-3">
 													<div className="h-4 bg-gray-100 rounded w-24" />
@@ -1637,7 +1695,8 @@ function EventRegistrationsModal({
 												className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
 											>
 												<td className="px-4 py-3 font-medium text-gray-800">
-													{registration.user?.name ?? `User #${registration.user_id}`}
+													{registration.user?.name ??
+														`User #${registration.user_id}`}
 												</td>
 												<td className="px-4 py-3 text-gray-500">
 													{registration.user?.email ?? "-"}
@@ -1646,7 +1705,9 @@ function EventRegistrationsModal({
 													{registration.user?.phone ?? "-"}
 												</td>
 												<td className="px-4 py-3 text-gray-500">
-													{registration.user?.angkatan ?? registration.user?.graduation_year ?? "-"}
+													{registration.user?.angkatan ??
+														registration.user?.graduation_year ??
+														"-"}
 												</td>
 												<td className="px-4 py-3 text-gray-500">
 													{registration.status} / {attendanceStatus}
@@ -1819,7 +1880,8 @@ function EventDetailModal({
 
 							{event.is_quota_full && (
 								<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-									{event.quota_message || "Kuota penuh, segera hubungi penyelenggara"}
+									{event.quota_message ||
+										"Kuota penuh, segera hubungi penyelenggara"}
 								</div>
 							)}
 
@@ -1847,7 +1909,10 @@ function EventDetailModal({
 									value={`${time} - ${event.end_time?.slice(0, 5) || "-"}`}
 								/>
 								<DetailItem label="Lokasi" value={event.location} />
-								<DetailItem label="Kategori ID" value={event.category_id ?? "-"} />
+								<DetailItem
+									label="Kategori ID"
+									value={event.category_id ?? "-"}
+								/>
 								<DetailItem
 									label="Dibuat"
 									value={
@@ -1878,21 +1943,27 @@ function EventCardUpcoming({
 	event,
 	onDetail,
 	onEdit,
-	onDelete,
+	onTogglePublish,
 	onBroadcast,
 	onRegistrations,
+	isToggling,
+	statusLabel = "Mendatang",
 }: {
 	event: Event;
 	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
-	onDelete: (id: number) => void;
+	onTogglePublish: (event: Event) => void;
 	onBroadcast: (event: Event) => void;
 	onRegistrations: (event: Event) => void;
+	isToggling: boolean;
+	statusLabel?: "Mendatang" | "Tidak Dipublikasikan";
 }) {
 	const { date, time } = parseEventDate(event);
 	const registered = getRegisteredCount(event);
 	const remainingQuota = getRemainingQuota(event);
 	const pct = getQuotaPercent(event);
+	const published = isEventPublished(event);
+	const isUnpublished = statusLabel === "Tidak Dipublikasikan";
 
 	return (
 		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -1900,8 +1971,14 @@ function EventCardUpcoming({
 				<h3 className="font-semibold text-gray-800 text-base leading-tight">
 					{event.event_title}
 				</h3>
-				<span className="text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap ml-2">
-					Mendatang
+				<span
+					className={`ml-2 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${
+						isUnpublished
+							? "border-amber-200 bg-amber-50 text-amber-700"
+							: "border-teal-200 bg-[#7AB2B2]/10 text-[#2D7EA0]"
+					}`}
+				>
+					{statusLabel}
 				</span>
 				{event.is_quota_full && (
 					<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
@@ -1933,33 +2010,37 @@ function EventCardUpcoming({
 			</div>
 
 			<div className="mt-4">
-				{event.quota === null || event.quota === undefined || event.quota_status === "unlimited" ? (
+				{event.quota === null ||
+				event.quota === undefined ||
+				event.quota_status === "unlimited" ? (
 					<div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-600">
 						<p className="font-medium">Kuota: Tidak terbatas</p>
-						<p className="text-xs text-gray-400 mt-0.5">Sisa kuota: Tidak terbatas</p>
+						<p className="text-xs text-gray-400 mt-0.5">
+							Sisa kuota: Tidak terbatas
+						</p>
 					</div>
 				) : (
 					<>
-					<div className="flex justify-between text-sm text-gray-600 mb-1.5">
-						<span>Kuota</span>
-						<span className="font-medium">
-							{registered}/{event.quota}
-						</span>
-					</div>
-					<p className="text-xs text-gray-400 mb-1.5">
-						Sisa kuota: {remainingQuota ?? 0}
-					</p>
+						<div className="flex justify-between text-sm text-gray-600 mb-1.5">
+							<span>Kuota</span>
+							<span className="font-medium">
+								{registered}/{event.quota}
+							</span>
+						</div>
+						<p className="text-xs text-gray-400 mb-1.5">
+							Sisa kuota: {remainingQuota ?? 0}
+						</p>
 
-					<div className="w-full bg-gray-100 rounded-full h-2">
-						<div
-							className="bg-[#3EBDAF] h-2 rounded-full transition-all"
-							style={{ width: `${pct}%` }}
-						/>
-					</div>
+						<div className="w-full bg-gray-100 rounded-full h-2">
+							<div
+								className="bg-[#3EBDAF] h-2 rounded-full transition-all"
+								style={{ width: `${pct}%` }}
+							/>
+						</div>
 
-					<p className="text-xs text-gray-400 mt-1 text-right">
-						{registered} terdaftar
-					</p>
+						<p className="text-xs text-gray-400 mt-1 text-right">
+							{registered} terdaftar
+						</p>
 					</>
 				)}
 				{event.is_quota_full && (
@@ -2003,11 +2084,17 @@ function EventCardUpcoming({
 				</button>
 
 				<button
-					onClick={() => onDelete(event.id)}
-					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					onClick={() => onTogglePublish(event)}
+					disabled={isToggling}
+					title={published ? "Unpublish event" : "Publish event"}
+					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
+						published
+							? "border-amber-200 text-amber-700 hover:bg-amber-50"
+							: "border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10"
+					}`}
 				>
-					<Trash2 size={13} />
-					Hapus
+					<Power size={13} />
+					{isToggling ? "Memproses..." : published ? "Unpublish" : "Publish"}
 				</button>
 			</div>
 		</div>
@@ -2019,21 +2106,27 @@ function EventCardDone({
 	event,
 	onDetail,
 	onEdit,
-	onDelete,
+	onTogglePublish,
 	onBroadcast,
 	onRegistrations,
+	isToggling,
+	statusLabel = "Selesai",
 }: {
 	event: Event;
 	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
-	onDelete: (id: number) => void;
+	onTogglePublish: (event: Event) => void;
 	onBroadcast: (event: Event) => void;
 	onRegistrations: (event: Event) => void;
+	isToggling: boolean;
+	statusLabel?: "Selesai" | "Tidak Dipublikasikan";
 }) {
 	const { date, time } = parseEventDate(event);
 	const registered = getRegisteredCount(event);
 	const remainingQuota = getRemainingQuota(event);
 	const pct = getQuotaPercent(event);
+	const published = isEventPublished(event);
+	const isUnpublished = statusLabel === "Tidak Dipublikasikan";
 
 	return (
 		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -2042,8 +2135,14 @@ function EventCardDone({
 					{event.event_title}
 				</h3>
 
-				<span className="text-xs bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap ml-2">
-					Selesai
+				<span
+					className={`ml-2 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${
+						isUnpublished
+							? "border-amber-200 bg-amber-50 text-amber-700"
+							: "border-gray-200 bg-gray-100 text-gray-500"
+					}`}
+				>
+					{statusLabel}
 				</span>
 				{event.is_quota_full && (
 					<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
@@ -2075,31 +2174,35 @@ function EventCardDone({
 			</div>
 
 			<div>
-				{event.quota === null || event.quota === undefined || event.quota_status === "unlimited" ? (
+				{event.quota === null ||
+				event.quota === undefined ||
+				event.quota_status === "unlimited" ? (
 					<div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-600">
 						<p className="font-medium">Kuota: Tidak terbatas</p>
-						<p className="text-xs text-gray-400 mt-0.5">Sisa kuota: Tidak terbatas</p>
+						<p className="text-xs text-gray-400 mt-0.5">
+							Sisa kuota: Tidak terbatas
+						</p>
 					</div>
 				) : (
 					<>
-					<div className="flex justify-between text-sm text-gray-600 mb-1.5">
-						<span>Kuota</span>
-						<span className="font-medium">
-							{registered} / {event.quota}
-						</span>
-					</div>
+						<div className="flex justify-between text-sm text-gray-600 mb-1.5">
+							<span>Kuota</span>
+							<span className="font-medium">
+								{registered} / {event.quota}
+							</span>
+						</div>
 
-					<div className="w-full bg-gray-100 rounded-full h-2">
-						<div
-							className="bg-[#3EBDAF] h-2 rounded-full transition-all"
-							style={{ width: `${pct}%` }}
-						/>
-					</div>
+						<div className="w-full bg-gray-100 rounded-full h-2">
+							<div
+								className="bg-[#3EBDAF] h-2 rounded-full transition-all"
+								style={{ width: `${pct}%` }}
+							/>
+						</div>
 
-					<p className="text-xs text-gray-400 mt-1 text-right">
-						{pct}% terisi
-						{remainingQuota !== null ? ` • sisa ${remainingQuota}` : ""}
-					</p>
+						<p className="text-xs text-gray-400 mt-1 text-right">
+							{pct}% terisi
+							{remainingQuota !== null ? ` • sisa ${remainingQuota}` : ""}
+						</p>
 					</>
 				)}
 				{event.is_quota_full && (
@@ -2143,11 +2246,17 @@ function EventCardDone({
 				</button>
 
 				<button
-					onClick={() => onDelete(event.id)}
-					className="flex-1 text-xs border border-red-100 text-red-400 hover:bg-red-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					onClick={() => onTogglePublish(event)}
+					disabled={isToggling}
+					title={published ? "Unpublish event" : "Publish event"}
+					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
+						published
+							? "border-amber-200 text-amber-700 hover:bg-amber-50"
+							: "border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10"
+					}`}
 				>
-					<Trash2 size={13} />
-					Hapus
+					<Power size={13} />
+					{isToggling ? "Memproses..." : published ? "Unpublish" : "Publish"}
 				</button>
 			</div>
 		</div>
@@ -2161,9 +2270,11 @@ export default function KelolEventPage() {
 	const [eventModalMode, setEventModalMode] = useState<EventFormMode>("create");
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 	const [detailEvent, setDetailEvent] = useState<Event | null>(null);
-	const [registrationsEvent, setRegistrationsEvent] = useState<Event | null>(null);
+	const [registrationsEvent, setRegistrationsEvent] = useState<Event | null>(
+		null,
+	);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
-	const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
+	const [toggleTarget, setToggleTarget] = useState<Event | null>(null);
 	const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 	const [categoryModalMode, setCategoryModalMode] =
 		useState<CategoryFormMode>("create");
@@ -2171,12 +2282,21 @@ export default function KelolEventPage() {
 		useState<EventCategory | null>(null);
 	const [categoryDeleteTarget, setCategoryDeleteTarget] =
 		useState<EventCategory | null>(null);
-	const [categoryActionError, setCategoryActionError] =
-		useState<string | null>(null);
-	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-	const [activeTab, setActiveTab] = useState<"upcoming" | "done">("upcoming");
+	const [categoryActionError, setCategoryActionError] = useState<string | null>(
+		null,
+	);
+	const [toast, setToast] = useState<{
+		message: string;
+		type: "success" | "error";
+	} | null>(null);
+	const [activeTab, setActiveTab] = useState<
+		"upcoming" | "done" | "unpublished"
+	>("upcoming");
 
-	const showToast = (message: string, type: "success" | "error" = "success") => {
+	const showToast = (
+		message: string,
+		type: "success" | "error" = "success",
+	) => {
 		setToast({ message, type });
 		setTimeout(() => setToast(null), 3000);
 	};
@@ -2186,7 +2306,7 @@ export default function KelolEventPage() {
 		isLoading,
 		isError,
 		error,
-	} = useEvents(search, 10, undefined, undefined, 5000);
+	} = useEvents(search, 100, undefined, undefined, 5000);
 	const {
 		data: categories = [],
 		isLoading: categoriesLoading,
@@ -2199,8 +2319,8 @@ export default function KelolEventPage() {
 		isError: categoryUsageError,
 	} = useEvents("", 100, undefined, undefined, 5000);
 
-	const deleteEvent = useDeleteEvent();
 	const deleteCategory = useDeleteEventCategory();
+	const toggleEvent = useToggleEvent();
 
 	const handleCreate = () => {
 		setEventModalMode("create");
@@ -2272,23 +2392,28 @@ export default function KelolEventPage() {
 		});
 	};
 
-	const handleDelete = (id: number) => {
-		const event = events.find((item) => item.id === id) ?? null;
-		setDeleteTarget(event);
+	const handleTogglePublish = (event: Event) => {
+		setToggleTarget(event);
 	};
 
-	const handleConfirmDelete = () => {
-		if (!deleteTarget) return;
+	const handleConfirmTogglePublish = () => {
+		if (!toggleTarget) return;
 
-		deleteEvent.mutate(deleteTarget.id, {
+		const wasPublished = isEventPublished(toggleTarget);
+
+		toggleEvent.mutate(toggleTarget.id, {
 			onSuccess: () => {
-				setDeleteTarget(null);
-				showToast("Event berhasil dihapus");
+				setToggleTarget(null);
+				showToast(
+					wasPublished
+						? "Event berhasil di-unpublish"
+						: "Event berhasil dipublish",
+				);
 			},
 			onError: (error) => {
-				setDeleteTarget(null);
+				setToggleTarget(null);
 				showToast(
-					getApiErrorMessage(error, "Event belum berhasil dihapus. Silakan coba lagi."),
+					getApiErrorMessage(error, "Gagal mengubah status publish event"),
 					"error",
 				);
 			},
@@ -2301,12 +2426,23 @@ export default function KelolEventPage() {
 
 	const filtered = events;
 
-	const upcoming = filtered.filter((e) => e.status_event === "Mendatang");
-	const done = filtered.filter((e) => e.status_event === "Selesai");
+	const upcoming = filtered.filter(
+		(event) =>
+			getEventPublicationStatus(event) === "active" &&
+			getEventTimeStatus(event) === "Mendatang",
+	);
+	const done = filtered.filter(
+		(event) =>
+			getEventPublicationStatus(event) === "active" &&
+			getEventTimeStatus(event) === "Selesai",
+	);
+	const unpublished = filtered.filter(
+		(event) => getEventPublicationStatus(event) === "inactive",
+	);
 
-	const totalPeserta = events
-		.filter((e) => e.registered !== undefined)
-		.reduce((sum, e) => sum + (e.registered ?? 0), 0);
+	const totalPeserta = events.reduce((sum, event) => {
+		return sum + (event.quota_used ?? event.registered ?? 0);
+	}, 0);
 
 	return (
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
@@ -2325,23 +2461,15 @@ export default function KelolEventPage() {
 
 						<StatCard
 							label="Event Mendatang"
-							value={
-								isLoading
-									? "..."
-									: events.filter((e) => e.status_event === "Mendatang").length
-							}
+							value={isLoading ? "..." : upcoming.length}
 							sub="Event aktif"
 							accent="border-[#7AB2B2]"
 						/>
 
 						<StatCard
 							label="Event Selesai"
-							value={
-								isLoading
-									? "..."
-									: events.filter((e) => e.status_event === "Selesai").length
-							}
-							sub="Event berlangsung"
+							value={isLoading ? "..." : done.length}
+							sub="Event selesai"
 						/>
 
 						<StatCard
@@ -2395,7 +2523,6 @@ export default function KelolEventPage() {
 							className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
 						/>
 
-
 						{isLoading && (
 							<div className="space-y-6">
 								<div>
@@ -2433,7 +2560,7 @@ export default function KelolEventPage() {
 									</div>
 								) : (
 									<>
-										<div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit mb-4">
+										<div className="mb-4 flex w-fit flex-wrap gap-2 rounded-xl bg-gray-100 p-1">
 											<button
 												onClick={() => setActiveTab("upcoming")}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
@@ -2454,6 +2581,16 @@ export default function KelolEventPage() {
 											>
 												Selesai ({done.length})
 											</button>
+											<button
+												onClick={() => setActiveTab("unpublished")}
+												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+													activeTab === "unpublished"
+														? "bg-white text-amber-700 shadow-sm"
+														: "text-gray-500 hover:text-gray-700"
+												}`}
+											>
+												Tidak Dipublikasikan ({unpublished.length})
+											</button>
 										</div>
 
 										{activeTab === "upcoming" && (
@@ -2471,9 +2608,13 @@ export default function KelolEventPage() {
 																event={e}
 																onDetail={handleDetail}
 																onEdit={handleEdit}
-																onDelete={handleDelete}
+																onTogglePublish={handleTogglePublish}
 																onBroadcast={handleOpenBroadcast}
 																onRegistrations={handleRegistrations}
+																isToggling={
+																	toggleEvent.isPending &&
+																	toggleTarget?.id === e.id
+																}
 															/>
 														))}
 													</div>
@@ -2496,11 +2637,53 @@ export default function KelolEventPage() {
 																event={e}
 																onDetail={handleDetail}
 																onEdit={handleEdit}
-																onDelete={handleDelete}
+																onTogglePublish={handleTogglePublish}
 																onBroadcast={handleOpenBroadcast}
 																onRegistrations={handleRegistrations}
+																isToggling={
+																	toggleEvent.isPending &&
+																	toggleTarget?.id === e.id
+																}
 															/>
 														))}
+													</div>
+												)}
+											</div>
+										)}
+
+										{activeTab === "unpublished" && (
+											<div>
+												{unpublished.length === 0 ? (
+													<div className="text-center py-12 text-gray-400 bg-white border border-gray-100 rounded-2xl">
+														<p className="text-sm">
+															Tidak ada event yang belum dipublikasikan
+														</p>
+													</div>
+												) : (
+													<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+														{unpublished.map((event) => {
+															const cardProps = {
+																event,
+																onDetail: handleDetail,
+																onEdit: handleEdit,
+																onTogglePublish: handleTogglePublish,
+																onBroadcast: handleOpenBroadcast,
+																onRegistrations: handleRegistrations,
+																isToggling:
+																	toggleEvent.isPending &&
+																	toggleTarget?.id === event.id,
+																statusLabel: "Tidak Dipublikasikan" as const,
+															};
+
+															return event.status_event === "Selesai" ? (
+																<EventCardDone key={event.id} {...cardProps} />
+															) : (
+																<EventCardUpcoming
+																	key={event.id}
+																	{...cardProps}
+																/>
+															);
+														})}
 													</div>
 												)}
 											</div>
@@ -2557,17 +2740,28 @@ export default function KelolEventPage() {
 			)}
 
 			<ConfirmDialog
-				isOpen={!!deleteTarget}
-				title="Hapus event?"
-				message={
-					deleteTarget
-						? `Event "${deleteTarget.event_title}" akan dihapus permanen dari daftar.`
-						: "Event ini akan dihapus permanen dari daftar."
+				isOpen={!!toggleTarget}
+				title={
+					toggleTarget && isEventPublished(toggleTarget)
+						? "Unpublish event?"
+						: "Publish event?"
 				}
-				confirmLabel="Hapus"
-				loading={deleteEvent.isPending}
-				onCancel={() => setDeleteTarget(null)}
-				onConfirm={handleConfirmDelete}
+				message={
+					toggleTarget && isEventPublished(toggleTarget)
+						? "Yakin ingin unpublish event ini? Event tidak akan tampil untuk alumni."
+						: "Yakin ingin publish event ini? Event akan tampil untuk alumni."
+				}
+				confirmLabel={
+					toggleTarget && isEventPublished(toggleTarget)
+						? "Unpublish"
+						: "Publish"
+				}
+				tone={
+					toggleTarget && isEventPublished(toggleTarget) ? "danger" : "default"
+				}
+				loading={toggleEvent.isPending}
+				onCancel={() => setToggleTarget(null)}
+				onConfirm={handleConfirmTogglePublish}
 			/>
 
 			<ConfirmDialog

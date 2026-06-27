@@ -23,6 +23,7 @@ export interface Event {
 	end_time?: string;
 	location: string;
 	status_event: EventStatus;
+	raw_status_event?: EventActiveStatus;
 	quota?: number | null;
 	quota_used?: number;
 	remaining_quota?: number | null;

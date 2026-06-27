@@ -1,4 +1,9 @@
-import type { Event, EventStatus, RawEvent } from "./types";
+import type {
+	Event,
+	EventActiveStatus,
+	EventStatus,
+	RawEvent,
+} from "./types";
 
 function getCategoryName(category: RawEvent["category"], fallback?: string) {
 	if (typeof category === "string") {
@@ -62,6 +67,16 @@ function getEventStatus(event: RawEvent): EventStatus {
 	return eventDate >= new Date() ? "Mendatang" : "Selesai";
 }
 
+function getRawEventStatus(event: RawEvent): EventActiveStatus | undefined {
+	const status = event.status_event ?? event.status;
+
+	if (status === "active" || status === "inactive") {
+		return status;
+	}
+
+	return undefined;
+}
+
 function toLocalDateString(value?: string | null) {
 	if (!value) return "";
 
@@ -81,8 +96,11 @@ function toLocalDateString(value?: string | null) {
 }
 
 export function normalizeEvent(event: RawEvent): Event {
-	const localDate = event.event_date ? toLocalDateString(event.event_date) : undefined;
+	const localDate = event.event_date
+		? toLocalDateString(event.event_date)
+		: undefined;
 	const normalizedRaw = { ...event, event_date: localDate };
+	const participantCount = event.quota_used ?? event.registered ?? 0;
 
 	return {
 		id: event.id,
@@ -97,13 +115,14 @@ export function normalizeEvent(event: RawEvent): Event {
 		end_time: event.end_time,
 		location: event.location,
 		status_event: getEventStatus(normalizedRaw),
+		raw_status_event: getRawEventStatus(event),
 		quota: event.quota,
-		quota_used: event.quota_used,
+		quota_used: participantCount,
 		remaining_quota: event.remaining_quota,
 		is_quota_full: event.is_quota_full,
 		quota_status: event.quota_status,
 		quota_message: event.quota_message,
-		registered: event.registered,
+		registered: event.registered ?? participantCount,
 		created_at: event.created_at,
 		updated_at: event.updated_at,
 	};

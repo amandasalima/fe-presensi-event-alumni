@@ -86,6 +86,9 @@ type RegisterField = keyof RegisterPayload;
 type RegisterErrors = Partial<Record<RegisterField, string>>;
 type LoginErrors = Partial<Record<keyof LoginPayload, string>>;
 
+const REGISTER_APPROVAL_MESSAGE =
+  "Registrasi berhasil. Akun Anda menunggu persetujuan admin sebelum dapat digunakan.";
+
 const registerErrorFields = [
   "first_name",
   "last_name",
@@ -311,6 +314,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(REGISTER_APPROVAL_MESSAGE);
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<RegisterField, boolean>>>({});
   const { mutate: register, isPending, error } = useRegister();
@@ -346,7 +350,8 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
     if (Object.values(localErrors).some(Boolean)) return;
 
     register(form, {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        setSuccessMessage(response.message?.trim() || REGISTER_APPROVAL_MESSAGE);
         setShowSuccessModal(true);
       },
     });
@@ -549,7 +554,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
       <SuccessModal
         isOpen={showSuccessModal}
         title="Registrasi Berhasil!"
-        message="Akun Anda telah berhasil dibuat. Silakan login dengan email dan password yang telah Anda daftarkan."
+        message={successMessage}
         onClose={handleSuccessModalClose}
       />
     </>

@@ -16,7 +16,7 @@ export interface RegisterPayload {
   password_confirmation: string;
 }
 
-export interface AuthResponse {
+export interface LoginAuthResponse {
   success: boolean;
   message: string;
   data: {
@@ -25,6 +25,20 @@ export interface AuthResponse {
     token_type: string;
   };
 }
+
+export interface RegisterAuthResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: AlumniUser;
+    access_token?: string | null;
+    token_type?: string | null;
+  };
+}
+
+export type AuthResponse = LoginAuthResponse | RegisterAuthResponse;
+
+export type UserStatus = "pending" | "active" | "inactive" | "rejected";
 
 export interface AlumniUser {
   id: number;
@@ -39,6 +53,7 @@ export interface AlumniUser {
   tanggal_lahir?: string | null;
   birth_date?: string | null;
   role: string;
+  status?: UserStatus;
   email_verified_at?: string | null;
   created_at: string;
   updated_at: string;

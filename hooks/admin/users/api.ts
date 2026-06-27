@@ -1,15 +1,54 @@
 import { fetchAPI } from "@/lib/api";
-import type { UpdateUserPayload, User, UsersResponse } from "./types";
+import type {
+	RawUser,
+	UpdateUserPayload,
+	UpdateUserStatusResponse,
+	User,
+	UsersResponse,
+	UserStatus,
+} from "./types";
+
+const USER_STATUSES: UserStatus[] = [
+	"pending",
+	"active",
+	"inactive",
+	"rejected",
+];
+
+function normalizeStatus(status?: string | null): UserStatus | null {
+	return USER_STATUSES.includes(status as UserStatus)
+		? (status as UserStatus)
+		: null;
+}
+
+function normalizeUser(user: RawUser): User {
+	const fullName = [user.first_name, user.last_name]
+		.filter(Boolean)
+		.join(" ")
+		.trim();
+
+	return {
+		...user,
+		name: user.name?.trim() || fullName || user.email,
+		graduation_year: user.graduation_year ?? user.angkatan ?? null,
+		status: normalizeStatus(user.status),
+	};
+}
 
 export function normalizeUsers(response: UsersResponse): User[] {
-	if (Array.isArray(response)) return response;
-	if (Array.isArray(response.data)) return response.data;
-	if (Array.isArray(response.users)) return response.users;
-	return [];
+	let users: RawUser[] = [];
+
+	if (Array.isArray(response)) users = response;
+	else if (Array.isArray(response.data)) users = response.data;
+	else if (response.data && Array.isArray(response.data.users)) {
+		users = response.data.users;
+	} else if (Array.isArray(response.users)) users = response.users;
+
+	return users.map(normalizeUser);
 }
 
 export async function getUsers() {
-	return normalizeUsers(await fetchAPI("/users"));
+	return normalizeUsers(await fetchAPI("/admin/users?per_page=100"));
 }
 
 export function updateUser(id: number, data: UpdateUserPayload) {
@@ -21,4 +60,11 @@ export function updateUser(id: number, data: UpdateUserPayload) {
 
 export function deleteUser(id: number) {
 	return fetchAPI(`/users/${id}`, { method: "DELETE" });
+}
+
+export function updateUserStatus(id: number, status: UserStatus) {
+	return fetchAPI(`/admin/users/${id}/status`, {
+		method: "PATCH",
+		body: JSON.stringify({ status }),
+	}) as Promise<UpdateUserStatusResponse>;
 }

@@ -8,6 +8,7 @@ import {
 	X,
 	Users,
 	UserCheck,
+	Clock3,
 	CalendarPlus,
 	UserCog,
 	Search,
@@ -19,17 +20,62 @@ import ConfirmDialog from "@/app/components/ConfirmDialog";
 import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
-import type { UpdateUserPayload, User } from "@/hooks/admin/users";
-import { useUsersPage } from "./_hooks/useUsersPage";
+import type {
+	UpdateUserPayload,
+	User,
+	UserStatus,
+} from "@/hooks/admin/users";
+import {
+	type UserStatusAction,
+	type UserStatusTarget,
+	useUsersPage,
+} from "./_hooks/useUsersPage";
 import {
 	formatDate,
 	formatLabel,
 	getUserPhone,
 	getStatusClass,
+	getStatusLabel,
+	isAdminUser,
 } from "./_utils/userFormatters";
 
 const ROLE_OPTIONS = ["alumni", "user"];
-const STATUS_OPTIONS = ["active", "inactive"];
+const STATUS_OPTIONS: Array<{ value: UserStatus; label: string }> = [
+	{ value: "pending", label: "Menunggu Approval" },
+	{ value: "active", label: "Aktif" },
+	{ value: "inactive", label: "Nonaktif" },
+	{ value: "rejected", label: "Ditolak" },
+];
+
+const STATUS_CONFIRMATIONS: Record<
+	UserStatusAction,
+	{ title: string; message: string; confirmLabel: string; tone: "danger" | "default" }
+> = {
+	approve: {
+		title: "Approve user?",
+		message: "Yakin ingin menyetujui user ini?",
+		confirmLabel: "Approve",
+		tone: "default",
+	},
+	reject: {
+		title: "Tolak user?",
+		message: "Yakin ingin menolak user ini?",
+		confirmLabel: "Reject",
+		tone: "danger",
+	},
+	deactivate: {
+		title: "Nonaktifkan user?",
+		message: "Yakin ingin menonaktifkan user ini?",
+		confirmLabel: "Nonaktifkan",
+		tone: "danger",
+	},
+	activate: {
+		title: "Aktifkan user?",
+		message: "Yakin ingin mengaktifkan user ini?",
+		confirmLabel: "Aktifkan",
+		tone: "default",
+	},
+};
 const GENDER_OPTIONS = ["Laki-laki", "Perempuan"];
 
 type EditUserForm = {
@@ -40,8 +86,12 @@ type EditUserForm = {
 	graduation_year: string;
 	birth_date: string;
 	role: string;
-	status: string;
+	status: UserStatus;
 };
+
+function getKnownUserStatus(status?: UserStatus | null): UserStatus {
+	return status ?? "pending";
+}
 
 function getInputValue(value?: string | null) {
 	return value ?? "";
@@ -129,7 +179,7 @@ function EditUserModal({
 		graduation_year: getInputValue(initial.graduation_year),
 		birth_date: getDateInputValue(initial.birth_date),
 		role: getInputValue(initial.role) || "user",
-		status: getInputValue(initial.status) || "active",
+		status: getKnownUserStatus(initial.status),
 	});
 	const genderOptions = Array.from(
 		new Set([...GENDER_OPTIONS, getInputValue(initial.gender)]),
@@ -137,10 +187,7 @@ function EditUserModal({
 	const roleOptions = Array.from(
 		new Set([...ROLE_OPTIONS, initial.role]),
 	).filter(Boolean);
-	const statusOptions = Array.from(
-		new Set([...STATUS_OPTIONS, initial.status]),
-	).filter(Boolean);
-	const set = (key: keyof UpdateUserPayload, value: string) =>
+	const set = <K extends keyof EditUserForm>(key: K, value: EditUserForm[K]) =>
 		setForm((current) => ({ ...current, [key]: value }));
 
 	return (
@@ -252,12 +299,14 @@ function EditUserModal({
 							</label>
 							<FormSelect
 								value={form.status}
-								onChange={(e) => set("status", e.target.value)}
+								onChange={(e) =>
+									set("status", e.target.value as UserStatus)
+								}
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white"
 							>
-								{statusOptions.map((status) => (
-									<option key={status} value={status}>
-										{formatLabel(status)}
+								{STATUS_OPTIONS.map((status) => (
+									<option key={status.value} value={status.value}>
+										{status.label}
 									</option>
 								))}
 							</FormSelect>
@@ -287,10 +336,101 @@ function EditUserModal({
 	);
 }
 
+function UserStatusActions({
+	user,
+	onRequest,
+	isLoading,
+}: {
+	user: User;
+	onRequest: (target: UserStatusTarget) => void;
+	isLoading: boolean;
+}) {
+	if (isAdminUser(user) || !user.status) return null;
+
+	const buttonClass =
+		"rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
+
+	if (user.status === "pending") {
+		return (
+			<>
+				<button
+					type="button"
+					onClick={() =>
+						onRequest({ user, status: "active", action: "approve" })
+					}
+					disabled={isLoading}
+					className={`${buttonClass} border-green-200 text-green-700 hover:bg-green-50`}
+				>
+					Approve
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onRequest({ user, status: "rejected", action: "reject" })
+					}
+					disabled={isLoading}
+					className={`${buttonClass} border-red-200 text-red-600 hover:bg-red-50`}
+				>
+					Reject
+				</button>
+			</>
+		);
+	}
+
+	if (user.status === "active") {
+		return (
+			<button
+				type="button"
+				onClick={() =>
+					onRequest({ user, status: "inactive", action: "deactivate" })
+				}
+				disabled={isLoading}
+				className={`${buttonClass} border-gray-200 text-gray-600 hover:bg-gray-50`}
+			>
+				Nonaktifkan
+			</button>
+		);
+	}
+
+	if (user.status === "inactive") {
+		return (
+			<button
+				type="button"
+				onClick={() =>
+					onRequest({ user, status: "active", action: "activate" })
+				}
+				disabled={isLoading}
+				className={`${buttonClass} border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10`}
+			>
+				Aktifkan
+			</button>
+		);
+	}
+
+	if (user.status === "rejected") {
+		return (
+			<button
+				type="button"
+				onClick={() =>
+					onRequest({ user, status: "active", action: "approve" })
+				}
+				disabled={isLoading}
+				className={`${buttonClass} border-green-200 text-green-700 hover:bg-green-50`}
+			>
+				Approve Ulang
+			</button>
+		);
+	}
+
+	return null;
+}
+
 export default function UsersPage() {
 	const {
 		cancelDelete,
+		cancelStatusUpdate,
 		confirmDelete,
+		confirmStatusUpdate,
 		deleteUser,
 		deleteTarget,
 		feedback,
@@ -300,15 +440,42 @@ export default function UsersPage() {
 		handleSubmit,
 		isError,
 		isLoading,
+		requestStatusUpdate,
 		search,
 		selected,
 		setSearch,
 		setSelected,
+		setStatusFilter,
 		stats,
+		statusFilter,
+		statusTarget,
 		updateUser,
+		updateUserStatus,
 		users,
 		closeModal,
 	} = useUsersPage();
+	const statusTabs = [
+		{ value: "all" as const, label: "Semua", count: users.length },
+		{
+			value: "pending" as const,
+			label: "Menunggu Approval",
+			count: stats.pendingUsers,
+		},
+		{ value: "active" as const, label: "Aktif", count: stats.activeUsers },
+		{
+			value: "inactive" as const,
+			label: "Nonaktif",
+			count: stats.inactiveUsers,
+		},
+		{
+			value: "rejected" as const,
+			label: "Ditolak",
+			count: stats.rejectedUsers,
+		},
+	];
+	const statusConfirmation = statusTarget
+		? STATUS_CONFIRMATIONS[statusTarget.action]
+		: STATUS_CONFIRMATIONS.approve;
 
 	return (
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
@@ -333,6 +500,13 @@ export default function UsersPage() {
 								desc: "User aktif",
 								icon: <UserCheck size={20} strokeWidth={2.5} />,
 								variant: "green" as const,
+							},
+							{
+								title: "Menunggu Approval",
+								value: isLoading ? "..." : stats.pendingUsers,
+								desc: "Perlu ditinjau admin",
+								icon: <Clock3 size={20} strokeWidth={2.5} />,
+								variant: "yellow" as const,
 							},
 							{
 								title: "Bulan Ini",
@@ -399,6 +573,23 @@ export default function UsersPage() {
 								onValueChange={setSearch}
 								className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
 							/>
+
+							<div className="mb-4 flex flex-wrap gap-2 rounded-xl bg-gray-100 p-1">
+								{statusTabs.map((tab) => (
+									<button
+										type="button"
+										key={tab.value}
+										onClick={() => setStatusFilter(tab.value)}
+										className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+											statusFilter === tab.value
+												? "bg-white text-[#2D7EA0] shadow-sm"
+												: "text-gray-500 hover:text-gray-700"
+										}`}
+									>
+										{tab.label} ({tab.count})
+									</button>
+								))}
+							</div>
 
 							{isError && (
 								<div className="text-center py-8">
@@ -491,14 +682,22 @@ export default function UsersPage() {
 															<span
 																className={`px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusClass(user.status)}`}
 															>
-																{formatLabel(user.status)}
+																{getStatusLabel(user.status)}
 															</span>
 														</td>
 														<td className="p-3 text-gray-500 text-xs">
 															{formatDate(user.created_at)}
 														</td>
 														<td className="p-3">
-															<div className="flex gap-1.5">
+															<div className="flex flex-wrap gap-1.5">
+																<UserStatusActions
+																	user={user}
+																	onRequest={requestStatusUpdate}
+																	isLoading={
+																		updateUserStatus.isPending &&
+																		statusTarget?.user.id === user.id
+																	}
+																/>
 																<button
 																	onClick={() => setSelected(user)}
 																	className="p-1.5 hover:bg-[#7AB2B2]/10 rounded-lg transition-colors text-[#2D7EA0]"
@@ -561,6 +760,17 @@ export default function UsersPage() {
 					loading={updateUser.isPending}
 				/>
 			)}
+
+			<ConfirmDialog
+				isOpen={!!statusTarget}
+				title={statusConfirmation.title}
+				message={statusConfirmation.message}
+				confirmLabel={statusConfirmation.confirmLabel}
+				tone={statusConfirmation.tone}
+				loading={updateUserStatus.isPending}
+				onCancel={cancelStatusUpdate}
+				onConfirm={confirmStatusUpdate}
+			/>
 
 			<ConfirmDialog
 				isOpen={!!deleteTarget}

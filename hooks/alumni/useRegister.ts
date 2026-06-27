@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
-import type { RegisterPayload, AuthResponse } from "@/types/auth";
+import type { RegisterPayload, RegisterAuthResponse } from "@/types/auth";
 import type { AxiosError } from "axios";
 
-async function registerFn(payload: RegisterPayload): Promise<AuthResponse> {
+async function registerFn(payload: RegisterPayload): Promise<RegisterAuthResponse> {
   // Kirim field baru sesuai database yang sudah diupdate
   const dataToSend = {
     first_name: payload.first_name,
@@ -17,20 +17,16 @@ async function registerFn(payload: RegisterPayload): Promise<AuthResponse> {
     password_confirmation: payload.password_confirmation,
     role: "alumni",
   };
-  console.log("Sending register data:", dataToSend);
-  const { data } = await api.post<AuthResponse>("/auth/register", dataToSend);
+  const { data } = await api.post<RegisterAuthResponse>("/auth/register", dataToSend);
   return data;
 }
 
 export function useRegister() {
   return useMutation<
-    AuthResponse,
+    RegisterAuthResponse,
     AxiosError<{ message: string; errors?: Record<string, string[]> }>,
     RegisterPayload
   >({
     mutationFn: registerFn,
-    onError: (error) => {
-      console.error("Register error:", error.response?.data);
-    },
   });
 }

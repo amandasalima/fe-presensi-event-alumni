@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type UpdateUserPayload,
 	type User,
+	type UserStatus,
 	useDeleteUser,
 	useUpdateUser,
+	useUpdateUserStatus,
 	useUsers,
 } from "@/hooks/admin/users";
 import { useSearchFilter } from "@/hooks/useSearchFilter";
@@ -18,9 +20,21 @@ import {
 	isAdminUser,
 } from "../_utils/userFormatters";
 
+export type UserStatusFilter = "all" | UserStatus;
+export type UserStatusAction = "approve" | "reject" | "deactivate" | "activate";
+
+export type UserStatusTarget = {
+	user: User;
+	status: Exclude<UserStatus, "pending">;
+	action: UserStatusAction;
+};
+
 export function useUsersPage() {
 	const [selected, setSelected] = useState<User | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+	const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all");
+	const [statusTarget, setStatusTarget] =
+		useState<UserStatusTarget | null>(null);
 	const [feedback, setFeedback] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -28,16 +42,24 @@ export function useUsersPage() {
 	const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const { data: allUsers = [], isLoading, isError } = useUsers();
 	const updateUser = useUpdateUser();
+	const updateUserStatus = useUpdateUserStatus();
 	const deleteUser = useDeleteUser();
 	const users = useMemo(
 		() => allUsers.filter((user) => !isAdminUser(user)),
 		[allUsers],
 	);
+	const statusFilteredUsers = useMemo(
+		() =>
+			statusFilter === "all"
+				? users
+				: users.filter((user) => user.status === statusFilter),
+		[statusFilter, users],
+	);
 	const {
 		filteredItems: filtered,
 		searchQuery: search,
 		setSearchQuery: setSearch,
-	} = useSearchFilter(users, (user) => [
+	} = useSearchFilter(statusFilteredUsers, (user) => [
 		user.name,
 		user.email,
 		getUserPhone(user),
@@ -104,6 +126,44 @@ export function useUsersPage() {
 	};
 
 	const cancelDelete = () => setDeleteTarget(null);
+	const cancelStatusUpdate = () => setStatusTarget(null);
+
+	const requestStatusUpdate = (target: UserStatusTarget) => {
+		if (isAdminUser(target.user) || !target.user.status) return;
+		setStatusTarget(target);
+	};
+
+	const confirmStatusUpdate = () => {
+		if (!statusTarget) return;
+
+		setFeedback(null);
+		updateUserStatus.mutate(
+			{ id: statusTarget.user.id, status: statusTarget.status },
+			{
+				onSuccess: () => {
+					const successMessages: Record<UserStatusAction, string> = {
+						approve: "User berhasil disetujui",
+						reject: "User berhasil ditolak",
+						deactivate: "User berhasil dinonaktifkan",
+						activate: "User berhasil diaktifkan",
+					};
+
+					setStatusTarget(null);
+					showFeedback({
+						type: "success",
+						message: successMessages[statusTarget.action],
+					});
+				},
+				onError: (error) => {
+					setStatusTarget(null);
+					showFeedback({
+						type: "error",
+						message: getApiErrorMessage(error, "Gagal mengubah status user"),
+					});
+				},
+			},
+		);
+	};
 
 	const confirmDelete = () => {
 		if (!deleteTarget) return;
@@ -147,7 +207,9 @@ export function useUsersPage() {
 
 	return {
 		cancelDelete,
+		cancelStatusUpdate,
 		confirmDelete,
+		confirmStatusUpdate,
 		deleteUser,
 		deleteTarget,
 		feedback,
@@ -158,11 +220,16 @@ export function useUsersPage() {
 		isError,
 		isLoading,
 		search,
+		requestStatusUpdate,
 		selected,
 		setSearch,
 		setSelected,
+		setStatusFilter,
 		stats,
+		statusFilter,
+		statusTarget,
 		updateUser,
+		updateUserStatus,
 		users,
 		closeModal,
 	};

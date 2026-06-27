@@ -7,6 +7,7 @@ import {
 	Trash2,
 	X,
 	CalendarDays,
+	ChevronDown,
 	MapPin,
 	Clock3,
 	Pencil,
@@ -29,12 +30,17 @@ import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 import {
 	useEvents,
 	useCreateEvent,
+	useCreateEventCategory,
 	useUpdateEvent,
+	useUpdateEventCategory,
 	useDeleteEvent,
+	useDeleteEventCategory,
 	useEventCategories,
 	useEvent,
 	useEventRegistrations,
+	type CategoryObject,
 	type Event,
+	type EventCategory,
 	type EventPayload,
 } from "@/hooks/admin/useEvents";
 import type { EventBroadcastTarget } from "@/hooks/admin/useBroadcast";
@@ -45,6 +51,7 @@ import {
 } from "./_utils/eventFormatters";
 
 type EventFormMode = "create" | "edit";
+type CategoryFormMode = "create" | "edit";
 
 type EventFormState = {
 	category_id: number;
@@ -197,6 +204,43 @@ function buildChangedEventPayload(form: EventFormState, event: Event) {
 	return payload;
 }
 
+type CategoryComparableEvent = {
+	category_id?: number | null;
+	category?: string | CategoryObject | null;
+};
+
+function eventUsesCategory(
+	event: CategoryComparableEvent,
+	category: EventCategory,
+) {
+	if (event.category_id != null && Number(event.category_id) === category.id) {
+		return true;
+	}
+
+	if (typeof event.category === "string") {
+		return event.category.trim().toLowerCase() ===
+			category.category_name.trim().toLowerCase();
+	}
+
+	if (event.category && typeof event.category === "object") {
+		const eventCategoryName = event.category.category_name;
+
+		return event.category.id === category.id ||
+			(typeof eventCategoryName === "string" &&
+				eventCategoryName.trim().toLowerCase() ===
+					category.category_name.trim().toLowerCase());
+	}
+
+	return false;
+}
+
+function getCategoryUsageCount(
+	category: EventCategory,
+	events: CategoryComparableEvent[],
+) {
+	return events.filter((event) => eventUsesCategory(event, category)).length;
+}
+
 // ─── 3D Icon ─────────────────────────────────────────────────────────────────
 function Icon3D({
 	children,
@@ -291,6 +335,344 @@ const broadcastTargetDescriptions: Record<
 			"Broadcast hanya dikirim ke daftar nomor yang Anda input satu per satu.",
 	},
 };
+
+function EventCategorySection({
+	categories,
+	events,
+	isLoading,
+	isError,
+	isUsageLoading,
+	isUsageUnavailable,
+	actionError,
+	onRetry,
+	onCreate,
+	onEdit,
+	onDelete,
+}: {
+	categories: EventCategory[];
+	events: Event[];
+	isLoading: boolean;
+	isError: boolean;
+	isUsageLoading: boolean;
+	isUsageUnavailable: boolean;
+	actionError: string | null;
+	onRetry: () => void;
+	onCreate: () => void;
+	onEdit: (category: EventCategory) => void;
+	onDelete: (category: EventCategory) => void;
+}) {
+	const [isExpanded, setIsExpanded] = useState(false);
+
+	return (
+		<div className="mb-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+			<button
+				type="button"
+				onClick={() => setIsExpanded((current) => !current)}
+				aria-expanded={isExpanded}
+				aria-controls="event-category-management"
+				className="flex w-full items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left transition hover:bg-gray-50"
+			>
+				<div className="min-w-0">
+					<h2 className="text-base font-bold text-gray-800">
+						Kelola Kategori Event
+					</h2>
+					<p className="text-xs text-gray-400">
+						Kelola kategori yang digunakan pada data event
+					</p>
+				</div>
+				<div className="flex shrink-0 items-center gap-3">
+					{!isLoading && !isError && (
+						<span className="hidden rounded-full bg-[#7AB2B2]/10 px-2.5 py-1 text-xs font-semibold text-[#2D7EA0] sm:inline">
+							{categories.length} kategori
+						</span>
+					)}
+					<ChevronDown
+						size={19}
+						className={`text-gray-400 transition-transform duration-200 ${
+							isExpanded ? "rotate-180" : ""
+						}`}
+					/>
+				</div>
+			</button>
+
+			{isExpanded && (
+				<div
+					id="event-category-management"
+					className="space-y-4 border-t border-gray-100 px-5 pb-5 pt-4"
+				>
+					<div className="flex justify-end">
+						<button
+							type="button"
+							onClick={onCreate}
+							className="flex items-center justify-center gap-2 rounded-xl bg-[#2D7EA0] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#236175]"
+						>
+							<Plus size={16} />
+							Tambah Kategori
+						</button>
+					</div>
+
+					{actionError && (
+				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+					{actionError}
+				</div>
+			)}
+
+			{isLoading && (
+				<div className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+					Memuat kategori...
+				</div>
+			)}
+
+			{isError && (
+				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-4 text-sm text-red-600">
+					<p>Gagal memuat kategori event.</p>
+					<button
+						type="button"
+						onClick={onRetry}
+						className="mt-2 font-semibold text-[#2D7EA0] hover:underline"
+					>
+						Coba lagi
+					</button>
+				</div>
+			)}
+
+			{!isLoading && !isError && categories.length === 0 && (
+				<div className="rounded-xl bg-gray-50 px-4 py-8 text-center text-sm text-gray-400">
+					Belum ada kategori event
+				</div>
+			)}
+
+			{!isLoading && !isError && categories.length > 0 && (
+				<div className="overflow-x-auto rounded-xl border border-gray-100">
+					<table className="min-w-full divide-y divide-gray-100 text-left">
+						<thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+							<tr>
+								<th className="px-4 py-3">Nama kategori</th>
+								<th className="px-4 py-3">Deskripsi</th>
+								<th className="px-4 py-3 text-center">Jumlah event</th>
+								<th className="px-4 py-3 text-right">Aksi</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-gray-100">
+							{categories.map((category) => {
+								const usageCount = getCategoryUsageCount(category, events);
+								const deleteDisabled =
+									isUsageLoading || isUsageUnavailable || usageCount > 0;
+								const deleteTitle = isUsageLoading
+									? "Sedang memeriksa penggunaan kategori"
+									: isUsageUnavailable
+										? "Penggunaan kategori belum dapat diverifikasi"
+										: usageCount > 0
+											? "Kategori masih digunakan oleh event"
+											: "Hapus kategori";
+
+								return (
+									<tr key={category.id} className="text-sm text-gray-600">
+										<td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-800">
+											{category.category_name}
+										</td>
+										<td className="max-w-md px-4 py-3 text-gray-500">
+											{category.description || "-"}
+										</td>
+										<td className="px-4 py-3 text-center">
+											{isUsageLoading || isUsageUnavailable ? "..." : usageCount}
+										</td>
+										<td className="px-4 py-3">
+											<div className="flex justify-end gap-2">
+												<button
+													type="button"
+													onClick={() => onEdit(category)}
+													className="inline-flex items-center gap-1.5 rounded-lg border border-[#7AB2B2]/30 px-3 py-1.5 text-xs font-semibold text-[#2D7EA0] transition hover:bg-[#7AB2B2]/10"
+												>
+													<Pencil size={13} /> Edit
+												</button>
+												<button
+													type="button"
+													onClick={() => onDelete(category)}
+													disabled={deleteDisabled}
+													title={deleteTitle}
+													className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-300"
+												>
+													<Trash2 size={13} /> Hapus
+												</button>
+											</div>
+											{usageCount > 0 && !isUsageLoading && (
+												<p className="mt-1 text-right text-[11px] text-gray-400">
+													Kategori masih digunakan oleh event
+												</p>
+											)}
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
+			)}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function CategoryFormModal({
+	mode,
+	category,
+	onClose,
+	onSuccess,
+}: {
+	mode: CategoryFormMode;
+	category: EventCategory | null;
+	onClose: () => void;
+	onSuccess: (message: string) => void;
+}) {
+	const createCategory = useCreateEventCategory();
+	const updateCategory = useUpdateEventCategory();
+	const [categoryName, setCategoryName] = useState(
+		() => category?.category_name ?? "",
+	);
+	const [description, setDescription] = useState(
+		() => category?.description ?? "",
+	);
+	const [fieldError, setFieldError] = useState("");
+	const mutation = mode === "create" ? createCategory : updateCategory;
+	const isPending = mutation.isPending;
+
+	const handleSubmit = (event: React.FormEvent) => {
+		event.preventDefault();
+
+		const normalizedName = categoryName.trim();
+		if (!normalizedName) {
+			setFieldError("Nama kategori wajib diisi.");
+			return;
+		}
+
+		setFieldError("");
+		const payload = {
+			category_name: normalizedName,
+			description: description.trim() || null,
+		};
+
+		if (mode === "edit" && category) {
+			updateCategory.mutate(
+				{ id: category.id, data: payload },
+				{
+					onSuccess: () => {
+						onSuccess("Kategori event berhasil diperbarui");
+						onClose();
+					},
+					onError: (error) => {
+						const errors = getApiFieldErrors(error);
+						setFieldError(errors.category_name?.[0] ?? "");
+					},
+				},
+			);
+			return;
+		}
+
+		createCategory.mutate(payload, {
+			onSuccess: () => {
+				onSuccess("Kategori event berhasil ditambahkan");
+				onClose();
+			},
+			onError: (error) => {
+				const errors = getApiFieldErrors(error);
+				setFieldError(errors.category_name?.[0] ?? "");
+			},
+		});
+	};
+
+	return (
+		<div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+			<div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+				<div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
+					<div>
+						<h3 className="text-lg font-bold text-gray-800">
+							{mode === "create" ? "Tambah Kategori" : "Edit Kategori"}
+						</h3>
+						<p className="mt-1 text-xs text-gray-400">
+							Kategori akan tersedia pada form event.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						disabled={isPending}
+						className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:opacity-60"
+						aria-label="Tutup modal kategori"
+					>
+						<X size={18} />
+					</button>
+				</div>
+
+				<form onSubmit={handleSubmit} className="space-y-5 p-6">
+					{mutation.error && (
+						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+							{getApiErrorMessage(
+								mutation.error,
+								"Gagal memproses kategori event",
+							)}
+						</div>
+					)}
+
+					<div>
+						<label className="mb-1.5 block text-sm font-medium text-gray-700">
+							Nama kategori <span className="text-red-400">*</span>
+						</label>
+						<FormInput
+							value={categoryName}
+							onChange={(event) => {
+								setCategoryName(event.target.value);
+								setFieldError("");
+							}}
+							maxLength={100}
+							placeholder="Contoh: Seminar"
+							className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#3EBDAF]"
+						/>
+						{fieldError && (
+							<p className="mt-1.5 text-xs text-red-500">{fieldError}</p>
+						)}
+					</div>
+
+					<div>
+						<label className="mb-1.5 block text-sm font-medium text-gray-700">
+							Deskripsi
+						</label>
+						<FormTextarea
+							value={description}
+							onChange={(event) => setDescription(event.target.value)}
+							rows={4}
+							placeholder="Deskripsi singkat kategori"
+							className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#3EBDAF]"
+						/>
+					</div>
+
+					<div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
+						<button
+							type="button"
+							onClick={onClose}
+							disabled={isPending}
+							className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
+						>
+							Batal
+						</button>
+						<button
+							type="submit"
+							disabled={isPending || !categoryName.trim()}
+							className="rounded-xl bg-[#2D7EA0] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#236175] disabled:cursor-not-allowed disabled:opacity-60"
+						>
+							{isPending
+								? "Menyimpan..."
+								: mode === "create"
+									? "Tambah Kategori"
+									: "Simpan Perubahan"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
 
 // ─── Create/Edit Event Modal ──────────────────────────────────────────────────
 function EventFormModal({
@@ -1782,6 +2164,15 @@ export default function KelolEventPage() {
 	const [registrationsEvent, setRegistrationsEvent] = useState<Event | null>(null);
 	const [broadcastEvent, setBroadcastEvent] = useState<Event | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
+	const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+	const [categoryModalMode, setCategoryModalMode] =
+		useState<CategoryFormMode>("create");
+	const [selectedCategory, setSelectedCategory] =
+		useState<EventCategory | null>(null);
+	const [categoryDeleteTarget, setCategoryDeleteTarget] =
+		useState<EventCategory | null>(null);
+	const [categoryActionError, setCategoryActionError] =
+		useState<string | null>(null);
 	const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 	const [activeTab, setActiveTab] = useState<"upcoming" | "done">("upcoming");
 
@@ -1796,8 +2187,20 @@ export default function KelolEventPage() {
 		isError,
 		error,
 	} = useEvents(search, 10, undefined, undefined, 5000);
+	const {
+		data: categories = [],
+		isLoading: categoriesLoading,
+		isError: categoriesError,
+		refetch: refetchCategories,
+	} = useEventCategories();
+	const {
+		data: categoryUsageEvents = [],
+		isLoading: categoryUsageLoading,
+		isError: categoryUsageError,
+	} = useEvents("", 100, undefined, undefined, 5000);
 
 	const deleteEvent = useDeleteEvent();
+	const deleteCategory = useDeleteEventCategory();
 
 	const handleCreate = () => {
 		setEventModalMode("create");
@@ -1822,6 +2225,51 @@ export default function KelolEventPage() {
 	const handleCloseEventModal = () => {
 		setIsEventModalOpen(false);
 		setSelectedEvent(null);
+	};
+
+	const handleCreateCategory = () => {
+		setCategoryActionError(null);
+		setCategoryModalMode("create");
+		setSelectedCategory(null);
+		setIsCategoryModalOpen(true);
+	};
+
+	const handleEditCategory = (category: EventCategory) => {
+		setCategoryActionError(null);
+		setCategoryModalMode("edit");
+		setSelectedCategory(category);
+		setIsCategoryModalOpen(true);
+	};
+
+	const handleCloseCategoryModal = () => {
+		setIsCategoryModalOpen(false);
+		setSelectedCategory(null);
+	};
+
+	const handleDeleteCategory = (category: EventCategory) => {
+		const usageCount = getCategoryUsageCount(category, categoryUsageEvents);
+		if (categoryUsageLoading || categoryUsageError || usageCount > 0) return;
+
+		setCategoryActionError(null);
+		setCategoryDeleteTarget(category);
+	};
+
+	const handleConfirmCategoryDelete = () => {
+		if (!categoryDeleteTarget) return;
+
+		deleteCategory.mutate(categoryDeleteTarget.id, {
+			onSuccess: () => {
+				setCategoryDeleteTarget(null);
+				setCategoryActionError(null);
+				showToast("Kategori event berhasil dihapus");
+			},
+			onError: (error) => {
+				setCategoryDeleteTarget(null);
+				setCategoryActionError(
+					getApiErrorMessage(error, "Gagal memproses kategori event"),
+				);
+			},
+		});
 	};
 
 	const handleDelete = (id: number) => {
@@ -1903,6 +2351,20 @@ export default function KelolEventPage() {
 							accent="border-blue-400"
 						/>
 					</div>
+
+					<EventCategorySection
+						categories={categories}
+						events={categoryUsageEvents}
+						isLoading={categoriesLoading}
+						isError={categoriesError}
+						isUsageLoading={categoryUsageLoading}
+						isUsageUnavailable={categoryUsageError}
+						actionError={categoryActionError}
+						onRetry={() => void refetchCategories()}
+						onCreate={handleCreateCategory}
+						onEdit={handleEditCategory}
+						onDelete={handleDeleteCategory}
+					/>
 
 					<div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4 mb-5">
 						<div className="flex items-center justify-between">
@@ -2055,6 +2517,16 @@ export default function KelolEventPage() {
 				</main>
 			</div>
 
+			{isCategoryModalOpen && (
+				<CategoryFormModal
+					key={`${categoryModalMode}-${selectedCategory?.id ?? "new"}`}
+					mode={categoryModalMode}
+					category={selectedCategory}
+					onClose={handleCloseCategoryModal}
+					onSuccess={showToast}
+				/>
+			)}
+
 			<EventFormModal
 				isOpen={isEventModalOpen}
 				mode={eventModalMode}
@@ -2096,6 +2568,20 @@ export default function KelolEventPage() {
 				loading={deleteEvent.isPending}
 				onCancel={() => setDeleteTarget(null)}
 				onConfirm={handleConfirmDelete}
+			/>
+
+			<ConfirmDialog
+				isOpen={!!categoryDeleteTarget}
+				title="Hapus kategori?"
+				message={
+					categoryDeleteTarget
+						? `Kategori "${categoryDeleteTarget.category_name}" akan dihapus permanen.`
+						: "Kategori ini akan dihapus permanen."
+				}
+				confirmLabel="Hapus"
+				loading={deleteCategory.isPending}
+				onCancel={() => setCategoryDeleteTarget(null)}
+				onConfirm={handleConfirmCategoryDelete}
 			/>
 
 			{toast && <FeedbackToast type={toast.type} message={toast.message} />}

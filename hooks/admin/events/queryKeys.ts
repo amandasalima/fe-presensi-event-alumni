@@ -13,6 +13,7 @@ export const adminEventQueryKeys = {
 	) => ["admin-events", search, status ?? "", categoryId ?? "", perPage] as const,
 	detail: (id: number) => ["admin-events", id] as const,
 	categories: ["admin-event-categories"] as const,
+	category: (id: number) => ["admin-event-categories", id] as const,
 	registrations: (
 		id: number | null,
 		status?: EventRegistrationStatus,

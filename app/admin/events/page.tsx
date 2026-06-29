@@ -357,17 +357,17 @@ const broadcastTargetDescriptions: Record<
 	all: {
 		label: "Semua alumni",
 		description:
-			"Broadcast akan dikirim ke seluruh alumni yang memiliki nomor HP valid.",
+			"Pesan massal akan dikirim ke seluruh alumni yang memiliki nomor HP valid.",
 	},
 	registered: {
 		label: "Terdaftar event",
 		description:
-			"Broadcast hanya dikirim ke alumni yang sudah terdaftar pada event ini.",
+			"Pesan massal hanya dikirim ke alumni yang sudah terdaftar pada event ini.",
 	},
 	custom: {
 		label: "Nomor manual",
 		description:
-			"Broadcast hanya dikirim ke daftar nomor yang Anda input satu per satu.",
+			"Pesan massal hanya dikirim ke daftar nomor yang Anda masukkan satu per satu.",
 	},
 };
 
@@ -521,7 +521,7 @@ function EventCategorySection({
 															onClick={() => onEdit(category)}
 															className="inline-flex items-center gap-1.5 rounded-lg border border-[#7AB2B2]/30 px-3 py-1.5 text-xs font-semibold text-[#2D7EA0] transition hover:bg-[#7AB2B2]/10"
 														>
-															<Pencil size={13} /> Edit
+											<Pencil size={13} /> Ubah
 														</button>
 														<button
 															type="button"
@@ -625,10 +625,10 @@ function CategoryFormModal({
 				<div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
 					<div>
 						<h3 className="text-lg font-bold text-gray-800">
-							{mode === "create" ? "Tambah Kategori" : "Edit Kategori"}
+							{mode === "create" ? "Tambah Kategori" : "Ubah Kategori"}
 						</h3>
 						<p className="mt-1 text-xs text-gray-400">
-							Kategori akan tersedia pada form event.
+							Kategori akan tersedia pada formulir event.
 						</p>
 					</div>
 					<button
@@ -911,7 +911,7 @@ function EventFormModal({
 			<div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
 				<div className="p-6 border-b border-gray-100 flex items-center justify-between">
 					<h3 className="font-semibold text-gray-800 text-lg">
-						{mode === "edit" ? "Edit Event" : "Buat Event Baru"}
+						{mode === "edit" ? "Ubah Event" : "Buat Event Baru"}
 					</h3>
 
 					<button
@@ -976,7 +976,7 @@ function EventFormModal({
 								<div className="mb-3">
 									<img
 										src={event.poster_url}
-										alt="Current poster"
+									alt="Poster saat ini"
 										className="h-24 object-cover rounded-xl border border-gray-200"
 									/>
 								</div>
@@ -986,7 +986,7 @@ function EventFormModal({
 								<div className="mb-3">
 									<img
 										src={URL.createObjectURL(form.poster)}
-										alt="Preview poster"
+									alt="Pratinjau poster"
 										className="h-24 object-cover rounded-xl border border-gray-200"
 									/>
 								</div>
@@ -1000,7 +1000,7 @@ function EventFormModal({
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#7AB2B2]/10 file:text-[#236175] hover:file:bg-[#7AB2B2]/20"
 							/>
 							<p className="text-xs text-gray-400 mt-1">
-								Format: JPG, JPEG, PNG, WebP (Max: 5MB)
+							Format: JPG, JPEG, PNG, WebP (Maks. 5 MB)
 							</p>
 							{getFieldError("poster") && (
 								<p className="text-xs text-red-500 mt-1">
@@ -1234,7 +1234,7 @@ function BroadcastModal({
 				<div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
 					<div>
 						<h3 className="text-lg font-semibold text-gray-800">
-							WA Broadcast
+							Pesan Massal WA
 						</h3>
 						<p className="text-sm text-gray-400">{event.event_title}</p>
 					</div>
@@ -1273,7 +1273,7 @@ function BroadcastModal({
 						<StatCard
 							label="Estimasi Penerima"
 							value={preview.isLoading ? "..." : estimatedTargets}
-							sub="Target broadcast saat ini"
+							sub="Target pesan massal saat ini"
 							accent="border-[#7AB2B2]"
 						/>
 						{target === "custom" && (
@@ -1282,7 +1282,7 @@ function BroadcastModal({
 								value={parsedNumbers.validNumbers.length}
 								sub={`Duplikat otomatis dihapus${
 									previewData?.breakdown.total_custom !== undefined
-										? ` • Preview: ${previewData.breakdown.total_custom}`
+										? ` • Pratinjau: ${previewData.breakdown.total_custom}`
 										: ""
 								}`}
 								accent="border-green-400"
@@ -1378,7 +1378,7 @@ function BroadcastModal({
 							<div>
 								<div className="flex items-center justify-between mb-2">
 									<label className="block text-sm font-medium text-gray-700">
-										Custom Message
+									Pesan Khusus
 									</label>
 									<span
 										className={`text-xs ${
@@ -1397,7 +1397,7 @@ function BroadcastModal({
 								/>
 								{isMessageTooLong && (
 									<p className="text-xs text-red-500 mt-1">
-										Custom message maksimal 1000 karakter.
+									Pesan khusus maksimal 1000 karakter.
 									</p>
 								)}
 							</div>
@@ -1406,7 +1406,7 @@ function BroadcastModal({
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<label className="block text-sm font-medium text-gray-700">
-									Preview Pesan
+									Pratinjau Pesan
 								</label>
 								<span className="text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-2 py-0.5 rounded-full font-medium">
 									{target}
@@ -1414,15 +1414,15 @@ function BroadcastModal({
 							</div>
 							<div className="min-h-[320px] text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm">
 								{target === "custom" && parsedNumbers.validNumbers.length === 0
-									? "Masukkan nomor manual untuk menghitung target custom."
+								? "Masukkan nomor manual untuk menghitung target khusus."
 									: preview.isLoading
-										? "Memuat preview..."
+									? "Memuat pratinjau..."
 										: preview.isError
 											? getApiErrorMessage(
 													preview.error,
-													"Gagal memuat preview",
+											"Gagal memuat pratinjau",
 												)
-											: previewMessage || "Preview belum tersedia"}
+										: previewMessage || "Pratinjau belum tersedia"}
 							</div>
 						</div>
 					</div>
@@ -1432,7 +1432,7 @@ function BroadcastModal({
 							<p>{successMessage}</p>
 							{sendDetail?.senderStatus !== undefined && (
 								<p className="text-xs">
-									Sender status: {String(sendDetail.senderStatus)}
+									Status pengirim: {String(sendDetail.senderStatus)}
 								</p>
 							)}
 							{sendDetail?.blockedReason !== undefined && (
@@ -1459,12 +1459,12 @@ function BroadcastModal({
 								{errorMessage ||
 									getApiErrorMessage(
 										sendEventBroadcast.error,
-										"Broadcast belum berhasil dikirim. Silakan coba lagi.",
+										"Pesan massal belum berhasil dikirim. Silakan coba lagi.",
 									)}
 							</p>
 							{sendDetail?.senderStatus !== undefined && (
 								<p className="text-xs">
-									Sender status: {String(sendDetail.senderStatus)}
+									Status pengirim: {String(sendDetail.senderStatus)}
 								</p>
 							)}
 							{sendDetail?.blockedReason !== undefined && (
@@ -1504,7 +1504,7 @@ function BroadcastModal({
 									Mengirim...
 								</>
 							) : (
-								"Kirim Broadcast"
+								"Kirim Pesan Massal"
 							)}
 						</button>
 					</div>
@@ -1513,7 +1513,7 @@ function BroadcastModal({
 
 			<ConfirmDialog
 				isOpen={isSendConfirmOpen}
-				title="Kirim broadcast WhatsApp?"
+				title="Kirim pesan massal WhatsApp?"
 				message={`Target: ${targetLabel}. Jumlah penerima: ${estimatedTargets}. Event: ${event.event_title}.`}
 				confirmLabel="Kirim"
 				tone="default"
@@ -1603,7 +1603,7 @@ function EventRegistrationsModal({
 						<StatCard
 							label="Total Hadir"
 							value={summary?.total_attended ?? 0}
-							sub="Sudah scan QR"
+							sub="Sudah memindai QR"
 							accent="border-emerald-400"
 						/>
 						<StatCard
@@ -1651,7 +1651,7 @@ function EventRegistrationsModal({
 										"Angkatan",
 										"Status pendaftaran / kehadiran",
 										"Jam daftar",
-										"Jam scan QR",
+									"Waktu pemindaian QR",
 									].map((header) => (
 										<th
 											key={header}
@@ -1696,7 +1696,7 @@ function EventRegistrationsModal({
 											>
 												<td className="px-4 py-3 font-medium text-gray-800">
 													{registration.user?.name ??
-														`User #${registration.user_id}`}
+												`Pengguna #${registration.user_id}`}
 												</td>
 												<td className="px-4 py-3 text-gray-500">
 													{registration.user?.email ?? "-"}
@@ -1888,7 +1888,7 @@ function EventDetailModal({
 							{event.quota && (
 								<div>
 									<div className="flex justify-between text-sm text-gray-600 mb-1.5">
-										<span>Progress kuota</span>
+										<span>Progres kuota</span>
 										<span className="font-medium">
 											{registered} / {event.quota}
 										</span>
@@ -2072,7 +2072,7 @@ function EventCardUpcoming({
 					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
 					<Pencil size={13} />
-					Edit
+					Ubah
 				</button>
 
 				<button
@@ -2086,7 +2086,7 @@ function EventCardUpcoming({
 				<button
 					onClick={() => onTogglePublish(event)}
 					disabled={isToggling}
-					title={published ? "Unpublish event" : "Publish event"}
+				title={published ? "Batalkan publikasi event" : "Publikasikan event"}
 					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
 						published
 							? "border-amber-200 text-amber-700 hover:bg-amber-50"
@@ -2094,7 +2094,7 @@ function EventCardUpcoming({
 					}`}
 				>
 					<Power size={13} />
-					{isToggling ? "Memproses..." : published ? "Unpublish" : "Publish"}
+				{isToggling ? "Memproses..." : published ? "Batalkan Publikasi" : "Publikasikan"}
 				</button>
 			</div>
 		</div>
@@ -2234,7 +2234,7 @@ function EventCardDone({
 					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
 				>
 					<Pencil size={13} />
-					Edit
+					Ubah
 				</button>
 
 				<button
@@ -2248,7 +2248,7 @@ function EventCardDone({
 				<button
 					onClick={() => onTogglePublish(event)}
 					disabled={isToggling}
-					title={published ? "Unpublish event" : "Publish event"}
+				title={published ? "Batalkan publikasi event" : "Publikasikan event"}
 					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
 						published
 							? "border-amber-200 text-amber-700 hover:bg-amber-50"
@@ -2256,7 +2256,7 @@ function EventCardDone({
 					}`}
 				>
 					<Power size={13} />
-					{isToggling ? "Memproses..." : published ? "Unpublish" : "Publish"}
+				{isToggling ? "Memproses..." : published ? "Batalkan Publikasi" : "Publikasikan"}
 				</button>
 			</div>
 		</div>
@@ -2406,14 +2406,14 @@ export default function KelolEventPage() {
 				setToggleTarget(null);
 				showToast(
 					wasPublished
-						? "Event berhasil di-unpublish"
-						: "Event berhasil dipublish",
+						? "Publikasi event berhasil dibatalkan"
+						: "Event berhasil dipublikasikan",
 				);
 			},
 			onError: (error) => {
 				setToggleTarget(null);
 				showToast(
-					getApiErrorMessage(error, "Gagal mengubah status publish event"),
+					getApiErrorMessage(error, "Gagal mengubah status publikasi event"),
 					"error",
 				);
 			},
@@ -2695,7 +2695,7 @@ export default function KelolEventPage() {
 					</div>
 
 					<p className="text-center text-xs text-gray-400 pb-4">
-						© 2026 QR Event Attendance System - Pesantren
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
 					</p>
 				</main>
 			</div>
@@ -2743,18 +2743,18 @@ export default function KelolEventPage() {
 				isOpen={!!toggleTarget}
 				title={
 					toggleTarget && isEventPublished(toggleTarget)
-						? "Unpublish event?"
-						: "Publish event?"
+						? "Batalkan publikasi event?"
+						: "Publikasikan event?"
 				}
 				message={
 					toggleTarget && isEventPublished(toggleTarget)
-						? "Yakin ingin unpublish event ini? Event tidak akan tampil untuk alumni."
-						: "Yakin ingin publish event ini? Event akan tampil untuk alumni."
+						? "Yakin ingin membatalkan publikasi event ini? Event tidak akan tampil untuk alumni."
+						: "Yakin ingin memublikasikan event ini? Event akan tampil untuk alumni."
 				}
 				confirmLabel={
 					toggleTarget && isEventPublished(toggleTarget)
-						? "Unpublish"
-						: "Publish"
+						? "Batalkan Publikasi"
+						: "Publikasikan"
 				}
 				tone={
 					toggleTarget && isEventPublished(toggleTarget) ? "danger" : "default"

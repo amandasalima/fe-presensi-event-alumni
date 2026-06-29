@@ -66,7 +66,7 @@ export default function AlumniPresenceHistoryPage() {
           className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Dashboard</span>
+          <span>Kembali ke Dasbor</span>
         </button>
 
         <div>
@@ -137,7 +137,7 @@ export default function AlumniPresenceHistoryPage() {
             </p>
             <p className="text-xs text-gray-400 max-w-xs mx-auto leading-relaxed">
               {presences.length === 0
-                ? "Anda belum pernah tercatat hadir via scan QR Code. Silakan ikuti event pesantren mendatang."
+                ? "Anda belum pernah tercatat hadir melalui pemindaian QR Code. Silakan ikuti event pesantren mendatang."
                 : "Coba cari dengan kata kunci lain atau periksa kembali ejaan Anda."}
             </p>
           </div>
@@ -153,7 +153,7 @@ export default function AlumniPresenceHistoryPage() {
                 onClick={() => router.push("/alumni/main/scan")}
                 className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold px-4 py-2 rounded-xl transition"
               >
-                Scan QR Presensi
+                Pindai QR Presensi
               </button>
             </div>
           )}

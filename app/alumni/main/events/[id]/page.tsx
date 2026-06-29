@@ -387,7 +387,7 @@ export default function EventDetailPage({
                         ? "Terima kasih telah menghadiri event ini. Presensi Anda sudah tercatat."
                         : isEventDone
                         ? "Pendaftaran dan pembatalan tidak tersedia untuk event yang sudah selesai."
-                        : "Jangan lupa scan QR code saat event dimulai untuk konfirmasi kehadiran Anda."}
+                        : "Jangan lupa memindai QR Code saat event dimulai untuk mengonfirmasi kehadiran Anda."}
                     </p>
                   </div>
                 </div>

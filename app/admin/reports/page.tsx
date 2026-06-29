@@ -174,7 +174,7 @@ export default function ReportsPage() {
 								Pilih Event untuk Detail Kehadiran
 							</h3>
 							<p className="text-sm text-gray-400 mt-1 ml-10">
-								Pilih event atau klik baris event di bawah untuk melihat siapa saja yang hadir saat scan QR
+								Pilih event atau klik baris event di bawah untuk melihat siapa saja yang hadir saat pemindaian QR
 								kehadiran
 							</p>
 						</div>
@@ -252,7 +252,7 @@ export default function ReportsPage() {
 													"No HP",
 													"Angkatan",
 													"Jam daftar",
-													"Jam hadir / scan QR",
+											"Waktu hadir / pemindaian QR",
 													"Status hadir",
 												].map((h) => (
 													<th
@@ -291,7 +291,7 @@ export default function ReportsPage() {
 															className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
 														>
 															<td className="px-5 py-3 font-medium text-gray-800">
-																{attendance.user?.name ?? `User #${attendance.user_id}`}
+											{attendance.user?.name ?? `Pengguna #${attendance.user_id}`}
 															</td>
 
 															<td className="px-5 py-3 text-gray-500">
@@ -436,7 +436,7 @@ export default function ReportsPage() {
 					</div>
 
 					<p className="text-center text-xs text-gray-400 pb-4">
-						© 2026 QR Event Attendance System - Pesantren
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
 					</p>
 				</main>
 			</div>

@@ -54,7 +54,7 @@ export default function AlumniFooter() {
             <Icon name="qr" className="w-6 h-6 min-[360px]:w-7 min-[360px]:h-7" />
           </span>
           <span className="text-[11px] font-semibold leading-none">
-            Scan QR
+            Pindai QR
           </span>
         </button>
       </div>

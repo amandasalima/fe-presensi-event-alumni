@@ -6,12 +6,12 @@ import { clearAuthStorage } from "@/lib/api";
 
 const menuItems = [
   {
-    name: "Dashboard",
+    name: "Dasbor",
     path: "/admin/dashboard",
     icon: "M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z",
   },
   {
-    name: "Kelola User",
+    name: "Kelola Pengguna",
     path: "/admin/users",
     icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
   },
@@ -21,12 +21,12 @@ const menuItems = [
     icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z",
   },
   {
-    name: "Generate QR",
+    name: "Buat QR",
     path: "/admin/qr-code",
     icon: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z",
   },
   {
-    name: "Broadcast WA",
+    name: "Pesan Massal WA",
     path: "/admin/broadcast",
     icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
   },
@@ -72,8 +72,8 @@ export default function AdminSidebar() {
             </svg>
           </span>
           <div>
-            <h1 className="font-bold text-base">Presences Apps</h1>
-            <p className="text-xs text-[#7AB2B2]">Dasboard Admin</p>
+            <h1 className="font-bold text-base">Aplikasi Presensi</h1>
+            <p className="text-xs text-[#7AB2B2]">Dasbor Admin</p>
           </div>
         </div>
       </div>

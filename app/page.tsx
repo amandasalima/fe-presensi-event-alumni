@@ -39,7 +39,7 @@ const features = [
 
 const flow = [
   "Alumni registrasi",
-  "Admin approve akun",
+  "Admin menyetujui akun",
   "Alumni mengikuti event",
   "Presensi dengan QR",
   "Admin melihat laporan",
@@ -148,7 +148,7 @@ export default function Home() {
             <div className="relative rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-2xl shadow-teal-900/10 backdrop-blur-xl sm:p-7">
               <div className="flex items-center justify-between border-b border-slate-100 pb-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">Dashboard Alumni</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">Dasbor Alumni</p>
                   <p className="mt-1 font-bold text-slate-900">Selamat datang kembali</p>
                 </div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
@@ -172,7 +172,7 @@ export default function Home() {
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
                     <QrCode size={21} aria-hidden="true" />
                   </span>
-                  <p className="mt-4 text-sm font-bold text-slate-900">QR Scan</p>
+                  <p className="mt-4 text-sm font-bold text-slate-900">Pindai QR</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">Presensi cepat dan tervalidasi.</p>
                 </div>
                 <div className="landing-float-delayed rounded-2xl border border-slate-100 bg-white p-4 shadow-lg shadow-slate-200/50">
@@ -202,13 +202,13 @@ export default function Home() {
                 </div>
                 <h3 className="mt-6 text-2xl font-bold text-slate-900">Admin</h3>
                 <p className="mt-3 max-w-xl leading-7 text-slate-600">
-                  Kelola event, kategori, QR Code, data alumni, approval user, dan laporan kehadiran.
+                  Kelola event, kategori, QR Code, data alumni, persetujuan pengguna, dan laporan kehadiran.
                 </p>
                 <Link
                   href="/admin/login"
                   className="mt-7 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700"
                 >
-                  Login Admin <ArrowRight size={16} aria-hidden="true" />
+                  Masuk sebagai Admin <ArrowRight size={16} aria-hidden="true" />
                 </Link>
               </article>
 
@@ -218,14 +218,14 @@ export default function Home() {
                 </div>
                 <h3 className="mt-6 text-2xl font-bold text-slate-900">Alumni</h3>
                 <p className="mt-3 max-w-xl leading-7 text-slate-600">
-                  Login atau registrasi, lihat event, scan QR presensi, dan pantau riwayat kehadiran.
+                  Masuk atau daftar, lihat event, pindai QR presensi, dan pantau riwayat kehadiran.
                 </p>
                 <div className="mt-7 flex flex-wrap items-center gap-4">
                   <Link
                     href="/alumni/login"
                     className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700"
                   >
-                    Login / Registrasi Alumni <ArrowRight size={16} aria-hidden="true" />
+                    Masuk / Daftar Alumni <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link href="/alumni/register" className="text-sm font-semibold text-teal-700 hover:underline">
                     Daftar langsung
@@ -284,7 +284,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-teal-100/80 bg-white/75 px-5 py-8 text-center text-sm text-slate-500 backdrop-blur sm:px-8">
-        © 2026 QR Event Attendance System - Pesantren
+        © 2026 Sistem Presensi Event Berbasis QR - Pesantren
       </footer>
     </div>
   );

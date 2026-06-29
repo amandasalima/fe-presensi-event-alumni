@@ -15,6 +15,7 @@ export function formatDate(dateStr?: string) {
 
 export function formatLabel(value: string) {
 	if (!value) return "-";
+	if (value.toLowerCase() === "user") return "Pengguna";
 	return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
@@ -29,7 +30,7 @@ export function isAdminUser(user: Pick<User, "role">) {
 export function getStatusLabel(status?: string | null) {
 	switch (status?.toLowerCase()) {
 		case "pending":
-			return "Menunggu Approval";
+			return "Menunggu Persetujuan";
 		case "active":
 			return "Aktif";
 		case "inactive":
@@ -127,16 +128,16 @@ export function exportUsersToExcel(users: User[]) {
 				</style>
 			</head>
 			<body>
-				<div class="report-title">Data User Alumni</div>
-				<div class="report-meta">Dicetak ${escapeExcelValue(getExportDate())} - Total ${users.length} user</div>
+				<div class="report-title">Data Pengguna Alumni</div>
+				<div class="report-meta">Dicetak ${escapeExcelValue(getExportDate())} - Total ${users.length} pengguna</div>
 				<table>
 					<thead>
 						<tr>
 							<th>No</th>
 							<th>Nama</th>
 							<th>Email</th>
-							<th>No Telp</th>
-							<th>Role</th>
+							<th>Nomor Telepon</th>
+							<th>Peran</th>
 							<th>Status</th>
 							<th>Tanggal Dibuat</th>
 						</tr>
@@ -182,7 +183,7 @@ export function exportUsersToPdf(users: User[]) {
 		<html>
 			<head>
 				<meta charset="UTF-8" />
-				<title>Data User Alumni</title>
+				<title>Data Pengguna Alumni</title>
 				<style>
 					@page { size: A4 landscape; margin: 14mm; }
 					* { box-sizing: border-box; }
@@ -223,10 +224,10 @@ export function exportUsersToPdf(users: User[]) {
 			<body>
 				<div class="header">
 					<div>
-						<h1>Data User Alumni</h1>
-						<div class="meta">Tanggal export: ${escapeExcelValue(getExportDate())}<br />Sumber data: halaman Manajemen User</div>
+						<h1>Data Pengguna Alumni</h1>
+						<div class="meta">Tanggal ekspor: ${escapeExcelValue(getExportDate())}<br />Sumber data: halaman Manajemen Pengguna</div>
 					</div>
-					<div class="badge">${users.length} User</div>
+					<div class="badge">${users.length} Pengguna</div>
 				</div>
 				<table>
 					<thead>
@@ -234,8 +235,8 @@ export function exportUsersToPdf(users: User[]) {
 							<th>No</th>
 							<th>Nama</th>
 							<th>Email</th>
-							<th>No Telp</th>
-							<th>Role</th>
+							<th>Nomor Telepon</th>
+							<th>Peran</th>
 							<th>Status</th>
 							<th>Tanggal Dibuat</th>
 						</tr>

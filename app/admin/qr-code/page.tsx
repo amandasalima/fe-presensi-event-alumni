@@ -432,7 +432,7 @@ export default function GenerateQRPage() {
       <AdminSidebar />
 
       <div className="flex-1 ml-56 flex flex-col h-screen">
-        <AdminHeader title="Generate QR" />
+        <AdminHeader title="Buat QR" />
 
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
 
@@ -529,7 +529,7 @@ export default function GenerateQRPage() {
 
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Timeout QR
+                    Durasi QR
                   </label>
 
                   <div className="flex items-center gap-3">
@@ -551,7 +551,7 @@ export default function GenerateQRPage() {
                   </div>
 
                   <p className="text-xs text-gray-400 mt-1">
-                    QR akan expired setelah sekian menit dari waktu mulai
+                    QR akan kedaluwarsa setelah sekian menit dari waktu mulai
                     berlaku.
                   </p>
                 </div>
@@ -562,7 +562,7 @@ export default function GenerateQRPage() {
                 <div className="p-3 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl text-xs flex items-start gap-2">
                   <AlertCircle size={15} className="mt-0.5 shrink-0" />
                   <span>
-                    Event ini sudah memiliki QR aktif. Generate ulang akan
+                    Event ini sudah memiliki QR aktif. Pembuatan ulang akan
                     menonaktifkan QR sebelumnya.
                   </span>
                 </div>
@@ -602,7 +602,7 @@ export default function GenerateQRPage() {
                     <span className="w-7 h-7 inline-flex items-center justify-center rounded-xl bg-white/20 shadow-inner border border-white/30">
                       <Zap size={16} />
                     </span>
-                    Generate QR Code
+                    Buat QR Code
                   </>
                 )}
               </button>
@@ -616,7 +616,7 @@ export default function GenerateQRPage() {
                 </Icon3D>
                 <div>
                   <h3 className="text-base font-semibold text-gray-800">
-                    Preview QR Code
+                    Pratinjau QR Code
                   </h3>
                   <p className="text-xs text-gray-400 mt-0.5">
                     QR aktif dari event yang dipilih akan tampil di sini
@@ -635,7 +635,7 @@ export default function GenerateQRPage() {
                       Belum Ada Event Dipilih
                     </p>
                     <p className="text-sm text-gray-400 mt-1 max-w-xs">
-                      Pilih event terlebih dahulu untuk melihat atau generate QR
+                      Pilih event terlebih dahulu untuk melihat atau membuat QR
                       Code.
                     </p>
                   </div>
@@ -653,10 +653,10 @@ export default function GenerateQRPage() {
 
                   <div className="text-center">
                     <p className="font-semibold text-gray-500 text-lg">
-                      QR Belum Digenerate
+                      QR Belum Dibuat
                     </p>
                     <p className="text-sm text-gray-400 mt-1 max-w-xs">
-                      Atur waktu mulai berlaku dan timeout, lalu klik Generate
+                      Atur waktu mulai berlaku dan durasi, lalu klik Buat
                       QR Code.
                     </p>
                   </div>
@@ -684,7 +684,7 @@ export default function GenerateQRPage() {
                       {displayedQr.is_valid_now
                         ? "Aktif"
                         : displayedQr.is_expired
-                          ? "Expired"
+                          ? "Kedaluwarsa"
                           : "Terjadwal"}
                     </span>
                   </div>
@@ -714,7 +714,7 @@ export default function GenerateQRPage() {
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-500 flex items-center gap-2">
                         <TimerReset size={14} />
-                        Expired
+                        Kedaluwarsa
                       </span>
                       <span className="font-medium text-gray-700 text-right">
                         {formatDateTime(displayedQr.expired_at)}
@@ -722,7 +722,7 @@ export default function GenerateQRPage() {
                     </div>
 
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Timeout</span>
+                      <span className="text-gray-500">Durasi</span>
                       <span className="font-medium text-gray-700 text-right">
                         {displayedQr.timeout_minutes} menit
                       </span>
@@ -737,7 +737,7 @@ export default function GenerateQRPage() {
                         <button
                           onClick={() => handleCopyToken(qrPayload)}
                           className="text-gray-400 hover:text-[#2D7EA0] transition-colors p-1"
-                          title="Copy QR Payload"
+                          title="Salin Data QR"
                         >
                           {copySuccess ? (
                             <CheckCircle size={14} className="text-[#3EBDAF]" />
@@ -763,7 +763,7 @@ export default function GenerateQRPage() {
                       className="flex items-center gap-2 bg-[#2D7EA0] hover:bg-[#236175] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
                     >
                       <Download size={16} />
-                      Download PNG
+                      Unduh PNG
                     </button>
 
                     <button
@@ -796,7 +796,7 @@ export default function GenerateQRPage() {
                   Daftar Event
                 </h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Klik salah satu event untuk generate atau melihat QR aktif
+              Klik salah satu event untuk membuat atau melihat QR aktif
                 </p>
               </div>
             </div>
@@ -830,7 +830,7 @@ export default function GenerateQRPage() {
           </div>
 
           <p className="text-center text-xs text-gray-400 pb-4">
-            © 2026 QR Event Attendance System - Pesantren
+            © 2026 Sistem Presensi Event Berbasis QR - Pesantren
           </p>
         </main>
       </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ResetPasswordForm from "./ResetPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Reset Kata Sandi | Sistem Presensi Event Alumni Berbasis QR",
+  title: "Atur Ulang Kata Sandi | Sistem Presensi Event Alumni Berbasis QR",
   description: "Buat kata sandi baru untuk akun Anda",
 };
 

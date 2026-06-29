@@ -651,10 +651,10 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
 
         {/* Heading */}
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 leading-tight mb-1">
-          Get Started now
+          Mulai Sekarang
         </h1>
         <p className="text-sm text-slate-500 mb-6">
-          Create an account or log in to explore about our app
+          Daftar atau masuk untuk mulai menggunakan aplikasi
         </p>
 
         {/* Card */}
@@ -681,13 +681,13 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-slate-500 leading-relaxed px-2">
-          By signing up, you agree to the{" "}
+          Dengan mendaftar, Anda menyetujui{" "}
           <Link href="/terms" className="font-semibold text-slate-700 underline underline-offset-2">
-            Terms of Service
+            Ketentuan Layanan
           </Link>{" "}
           and{" "}
           <Link href="/privacy" className="font-semibold text-slate-700 underline underline-offset-2">
-            Data Processing Agreement
+            Persetujuan Pemrosesan Data
           </Link>
         </p>
       </div>

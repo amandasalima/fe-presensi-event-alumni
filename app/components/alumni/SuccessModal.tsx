@@ -41,7 +41,7 @@ export default function SuccessModal({
               background: "#41A07E",
             }}
           >
-            OK
+            Tutup
           </button>
         </div>
       </div>

@@ -111,9 +111,9 @@ const AdminLogin = () => {
 								/>
 							</svg>
 						</span>
-						Dashboard Admin
+						Dasbor Admin
 					</h1>
-					<p className="mt-1 text-[#A8D5D5] text-xs">Presences Apps</p>
+					<p className="mt-1 text-[#A8D5D5] text-xs">Aplikasi Presensi</p>
 				</div>
 
 				<div>
@@ -122,7 +122,7 @@ const AdminLogin = () => {
 						{[
 							{
 								icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
-								title: "Kelola Data User",
+								title: "Kelola Data Pengguna",
 								desc: "Manajemen lengkap untuk alumni",
 							},
 							{
@@ -132,18 +132,18 @@ const AdminLogin = () => {
 							},
 							{
 								icon: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z",
-								title: "Generate QR Code",
+								title: "Buat QR Code",
 								desc: "QR Code unik untuk setiap event",
 							},
 							{
 								icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
 								title: "Laporan Kehadiran",
-								desc: "Lihat dan download laporan lengkap",
+								desc: "Lihat dan unduh laporan lengkap",
 							},
 							{
 								icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
-								title: "Broadcast WhatsApp",
-								desc: "Kirim notifikasi ke peserta via WA",
+								title: "Pesan Massal WhatsApp",
+								desc: "Kirim notifikasi kepada peserta melalui WA",
 							},
 						].map((item, i) => (
 							<li
@@ -201,7 +201,7 @@ const AdminLogin = () => {
 							</svg>
 						</div>
 						<h2 className="text-xl font-bold mt-3 text-gray-800">
-							Login Admin
+							Masuk sebagai Admin
 						</h2>
 						<p className="text-gray-500 mt-0.5 text-xs">
 							Assalamualaikum, Selamat Datang Kembali
@@ -245,7 +245,7 @@ const AdminLogin = () => {
 						{/* Password */}
 						<div>
 							<label className="block text-xs font-medium text-gray-700 mb-1">
-								Password
+								Kata Sandi
 							</label>
 							<div className="relative">
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -268,7 +268,7 @@ const AdminLogin = () => {
 									type={showPassword ? "text" : "password"}
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
-									placeholder="Masukkan password admin"
+									placeholder="Masukkan kata sandi admin"
 									className="text-gray-500 w-full pl-9 pr-10 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]/30 focus:border-[#2D7EA0] bg-gray-50"
 									required
 								/>
@@ -353,8 +353,8 @@ const AdminLogin = () => {
 							</svg>
 							<span>
 								<strong>Peringatan Keamanan:</strong> Pastikan Anda memiliki
-								izin akses sebelum login. Setiap aktivitas admin akan tercatat
-								dalam sistem log.
+								izin akses sebelum masuk. Setiap aktivitas admin akan tercatat
+								dalam catatan sistem.
 							</span>
 						</div>
 
@@ -370,7 +370,7 @@ const AdminLogin = () => {
 									Memproses...
 								</>
 							) : (
-								"Masuk ke Dashboard Admin"
+								"Masuk ke Dasbor Admin"
 							)}
 						</button>
 
@@ -380,16 +380,16 @@ const AdminLogin = () => {
 								href="/alumni/login"
 								className="inline-block mt-1 text-[#2D7EA0] hover:text-[#236175] hover:underline text-xs transition-colors"
 							>
-								← Kembali ke Login User
+								← Kembali ke Halaman Masuk Alumni
 							</Link>
 						</div>
 					</form>
 
 					<p className="mt-4 text-center text-gray-400 text-xs">
-						Jika Anda bukan administrator, silakan login sebagai user
+					Jika Anda bukan administrator, silakan masuk sebagai alumni
 					</p>
 					<p className="mt-1 text-center text-gray-300 text-xs">
-						Dilindungi dengan enkripsi end-to-end | Dashboard Admin v1.0.0
+						Dilindungi dengan enkripsi ujung ke ujung | Dasbor Admin v1.0.0
 					</p>
 				</div>
 			</div>

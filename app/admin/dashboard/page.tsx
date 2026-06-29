@@ -103,35 +103,35 @@ function renderLogItem(log: ActivityLog, i: number) {
 
 	switch (log.action) {
 		case "login":
-			label = "Login Admin";
+			label = "Admin Masuk";
 			badgeColor = "bg-blue-50 text-blue-700 border-blue-100";
 			break;
 		case "generate_qr":
-			label = "QR Generated";
+			label = "QR Dibuat";
 			badgeColor = "bg-[#7AB2B2]/10 text-[#236175] border-[#7AB2B2]/20";
 			break;
 		case "edit_user":
-			label = "User Updated";
+			label = "Pengguna Diperbarui";
 			badgeColor = "bg-yellow-50 text-yellow-700 border-yellow-100";
 			break;
 		case "delete_user":
-			label = "User Deleted";
+			label = "Pengguna Dihapus";
 			badgeColor = "bg-red-50 text-red-700 border-red-100";
 			break;
 		case "create_event":
-			label = "Event Created";
+			label = "Event Dibuat";
 			badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
 			break;
 		case "update_event":
-			label = "Event Updated";
+			label = "Event Diperbarui";
 			badgeColor = "bg-amber-50 text-amber-700 border-amber-100";
 			break;
 		case "delete_event":
-			label = "Event Deleted";
+			label = "Event Dihapus";
 			badgeColor = "bg-rose-50 text-rose-700 border-rose-100";
 			break;
 		case "toggle_event":
-			label = "Event Status Toggled";
+			label = "Status Event Diubah";
 			badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-100";
 			break;
 	}
@@ -468,9 +468,9 @@ export default function DashboardPage() {
 			icon: <ClipboardCheck size={20} strokeWidth={2.5} />,
 		},
 		{
-			title: "QR Scan Hari Ini",
+			title: "Pemindaian QR Hari Ini",
 			value: todayScan,
-			desc: "Real-time tracking",
+			desc: "Pemantauan waktu nyata",
 			variant: "teal",
 			icon: <QrCode size={20} strokeWidth={2.5} />,
 		},
@@ -481,7 +481,7 @@ export default function DashboardPage() {
 			<AdminSidebar />
 
 			<div className="flex-1 ml-56 flex flex-col h-screen">
-				<AdminHeader title="Dashboard" />
+				<AdminHeader title="Dasbor" />
 
 				<main className="flex-1 overflow-y-auto p-5">
 
@@ -602,7 +602,7 @@ export default function DashboardPage() {
 									<span className="text-gray-600 text-sm">Status Sistem</span>
 									<span className="text-green-600 font-semibold text-sm flex items-center gap-1.5">
 										<span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" />
-										Online
+										Beroperasi
 									</span>
 								</div>
 								{[
@@ -729,7 +729,7 @@ export default function DashboardPage() {
 					</div>
 
 					<footer className="mt-6 text-center text-gray-400 text-xs pb-4">
-						© 2026 QR Event Attendance System - Pesantren
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
 					</footer>
 				</main>
 			</div>

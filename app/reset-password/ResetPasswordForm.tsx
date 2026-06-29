@@ -189,7 +189,7 @@ function ResetPasswordInner() {
       setErrorMessage(
         getApiErrorMessage(
           error,
-          "Reset kata sandi belum berhasil. Silakan coba lagi.",
+          "Kata sandi belum berhasil diatur ulang. Silakan coba lagi.",
         ),
       );
     } finally {
@@ -209,7 +209,7 @@ function ResetPasswordInner() {
             Tautan Tidak Valid
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Tautan reset kata sandi tidak lengkap atau sudah kedaluwarsa.
+            Tautan pengaturan ulang kata sandi tidak lengkap atau sudah kedaluwarsa.
             Silakan minta tautan baru.
           </p>
         </div>
@@ -236,8 +236,8 @@ function ResetPasswordInner() {
             Kata Sandi Berhasil Diubah
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Kata sandi Anda telah berhasil direset. Anda akan dialihkan ke
-            halaman login dalam beberapa detik...
+            Kata sandi Anda berhasil diatur ulang. Anda akan dialihkan ke
+            halaman masuk dalam beberapa detik...
           </p>
         </div>
         <Link
@@ -264,7 +264,7 @@ function ResetPasswordInner() {
 
       {/* Email indicator (read-only) */}
       <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600 border border-slate-200">
-        Reset kata sandi untuk:{" "}
+        Atur ulang kata sandi untuk:{" "}
         <strong className="text-slate-800">{email}</strong>
       </div>
 
@@ -399,7 +399,7 @@ export default function ResetPasswordForm() {
 
         {/* Heading */}
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 leading-tight mb-1">
-          Reset Kata Sandi
+          Atur Ulang Kata Sandi
         </h1>
         <p className="text-sm text-slate-500 mb-6">
           Buat kata sandi baru untuk akun Anda
@@ -420,7 +420,7 @@ export default function ResetPasswordForm() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-slate-500 leading-relaxed px-2">
-          Tautan reset kata sandi hanya berlaku untuk satu kali penggunaan.
+          Tautan pengaturan ulang kata sandi hanya berlaku untuk satu kali penggunaan.
         </p>
       </div>
     </div>

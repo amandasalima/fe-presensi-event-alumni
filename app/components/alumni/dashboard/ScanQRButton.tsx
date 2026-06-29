@@ -15,7 +15,7 @@ export default function ScanQRButton() {
         <QrCode size={24} />
       </div>
       <div className="text-left">
-        <p className="font-bold text-base">Scan QR Code</p>
+        <p className="font-bold text-base">Pindai QR Code</p>
         <p className="text-xs text-emerald-50">Presensi event dengan mudah</p>
       </div>
     </button>

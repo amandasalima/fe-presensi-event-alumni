@@ -22,7 +22,7 @@ export function useMyProfile() {
 					last_name: lastName,
 				};
 			}
-			throw new Error("Failed to load profile from backend");
+			throw new Error("Gagal memuat profil dari layanan");
 		},
 	});
 }

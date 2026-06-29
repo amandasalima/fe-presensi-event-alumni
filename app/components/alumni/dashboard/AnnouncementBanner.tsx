@@ -12,7 +12,7 @@ export default function AnnouncementBanner() {
         <div>
           <h3 className="font-semibold text-sm mb-1">Pengumuman Penting</h3>
           <p className="text-xs text-emerald-50 leading-relaxed">
-            Jangan lupa untuk scan QR code saat menghadiri event agar presensi Anda tercatat
+            Jangan lupa memindai QR Code saat menghadiri event agar presensi Anda tercatat
           </p>
         </div>
       </div>

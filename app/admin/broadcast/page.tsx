@@ -95,17 +95,17 @@ const targetDescriptions: Record<
 	all: {
 		label: "Semua alumni",
 		description:
-			"Broadcast akan dikirim ke seluruh alumni yang memiliki nomor HP valid.",
+			"Pesan massal akan dikirim ke seluruh alumni yang memiliki nomor HP valid.",
 	},
 	registered: {
 		label: "Terdaftar event",
 		description:
-			"Broadcast hanya dikirim ke alumni yang sudah terdaftar pada event yang dipilih.",
+			"Pesan massal hanya dikirim ke alumni yang sudah terdaftar pada event yang dipilih.",
 	},
 	custom: {
 		label: "Nomor manual",
 		description:
-			"Broadcast hanya dikirim ke daftar nomor yang Anda input satu per satu.",
+			"Pesan massal hanya dikirim ke daftar nomor yang Anda masukkan satu per satu.",
 	},
 };
 
@@ -212,7 +212,7 @@ export default function BroadcastPage() {
 					setIsSendConfirmOpen(false);
 					const totalSent = response.data?.total_sent ?? 0;
 					setSuccessMessage(
-						`${response.message || "Broadcast berhasil dikirim"} Total terkirim: ${totalSent}.`,
+						`${response.message || "Pesan massal berhasil dikirim"} Total terkirim: ${totalSent}.`,
 					);
 					setSendDetail({
 						totalSent,
@@ -225,7 +225,7 @@ export default function BroadcastPage() {
 				},
 				onError: (error) => {
 					setIsSendConfirmOpen(false);
-					setErrorMessage(getApiErrorMessage(error, "Gagal mengirim broadcast"));
+					setErrorMessage(getApiErrorMessage(error, "Gagal mengirim pesan massal"));
 					const detail = getBroadcastDebugDetail(error);
 					if (detail) {
 						setSendDetail({
@@ -243,7 +243,7 @@ export default function BroadcastPage() {
 			<AdminSidebar />
 
 			<div className="flex-1 ml-56 flex flex-col h-screen">
-				<AdminHeader title="Broadcast WhatsApp" />
+				<AdminHeader title="Pesan Massal WhatsApp" />
 
 				<main className="flex-1 overflow-y-auto p-5">
 					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
@@ -271,13 +271,13 @@ export default function BroadcastPage() {
 							sub={
 								parsedNumbers.invalidCount > 0
 									? `${parsedNumbers.invalidCount} tidak valid`
-									: "Target custom"
+									: "Target khusus"
 							}
 						/>
 						<StatCard
 							label="Estimasi Penerima"
 							value={preview.isLoading ? "..." : estimatedTargets}
-							sub="Target broadcast saat ini"
+							sub="Target pesan massal saat ini"
 						/>
 					</div>
 
@@ -285,10 +285,10 @@ export default function BroadcastPage() {
 						<div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
 							<div>
 								<h2 className="text-base font-bold text-gray-800">
-									Kirim Broadcast Event
+									Kirim Pesan Massal Event
 								</h2>
 								<p className="text-xs text-gray-400">
-									Preview dan pengiriman memakai endpoint admin event.
+									Pratinjau dan pengiriman menggunakan endpoint admin event.
 								</p>
 							</div>
 							<button
@@ -303,7 +303,7 @@ export default function BroadcastPage() {
 										Mengirim...
 									</>
 								) : (
-									"Kirim Broadcast"
+									"Kirim Pesan Massal"
 								)}
 							</button>
 						</div>
@@ -335,7 +335,7 @@ export default function BroadcastPage() {
 									<p className="mt-1 text-xs text-gray-400">
 										{selectedEvent
 											? `${formatEventDate(selectedEvent)} - ${selectedEvent.location}`
-											: "Broadcast wajib dikaitkan dengan event."}
+										: "Pesan massal wajib dikaitkan dengan event."}
 									</p>
 								</div>
 
@@ -426,7 +426,7 @@ export default function BroadcastPage() {
 								<div className="flex h-full min-h-[430px] flex-col">
 									<div className="mb-2 flex items-center justify-between">
 										<label className="block text-sm font-medium text-gray-700">
-											Custom Message
+										Pesan Khusus
 										</label>
 										<span
 											className={`text-xs ${
@@ -448,7 +448,7 @@ export default function BroadcastPage() {
 									/>
 									{isMessageTooLong && (
 										<p className="mt-1 text-xs text-red-500">
-											Custom message maksimal 1000 karakter.
+										Pesan khusus maksimal 1000 karakter.
 										</p>
 									)}
 								</div>
@@ -457,7 +457,7 @@ export default function BroadcastPage() {
 									<div className="flex h-full min-h-[430px] flex-col">
 										<div className="mb-2 flex items-center justify-between">
 											<label className="block text-sm font-medium text-gray-700">
-												Preview Pesan
+											Pratinjau Pesan
 											</label>
 											<span className="rounded-full border border-teal-200 bg-[#7AB2B2]/10 px-2 py-0.5 text-xs font-medium text-[#2D7EA0]">
 												{target}
@@ -465,18 +465,18 @@ export default function BroadcastPage() {
 										</div>
 										<div className="min-h-[360px] flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
 											{!selectedEventId
-												? "Pilih event untuk melihat preview."
+											? "Pilih event untuk melihat pratinjau."
 												: target === "custom" &&
 														parsedNumbers.validNumbers.length === 0
-													? "Masukkan nomor manual untuk menghitung target custom."
+												? "Masukkan nomor manual untuk menghitung target khusus."
 													: preview.isLoading
-														? "Memuat preview..."
+													? "Memuat pratinjau..."
 														: preview.isError
 															? getApiErrorMessage(
 																	preview.error,
-																	"Gagal memuat preview",
+															"Gagal memuat pratinjau",
 																)
-															: previewMessage || "Preview belum tersedia"}
+													: previewMessage || "Pratinjau belum tersedia"}
 										</div>
 									</div>
 
@@ -498,7 +498,7 @@ export default function BroadcastPage() {
 											)}
 											{sendDetail?.senderStatus !== undefined && (
 												<p className="text-xs">
-													Sender status: {String(sendDetail.senderStatus)}
+											Status pengirim: {String(sendDetail.senderStatus)}
 												</p>
 											)}
 											{sendDetail?.blockedReason !== undefined && (
@@ -514,7 +514,7 @@ export default function BroadcastPage() {
 											<p>{errorMessage}</p>
 											{sendDetail?.senderStatus !== undefined && (
 												<p className="text-xs">
-													Sender status: {String(sendDetail.senderStatus)}
+											Status pengirim: {String(sendDetail.senderStatus)}
 												</p>
 											)}
 											{sendDetail?.blockedReason !== undefined && (
@@ -540,14 +540,14 @@ export default function BroadcastPage() {
 					</div>
 
 					<p className="mt-6 pb-4 text-center text-xs text-gray-400">
-						© 2026 QR Event Attendance System - Pesantren
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
 					</p>
 				</main>
 			</div>
 
 			<ConfirmDialog
 				isOpen={isSendConfirmOpen}
-				title="Kirim broadcast WhatsApp?"
+				title="Kirim pesan massal WhatsApp?"
 				message={`Target: ${targetDescriptions[target].label}. Jumlah penerima: ${estimatedTargets}. Event: ${
 					selectedEvent?.event_title ?? "-"
 				}.`}

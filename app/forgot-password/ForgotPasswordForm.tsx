@@ -55,7 +55,7 @@ export default function ForgotPasswordForm() {
       // Show success message from API (or a generic fallback)
       setSuccessMessage(
         data?.message ||
-          "Jika email terdaftar, kami telah mengirimkan tautan untuk mereset kata sandi Anda.",
+          "Jika email terdaftar, kami telah mengirimkan tautan untuk mengatur ulang kata sandi Anda.",
       );
     } catch (error) {
       setErrorMessage(
@@ -88,7 +88,7 @@ export default function ForgotPasswordForm() {
           Lupa Kata Sandi
         </h1>
         <p className="text-sm text-slate-500 mb-6">
-          Masukkan email Anda untuk menerima tautan reset kata sandi
+          Masukkan email Anda untuk menerima tautan pengaturan ulang kata sandi
         </p>
 
         {/* Card */}
@@ -171,7 +171,7 @@ export default function ForgotPasswordForm() {
                 className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
                 id="forgot-password-submit"
               >
-                {isPending ? "Mengirim..." : "Kirim Tautan Reset"}
+                {isPending ? "Mengirim..." : "Kirim Tautan Pengaturan Ulang"}
               </button>
 
               {/* Back to login */}

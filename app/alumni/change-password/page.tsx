@@ -34,13 +34,13 @@ export default function AlumniChangePasswordPage() {
       return "Semua field wajib diisi.";
     }
     if (newPassword.length < 8) {
-      return "Password baru minimal 8 karakter.";
+      return "Kata sandi baru minimal 8 karakter.";
     }
     if (newPassword !== confirmPassword) {
-      return "Konfirmasi password tidak cocok.";
+      return "Konfirmasi kata sandi tidak cocok.";
     }
     if (currentPassword === newPassword) {
-      return "Password baru tidak boleh sama dengan password lama.";
+      return "Kata sandi baru tidak boleh sama dengan kata sandi lama.";
     }
     return null;
   }
@@ -94,10 +94,10 @@ export default function AlumniChangePasswordPage() {
             <CheckCircle size={32} className="text-emerald-600" />
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">
-            Password Berhasil Diubah!
+            Kata Sandi Berhasil Diubah!
           </h2>
           <p className="text-sm text-slate-500">
-            Anda akan dialihkan ke halaman login...
+            Anda akan dialihkan ke halaman masuk...
           </p>
           <div className="mt-4">
             <Loader2 size={20} className="animate-spin text-emerald-500 mx-auto" />
@@ -133,7 +133,7 @@ export default function AlumniChangePasswordPage() {
               Keamanan Akun
             </p>
             <p className="text-xs text-emerald-600 mt-0.5">
-              Setelah password berhasil diubah, Anda akan diminta login ulang
+              Setelah kata sandi berhasil diubah, Anda akan diminta masuk ulang
               untuk keamanan.
             </p>
           </div>
@@ -144,7 +144,7 @@ export default function AlumniChangePasswordPage() {
           {/* Current Password */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Password Lama
+              Kata Sandi Lama
             </label>
             <div className="relative">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
@@ -157,7 +157,7 @@ export default function AlumniChangePasswordPage() {
                   setCurrentPassword(e.target.value);
                   setFormError("");
                 }}
-                placeholder="Masukkan password lama"
+                placeholder="Masukkan kata sandi lama"
                 className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
               />
               <button
@@ -173,7 +173,7 @@ export default function AlumniChangePasswordPage() {
           {/* New Password */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Password Baru
+              Kata Sandi Baru
             </label>
             <div className="relative">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
@@ -208,7 +208,7 @@ export default function AlumniChangePasswordPage() {
           {/* Confirm Password */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Konfirmasi Password Baru
+              Konfirmasi Kata Sandi Baru
             </label>
             <div className="relative">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
@@ -221,7 +221,7 @@ export default function AlumniChangePasswordPage() {
                   setConfirmPassword(e.target.value);
                   setFormError("");
                 }}
-                placeholder="Ulangi password baru"
+                placeholder="Ulangi kata sandi baru"
                 className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
               />
               <button
@@ -235,7 +235,7 @@ export default function AlumniChangePasswordPage() {
             {confirmPassword.length > 0 && newPassword !== confirmPassword && (
               <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
                 <AlertCircle size={12} />
-                Password tidak cocok
+                Kata sandi tidak cocok
               </p>
             )}
           </div>
@@ -272,12 +272,12 @@ export default function AlumniChangePasswordPage() {
           {changePassword.isPending ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Mengubah Password...
+              Mengubah Kata Sandi...
             </>
           ) : (
             <>
               <ShieldCheck size={16} />
-              Ubah Password
+              Ubah Kata Sandi
             </>
           )}
         </button>

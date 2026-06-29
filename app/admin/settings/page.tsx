@@ -17,6 +17,19 @@ import { useSettingsPage } from "./_hooks/useSettingsPage";
 import { DEFAULT_FONNTE_API_URL } from "./_utils/waConfig";
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
+function getStatusText(status: string) {
+	return (
+		{
+			Connected: "Terhubung",
+			Disconnected: "Terputus",
+			Online: "Beroperasi",
+			Offline: "Tidak Beroperasi",
+			Active: "Aktif",
+			Running: "Berjalan",
+		}[status] ?? status
+	);
+}
+
 function StatusBadge({ status }: { status: string }) {
 	const isOk = ["Connected", "Online", "Active", "Running"].includes(status);
 	return (
@@ -28,7 +41,7 @@ function StatusBadge({ status }: { status: string }) {
 			<span
 				className={`w-2 h-2 rounded-full ${isOk ? "bg-green-500 animate-pulse" : "bg-red-400"}`}
 			/>
-			{status}
+			{getStatusText(status)}
 		</span>
 	);
 }
@@ -122,7 +135,9 @@ export default function SettingsPage() {
 							{
 								label: "Status Sistem",
 								accent: "border-[#7AB2B2]",
-								value: loadingStatus ? "..." : (status?.system ?? "Online"),
+								value: loadingStatus
+									? "..."
+									: getStatusText(status?.system ?? "Online"),
 								sub: "Sistem berjalan normal",
 								color: "text-green-600",
 							},
@@ -131,7 +146,7 @@ export default function SettingsPage() {
 								accent: "border-green-400",
 								value: loadingStatus
 									? "..."
-									: (status?.database ?? "Connected"),
+									: getStatusText(status?.database ?? "Connected"),
 								sub: "MySQL aktif",
 								color: "text-[#2D7EA0]",
 							},
@@ -140,7 +155,7 @@ export default function SettingsPage() {
 								accent: "border-purple-400",
 								value: loadingStatus
 									? "..."
-									: (status?.whatsapp_api ?? "Connected"),
+									: getStatusText(status?.whatsapp_api ?? "Connected"),
 								sub: "API terhubung",
 								color: "text-green-600",
 							},
@@ -234,27 +249,27 @@ export default function SettingsPage() {
 							{/* Keamanan */}
 							<SectionCard
 								title="Keamanan Akun"
-								desc="Ubah password administrator"
+								desc="Ubah kata sandi administrator"
 							>
 								<div className="space-y-5">
 									{[
 										{
-											label: "Password Lama",
+											label: "Kata Sandi Lama",
 											value: oldPassword,
 											set: setOldPassword,
-											placeholder: "Masukkan password lama",
+											placeholder: "Masukkan kata sandi lama",
 										},
 										{
-											label: "Password Baru",
+											label: "Kata Sandi Baru",
 											value: newPassword,
 											set: setNewPassword,
 											placeholder: "Minimal 8 karakter",
 										},
 										{
-											label: "Konfirmasi Password Baru",
+											label: "Konfirmasi Kata Sandi Baru",
 											value: confirmPassword,
 											set: setConfirmPassword,
-											placeholder: "Ulangi password baru",
+											placeholder: "Ulangi kata sandi baru",
 										},
 									].map((field, i) => (
 										<div key={i}>
@@ -278,7 +293,7 @@ export default function SettingsPage() {
 									)}
 									{updatePassword.isSuccess && (
 										<p className="text-sm text-green-600 flex items-center gap-2">
-											<span>✅</span> Password berhasil diperbarui
+											<span>✅</span> Kata sandi berhasil diperbarui
 										</p>
 									)}
 									{updatePassword.isError && (
@@ -299,25 +314,25 @@ export default function SettingsPage() {
 										{updatePassword.isPending && (
 											<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
 										)}
-										Update Password
+										Perbarui Kata Sandi
 									</button>
 								</div>
 							</SectionCard>
 
 							{/* Konfigurasi WhatsApp API */}
 							<SectionCard
-								title="Konfigurasi WhatsApp Broadcast"
-								desc="Atur koneksi Fonnte untuk broadcast WhatsApp"
+								title="Konfigurasi Pesan Massal WhatsApp"
+								desc="Atur koneksi Fonnte untuk pesan massal WhatsApp"
 							>
 									<div className="space-y-5">
 										<div className="p-4 bg-[#7AB2B2]/10 border border-[#7AB2B2]/20 rounded-2xl flex items-start gap-3">
 											<CheckCircle2 className="w-5 h-5 text-[#2D7EA0] mt-0.5" />
 											<div>
 												<p className="text-sm font-semibold text-gray-800">
-													Provider aktif: Fonnte
+											Penyedia aktif: Fonnte
 												</p>
 												<p className="text-xs text-gray-500 mt-1">
-													Pengaturan ini dipakai untuk broadcast WA dan test koneksi
+											Pengaturan ini dipakai untuk pesan massal WA dan uji koneksi
 													sebelum pengiriman massal.
 												</p>
 											</div>
@@ -340,10 +355,10 @@ export default function SettingsPage() {
 													<div className="flex items-start justify-between gap-4">
 														<div>
 															<p className="text-sm font-semibold text-green-700">
-																Status connected
+														Status terhubung
 															</p>
 															<p className="text-xs text-green-600 mt-1">
-																Konfigurasi tersimpan siap dipakai untuk broadcast.
+														Konfigurasi tersimpan siap dipakai untuk pesan massal.
 															</p>
 														</div>
 														<span className="px-3 py-1 rounded-full bg-white text-green-700 border border-green-200 text-xs font-semibold">
@@ -354,13 +369,13 @@ export default function SettingsPage() {
 
 												<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 													{[
-														{ label: "Provider", value: waConfig?.provider ?? "fonnte" },
+												{ label: "Penyedia", value: waConfig?.provider ?? "fonnte" },
 														{ label: "URL API", value: DEFAULT_FONNTE_API_URL },
 														{ label: "Nomor Pengirim", value: waConfig?.sender_number ?? "-" },
 														{ label: "Token", value: waConfig?.api_token || "Token tersimpan" },
 														{
 															label: "Koneksi",
-															value: waConfig?.connected ? "connected" : "disconnected",
+													value: waConfig?.connected ? "Terhubung" : "Terputus",
 														},
 														{
 															label: "Terakhir dites",
@@ -385,7 +400,7 @@ export default function SettingsPage() {
 											<div className="space-y-5">
 												<div>
 													<label className="block text-sm font-semibold text-gray-700 mb-2">
-														Provider
+												Penyedia
 													</label>
 													<FormInput
 														type="text"
@@ -410,7 +425,7 @@ export default function SettingsPage() {
 
 												<div>
 													<label className="block text-sm font-semibold text-gray-700 mb-2">
-														API Token
+												Token API
 													</label>
 													<div className="relative">
 														<FormInput
@@ -422,8 +437,8 @@ export default function SettingsPage() {
 															}}
 															placeholder={
 																isWAConfigured
-																	? "Biarkan token masked jika tidak diganti"
-																	: "Masukkan API token"
+															? "Biarkan token tersamarkan jika tidak diganti"
+															: "Masukkan token API"
 															}
 															disabled={loadingWA || savingWA}
 															className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
@@ -447,14 +462,14 @@ export default function SettingsPage() {
 													</div>
 													<p className="text-xs text-gray-400 mt-1">
 														{isWAConfigured
-															? "Token tersimpan ditampilkan dalam bentuk masked dari backend."
+													? "Token tersimpan ditampilkan dalam bentuk tersamarkan dari layanan."
 															: "Token wajib diisi untuk konfigurasi baru."}
 													</p>
 												</div>
 
 												<div>
 													<label className="block text-sm font-semibold text-gray-700 mb-2">
-														Nomor Pengirim (Sender)
+											Nomor Pengirim
 													</label>
 													<FormInput
 														type="text"
@@ -484,7 +499,7 @@ export default function SettingsPage() {
 												</p>
 												<p className="text-green-600 mt-1">
 													{testResult?.message ??
-														"Nomor pengirim siap dipakai untuk broadcast WA."}
+												"Nomor pengirim siap dipakai untuk pesan massal WA."}
 												</p>
 											</div>
 										</div>
@@ -499,7 +514,7 @@ export default function SettingsPage() {
 												<p className="text-red-500 mt-1">
 													{testResult?.blocked_reason ??
 														testResult?.message ??
-														"Jangan lanjutkan broadcast sampai nomor sender aktif kembali di Fonnte."}
+												"Jangan lanjutkan pengiriman massal sampai nomor pengirim aktif kembali di Fonnte."}
 												</p>
 											</div>
 										</div>
@@ -508,7 +523,7 @@ export default function SettingsPage() {
 										<div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-500 text-sm flex items-start gap-2">
 											<ShieldAlert className="w-5 h-5 mt-0.5" />
 											<div>
-												<p className="font-semibold">Test koneksi gagal</p>
+										<p className="font-semibold">Uji koneksi gagal</p>
 												<p className="mt-1">{testError}</p>
 											</div>
 										</div>
@@ -517,7 +532,7 @@ export default function SettingsPage() {
 										<div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-500 text-sm flex items-start gap-2">
 											<ShieldAlert className="w-5 h-5 mt-0.5" />
 											<div>
-												<p className="font-semibold">Form belum valid</p>
+										<p className="font-semibold">Formulir belum valid</p>
 												<p className="mt-1">{waFormError}</p>
 											</div>
 										</div>
@@ -550,7 +565,7 @@ export default function SettingsPage() {
 											) : (
 												<PlugZap className="w-5 h-5" />
 											)}
-											Test Koneksi
+										Uji Koneksi
 										</button>
 										{readOnlyConnected ? (
 											<button
@@ -559,7 +574,7 @@ export default function SettingsPage() {
 												className="flex-1 min-w-48 py-4 bg-[#2D7EA0] hover:bg-[#236175] text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
 											>
 												<Edit3 className="w-5 h-5" />
-												Edit
+												Ubah
 											</button>
 										) : (
 											<>
@@ -587,13 +602,13 @@ export default function SettingsPage() {
 											)}
 									</div>
 									<div className="sr-only" aria-live="polite">
-										{loadingWA ? "loading" : ""}
-										{readOnlyConnected ? "readOnlyConnected" : ""}
-										{editingWA ? "editing" : ""}
-										{savingWA ? "saving" : ""}
-										{testingWA ? "testing" : ""}
-										{waError ? "error" : ""}
-										{waSuccess ? "success" : ""}
+									{loadingWA ? "memuat" : ""}
+									{readOnlyConnected ? "terhubung dan hanya baca" : ""}
+									{editingWA ? "mengubah" : ""}
+									{savingWA ? "menyimpan" : ""}
+									{testingWA ? "menguji" : ""}
+									{waError ? "gagal" : ""}
+									{waSuccess ? "berhasil" : ""}
 									</div>
 								</div>
 							</SectionCard>
@@ -630,7 +645,7 @@ export default function SettingsPage() {
 					</div>
 
 					<footer className="mt-10 text-center text-gray-400 text-xs pb-8">
-						© 2026 QR Event Attendance System - Pesantren
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
 					</footer>
 				</main>
 			</div>

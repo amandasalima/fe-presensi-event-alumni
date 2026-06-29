@@ -90,7 +90,7 @@ export function useUsersPage() {
 			setSelected(null);
 			showFeedback({
 				type: "error",
-				message: "User dengan role admin tidak dapat diedit",
+				message: "Pengguna dengan peran admin tidak dapat diubah",
 			});
 			return;
 		}
@@ -101,12 +101,12 @@ export function useUsersPage() {
 			{
 				onSuccess: () => {
 					setSelected(null);
-					showFeedback({ type: "success", message: "User berhasil diperbarui" });
+					showFeedback({ type: "success", message: "Pengguna berhasil diperbarui" });
 				},
 				onError: (error) => {
 					showFeedback({
 						type: "error",
-						message: getApiErrorMessage(error, "Gagal memperbarui user"),
+						message: getApiErrorMessage(error, "Gagal memperbarui pengguna"),
 					});
 				},
 			},
@@ -117,7 +117,7 @@ export function useUsersPage() {
 		if (isAdminUser(user)) {
 			showFeedback({
 				type: "error",
-				message: "User dengan role admin tidak dapat dihapus",
+				message: "Pengguna dengan peran admin tidak dapat dihapus",
 			});
 			return;
 		}
@@ -142,10 +142,10 @@ export function useUsersPage() {
 			{
 				onSuccess: () => {
 					const successMessages: Record<UserStatusAction, string> = {
-						approve: "User berhasil disetujui",
-						reject: "User berhasil ditolak",
-						deactivate: "User berhasil dinonaktifkan",
-						activate: "User berhasil diaktifkan",
+						approve: "Pengguna berhasil disetujui",
+						reject: "Pengguna berhasil ditolak",
+						deactivate: "Pengguna berhasil dinonaktifkan",
+						activate: "Pengguna berhasil diaktifkan",
 					};
 
 					setStatusTarget(null);
@@ -158,7 +158,7 @@ export function useUsersPage() {
 					setStatusTarget(null);
 					showFeedback({
 						type: "error",
-						message: getApiErrorMessage(error, "Gagal mengubah status user"),
+						message: getApiErrorMessage(error, "Gagal mengubah status pengguna"),
 					});
 				},
 			},
@@ -172,13 +172,13 @@ export function useUsersPage() {
 		deleteUser.mutate(deleteTarget.id, {
 			onSuccess: () => {
 				setDeleteTarget(null);
-				showFeedback({ type: "success", message: "User berhasil dihapus" });
+				showFeedback({ type: "success", message: "Pengguna berhasil dihapus" });
 			},
 			onError: (error) => {
 				setDeleteTarget(null);
 				showFeedback({
 					type: "error",
-					message: getApiErrorMessage(error, "Gagal menghapus user"),
+					message: getApiErrorMessage(error, "Gagal menghapus pengguna"),
 				});
 			},
 		});
@@ -186,7 +186,7 @@ export function useUsersPage() {
 
 	const handleExport = (format: "excel" | "pdf") => {
 		if (filtered.length === 0) {
-			showFeedback({ type: "error", message: "Tidak ada data user untuk diexport" });
+			showFeedback({ type: "error", message: "Tidak ada data pengguna untuk diekspor" });
 			return;
 		}
 
@@ -195,14 +195,14 @@ export function useUsersPage() {
 			showFeedback({
 				type: opened ? "success" : "error",
 				message: opened
-					? "Data user siap dicetak atau disimpan sebagai PDF"
+					? "Data pengguna siap dicetak atau disimpan sebagai PDF"
 					: "Popup PDF diblokir browser. Izinkan popup lalu coba lagi",
 			});
 			return;
 		}
 
 		exportUsersToExcel(filtered);
-		showFeedback({ type: "success", message: "Data user berhasil diexport ke Excel" });
+	showFeedback({ type: "success", message: "Data pengguna berhasil diekspor ke Excel" });
 	};
 
 	return {

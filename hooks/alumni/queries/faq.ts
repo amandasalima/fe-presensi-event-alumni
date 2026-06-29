@@ -7,7 +7,7 @@ const fallbackFaq = [
 		id: 1,
 		question: "Bagaimana cara melakukan presensi?",
 		answer:
-			"Buka menu Scan QR pada aplikasi, lalu arahkan kamera ke QR Code yang disediakan panitia di lokasi acara.",
+			"Buka menu Pindai QR pada aplikasi, lalu arahkan kamera ke QR Code yang disediakan panitia di lokasi acara.",
 	},
 	{
 		id: 2,

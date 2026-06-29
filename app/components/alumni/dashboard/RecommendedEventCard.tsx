@@ -17,7 +17,7 @@ export default function RecommendedEventCard() {
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-slate-800">Event Rekomendasi</h3>
         <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">
-          Trending
+            Populer
         </span>
       </div>
       

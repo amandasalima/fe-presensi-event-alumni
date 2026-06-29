@@ -3,7 +3,7 @@ import ForgotPasswordForm from "./ForgotPasswordForm";
 
 export const metadata: Metadata = {
   title: "Lupa Kata Sandi | Sistem Presensi Event Alumni Berbasis QR",
-  description: "Reset kata sandi akun Anda",
+  description: "Atur ulang kata sandi akun Anda",
 };
 
 export default function ForgotPasswordPage() {

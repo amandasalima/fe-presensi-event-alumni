@@ -41,7 +41,7 @@ import {
 
 const ROLE_OPTIONS = ["alumni", "user"];
 const STATUS_OPTIONS: Array<{ value: UserStatus; label: string }> = [
-	{ value: "pending", label: "Menunggu Approval" },
+	{ value: "pending", label: "Menunggu Persetujuan" },
 	{ value: "active", label: "Aktif" },
 	{ value: "inactive", label: "Nonaktif" },
 	{ value: "rejected", label: "Ditolak" },
@@ -52,26 +52,26 @@ const STATUS_CONFIRMATIONS: Record<
 	{ title: string; message: string; confirmLabel: string; tone: "danger" | "default" }
 > = {
 	approve: {
-		title: "Approve user?",
-		message: "Yakin ingin menyetujui user ini?",
-		confirmLabel: "Approve",
+		title: "Setujui pengguna?",
+		message: "Yakin ingin menyetujui pengguna ini?",
+		confirmLabel: "Setujui",
 		tone: "default",
 	},
 	reject: {
-		title: "Tolak user?",
-		message: "Yakin ingin menolak user ini?",
-		confirmLabel: "Reject",
+		title: "Tolak pengguna?",
+		message: "Yakin ingin menolak pengguna ini?",
+		confirmLabel: "Tolak",
 		tone: "danger",
 	},
 	deactivate: {
-		title: "Nonaktifkan user?",
-		message: "Yakin ingin menonaktifkan user ini?",
+		title: "Nonaktifkan pengguna?",
+		message: "Yakin ingin menonaktifkan pengguna ini?",
 		confirmLabel: "Nonaktifkan",
 		tone: "danger",
 	},
 	activate: {
-		title: "Aktifkan user?",
-		message: "Yakin ingin mengaktifkan user ini?",
+		title: "Aktifkan pengguna?",
+		message: "Yakin ingin mengaktifkan pengguna ini?",
 		confirmLabel: "Aktifkan",
 		tone: "default",
 	},
@@ -194,7 +194,7 @@ function EditUserModal({
 		<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
 			<div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 				<div className="p-6 border-b border-gray-100 flex items-center justify-between">
-					<h3 className="font-semibold text-gray-800 text-lg">Edit User</h3>
+					<h3 className="font-semibold text-gray-800 text-lg">Ubah Pengguna</h3>
 					<button
 						onClick={onClose}
 						className="text-gray-400 hover:text-gray-600"
@@ -227,7 +227,7 @@ function EditUserModal({
 					</div>
 					<div>
 						<label className="text-xs font-medium text-gray-600 mb-1 block">
-							No Telp
+							Nomor Telepon
 						</label>
 						<FormInput
 							value={form.phone}
@@ -279,7 +279,7 @@ function EditUserModal({
 					<div className="grid grid-cols-2 gap-3">
 						<div>
 							<label className="text-xs font-medium text-gray-600 mb-1 block">
-								Role
+								Peran
 							</label>
 							<FormSelect
 								value={form.role}
@@ -361,7 +361,7 @@ function UserStatusActions({
 					disabled={isLoading}
 					className={`${buttonClass} border-green-200 text-green-700 hover:bg-green-50`}
 				>
-					Approve
+					Setujui
 				</button>
 				<button
 					type="button"
@@ -371,7 +371,7 @@ function UserStatusActions({
 					disabled={isLoading}
 					className={`${buttonClass} border-red-200 text-red-600 hover:bg-red-50`}
 				>
-					Reject
+					Tolak
 				</button>
 			</>
 		);
@@ -417,7 +417,7 @@ function UserStatusActions({
 				disabled={isLoading}
 				className={`${buttonClass} border-green-200 text-green-700 hover:bg-green-50`}
 			>
-				Approve Ulang
+				Setujui Ulang
 			</button>
 		);
 	}
@@ -458,7 +458,7 @@ export default function UsersPage() {
 		{ value: "all" as const, label: "Semua", count: users.length },
 		{
 			value: "pending" as const,
-			label: "Menunggu Approval",
+			label: "Menunggu Persetujuan",
 			count: stats.pendingUsers,
 		},
 		{ value: "active" as const, label: "Aktif", count: stats.activeUsers },
@@ -482,27 +482,27 @@ export default function UsersPage() {
 			<AdminSidebar />
 
 			<div className="flex-1 ml-56 flex flex-col h-screen">
-				<AdminHeader title="Kelola User" />
+				<AdminHeader title="Kelola Pengguna" />
 
 				<main className="flex-1 overflow-y-auto p-5">
 					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
 						{[
 							{
-								title: "Total User",
+								title: "Total Pengguna",
 								value: isLoading ? "..." : users.length,
-								desc: "User terdaftar",
+								desc: "Pengguna terdaftar",
 								icon: <Users size={20} strokeWidth={2.5} />,
 								variant: "teal" as const,
 							},
 							{
 								title: "Aktif",
 								value: isLoading ? "..." : stats.activeUsers,
-								desc: "User aktif",
+								desc: "Pengguna aktif",
 								icon: <UserCheck size={20} strokeWidth={2.5} />,
 								variant: "green" as const,
 							},
 							{
-								title: "Menunggu Approval",
+								title: "Menunggu Persetujuan",
 								value: isLoading ? "..." : stats.pendingUsers,
 								desc: "Perlu ditinjau admin",
 								icon: <Clock3 size={20} strokeWidth={2.5} />,
@@ -511,7 +511,7 @@ export default function UsersPage() {
 							{
 								title: "Bulan Ini",
 								value: isLoading ? "..." : stats.monthUsers,
-								desc: "User baru",
+								desc: "Pengguna baru",
 								icon: <CalendarPlus size={20} strokeWidth={2.5} />,
 								variant: "blue" as const,
 							},
@@ -542,10 +542,10 @@ export default function UsersPage() {
 								</Icon3D>
 								<div>
 									<h2 className="text-gray-800 text-xl font-bold">
-										Manajemen User
+										Manajemen Pengguna
 									</h2>
 									<p className="text-gray-500 text-xs mt-1">
-										Kelola data user aplikasi presensi event
+										Kelola data pengguna aplikasi presensi event
 									</p>
 								</div>
 							</div>
@@ -599,7 +599,7 @@ export default function UsersPage() {
 										</Icon3D>
 									</div>
 									<p className="text-sm text-red-500 font-medium">
-										Gagal memuat data user
+										Gagal memuat data pengguna
 									</p>
 									<p className="text-xs text-gray-400 mt-1">
 										Data belum bisa dimuat. Periksa koneksi, lalu coba lagi.
@@ -615,8 +615,8 @@ export default function UsersPage() {
 												{[
 													"Nama",
 													"Email",
-													"No Telp",
-													"Role",
+													"Nomor Telepon",
+													"Peran",
 													"Status",
 													"Tanggal Dibuat",
 													"Aksi",
@@ -646,8 +646,8 @@ export default function UsersPage() {
 														</div>
 														<p className="text-xs">
 															{search
-																? "User tidak ditemukan"
-																: "Belum ada data user"}
+														? "Pengguna tidak ditemukan"
+														: "Belum ada data pengguna"}
 														</p>
 													</td>
 												</tr>
@@ -701,8 +701,8 @@ export default function UsersPage() {
 																<button
 																	onClick={() => setSelected(user)}
 																	className="p-1.5 hover:bg-[#7AB2B2]/10 rounded-lg transition-colors text-[#2D7EA0]"
-																	title="Edit"
-																	aria-label={`Edit ${user.name}`}
+														title="Ubah"
+														aria-label={`Ubah ${user.name}`}
 																>
 																	<Edit3 size={15} strokeWidth={2.5} />
 																</button>
@@ -728,7 +728,7 @@ export default function UsersPage() {
 							{!isLoading && !isError && filtered.length > 0 && (
 								<div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
 									<p className="text-xs text-gray-400">
-										Menampilkan {filtered.length} dari {users.length} user
+										Menampilkan {filtered.length} dari {users.length} pengguna
 									</p>
 									<div className="flex gap-1.5">
 										<button className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors">
@@ -747,7 +747,7 @@ export default function UsersPage() {
 					</div>
 
 					<footer className="mt-6 text-center text-gray-400 text-xs">
-						© 2026 QR Event Attendance System - Pesantren
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
 					</footer>
 				</main>
 			</div>
@@ -774,11 +774,11 @@ export default function UsersPage() {
 
 			<ConfirmDialog
 				isOpen={!!deleteTarget}
-				title="Hapus user?"
+				title="Hapus pengguna?"
 				message={
 					deleteTarget
-						? `User "${deleteTarget.name}" akan dihapus permanen dari daftar.`
-						: "User ini akan dihapus permanen dari daftar."
+						? `Pengguna "${deleteTarget.name}" akan dihapus permanen dari daftar.`
+						: "Pengguna ini akan dihapus permanen dari daftar."
 				}
 				confirmLabel="Hapus"
 				loading={deleteUser.isPending}

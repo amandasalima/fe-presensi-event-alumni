@@ -83,7 +83,7 @@ function isFailedResponse(value: unknown): value is { success: false } {
 function getFriendlyErrorMessage(message: string): string {
   const errorMap: Record<string, string> = {
     "QR Code tidak valid":
-      "QR Code tidak dapat dikenali. Pastikan Anda scan QR code yang benar.",
+      "QR Code tidak dapat dikenali. Pastikan Anda memindai QR Code yang benar.",
     "QR Code tidak dikenali":
       "Anda belum terdaftar untuk event ini atau QR Code tidak valid.",
     "Event ini sudah tidak aktif":
@@ -356,7 +356,7 @@ export default function ScanPage() {
         </div>
 
         <h1 className="text-xl font-bold text-gray-800 mt-4">
-          Scan QR Presensi
+          Pindai QR Presensi
         </h1>
 
         <div className="mt-3 px-2 sm:px-6">
@@ -447,7 +447,7 @@ export default function ScanPage() {
       {status !== "success" && (
         <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="font-bold text-gray-800 text-sm mb-2">
-            Input Kode Manual
+            Masukkan Kode Manual
           </h2>
 
           <p className="text-xs text-gray-500 mb-4 leading-relaxed">
@@ -489,7 +489,7 @@ export default function ScanPage() {
 
           <div>
             <h2 className="font-bold text-gray-800 text-sm">
-              Tips Scan QR Code
+              Tips Memindai QR Code
             </h2>
 
             <ul className="text-xs text-gray-500 mt-1 space-y-1 leading-relaxed">

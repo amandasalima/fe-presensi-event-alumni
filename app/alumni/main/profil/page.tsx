@@ -369,7 +369,7 @@ export default function AlumniProfilePage() {
           </p>
 
           <p className="text-sm text-slate-500">
-            {serverError || "Silakan login ulang untuk memuat profil."}
+            {serverError || "Silakan masuk ulang untuk memuat profil."}
           </p>
 
           <button
@@ -377,7 +377,7 @@ export default function AlumniProfilePage() {
             onClick={handleLogout}
             className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#41A07E] hover:bg-[#357f65]"
           >
-            Login Ulang
+            Masuk Ulang
           </button>
         </div>
       </div>
@@ -408,7 +408,7 @@ export default function AlumniProfilePage() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#41A07E] bg-[#B2DE96]/20 hover:bg-[#B2DE96]/30 transition"
           >
             <Edit3 size={13} />
-            Edit
+            Ubah
           </button>
         ) : (
           <div className="flex gap-2">

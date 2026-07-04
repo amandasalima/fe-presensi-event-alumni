@@ -49,8 +49,36 @@ export function normalizeUsers(response: UsersResponse): User[] {
 	return users.map(normalizeUser);
 }
 
+function getLastPage(response: UsersResponse) {
+	if (
+		!Array.isArray(response) &&
+		response.data &&
+		!Array.isArray(response.data)
+	) {
+		return response.data.last_page ?? 1;
+	}
+
+	return 1;
+}
+
 export async function getUsers() {
-	return normalizeUsers(await fetchAPI("/admin/users?per_page=100"));
+	const firstPage = (await fetchAPI(
+		"/admin/users?per_page=100&page=1",
+	)) as UsersResponse;
+	const lastPage = getLastPage(firstPage);
+
+	if (lastPage <= 1) return normalizeUsers(firstPage);
+
+	const remainingPages = await Promise.all(
+		Array.from({ length: lastPage - 1 }, (_, index) => index + 2).map(
+			async (page) =>
+				(await fetchAPI(
+					`/admin/users?per_page=100&page=${page}`,
+				)) as UsersResponse,
+		),
+	);
+
+	return [firstPage, ...remainingPages].flatMap(normalizeUsers);
 }
 
 export function updateUser(id: number, data: UpdateUserPayload) {

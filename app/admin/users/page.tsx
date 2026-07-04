@@ -26,6 +26,7 @@ import type {
 	UserStatus,
 } from "@/hooks/admin/users";
 import {
+	type UserSortKey,
 	type UserStatusAction,
 	type UserStatusTarget,
 	useUsersPage,
@@ -77,6 +78,14 @@ const STATUS_CONFIRMATIONS: Record<
 	},
 };
 const GENDER_OPTIONS = ["Laki-laki", "Perempuan"];
+const USER_TABLE_HEADERS: Array<{ label: string; sortKey: UserSortKey }> = [
+	{ label: "Nama", sortKey: "name" },
+	{ label: "Email", sortKey: "email" },
+	{ label: "Nomor Telepon", sortKey: "phone" },
+	{ label: "Peran", sortKey: "role" },
+	{ label: "Status", sortKey: "status" },
+	{ label: "Tanggal Dibuat", sortKey: "created_at" },
+];
 
 type EditUserForm = {
 	name: string;
@@ -434,16 +443,23 @@ export default function UsersPage() {
 		clearSelectedUsers,
 		confirmDelete,
 		confirmStatusUpdate,
+		currentPage,
 		deleteUser,
 		deleteTarget,
 		feedback,
-		filtered,
+		goToPage,
 		handleDelete,
 		handleExport,
+		handleSort,
 		handleSubmit,
 		isBulkSelectable,
 		isError,
 		isLoading,
+		pageEnd,
+		pageStart,
+		paginatedUsers,
+		paginationRange,
+		perPage,
 		requestStatusUpdate,
 		runBulkAction,
 		search,
@@ -452,13 +468,18 @@ export default function UsersPage() {
 		selectedUsers,
 		setSearch,
 		setSelected,
+		setPerPage,
 		setStatusFilter,
+		sortBy,
+		sortDirection,
 		stats,
 		statusFilter,
 		statusTarget,
 		someVisibleSelected,
 		toggleSelectAll,
 		toggleUserSelection,
+		totalFilteredUsers,
+		totalPages,
 		updateUser,
 		updateUserStatus,
 		users,
@@ -564,7 +585,7 @@ export default function UsersPage() {
 									<button
 										key={format}
 										onClick={() => handleExport(format)}
-										disabled={isLoading || filtered.length === 0}
+									disabled={isLoading || totalFilteredUsers === 0}
 										className="px-4 py-2 border-2 border-[#3EBDAF] rounded-xl text-[#2D7EA0] text-sm font-semibold hover:bg-[#7AB2B2]/10 disabled:opacity-50 disabled:hover:bg-transparent transition-colors flex items-center gap-2"
 									>
 										<Download size={15} strokeWidth={2.5} />
@@ -673,7 +694,7 @@ export default function UsersPage() {
 														onChange={toggleSelectAll}
 														disabled={
 															bulkActionLoading ||
-															!filtered.some(isBulkSelectable)
+															!paginatedUsers.some(isBulkSelectable)
 														}
 														aria-label="Pilih semua pengguna yang tampil"
 														aria-checked={
@@ -687,28 +708,43 @@ export default function UsersPage() {
 														className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-50"
 													/>
 												</th>
-												{[
-													"Nama",
-													"Email",
-													"Nomor Telepon",
-													"Peran",
-													"Status",
-													"Tanggal Dibuat",
-													"Aksi",
-												].map((header) => (
+												{USER_TABLE_HEADERS.map((header) => (
 													<th
-														key={header}
-														className="text-left p-3 text-xs font-semibold text-gray-700"
+														key={header.sortKey}
+														className="p-3 text-left text-xs font-semibold text-gray-700"
 													>
-														{header}
+														<button
+															type="button"
+															onClick={() => handleSort(header.sortKey)}
+															className="inline-flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 transition hover:bg-white/50 hover:text-[#236175]"
+														>
+															{header.label}
+															<span
+																className={
+																	sortBy === header.sortKey
+																		? "text-[#2D7EA0]"
+																		: "text-gray-300"
+																}
+																aria-hidden="true"
+															>
+																{sortBy === header.sortKey
+																	? sortDirection === "asc"
+																		? "↑"
+																		: "↓"
+																	: "↕"}
+															</span>
+														</button>
 													</th>
 												))}
+												<th className="p-3 text-left text-xs font-semibold text-gray-700">
+													Aksi
+												</th>
 											</tr>
 										</thead>
 										<tbody>
 											{isLoading ? (
 												<TableSkeleton />
-											) : filtered.length === 0 ? (
+											) : totalFilteredUsers === 0 ? (
 												<tr>
 													<td
 												colSpan={8}
@@ -727,7 +763,7 @@ export default function UsersPage() {
 													</td>
 												</tr>
 											) : (
-										filtered.map((user) => {
+										paginatedUsers.map((user) => {
 											const canSelect = isBulkSelectable(user);
 											const selectionTitle = isAdminUser(user)
 												? "Admin tidak dapat diproses secara massal"
@@ -822,22 +858,77 @@ export default function UsersPage() {
 								</div>
 							)}
 
-							{!isLoading && !isError && filtered.length > 0 && (
-								<div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-									<p className="text-xs text-gray-400">
-										Menampilkan {filtered.length} dari {users.length} pengguna
-									</p>
-									<div className="flex gap-1.5">
-										<button className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+							{!isLoading && !isError && totalFilteredUsers > 0 && (
+								<div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-3 lg:flex-row lg:items-center lg:justify-between">
+									<div className="flex flex-wrap items-center gap-4">
+										<p className="text-xs text-gray-500">
+											Menampilkan {pageStart}-{pageEnd} dari {totalFilteredUsers}{" "}
+											pengguna
+										</p>
+										<label className="flex items-center gap-2 text-xs text-gray-500">
+											Tampilkan
+											<FormSelect
+												value={perPage}
+												onChange={(event) => setPerPage(Number(event.target.value))}
+												className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20"
+											>
+												{[10, 25, 50, 100].map((value) => (
+													<option key={value} value={value}>
+														{value}
+													</option>
+												))}
+											</FormSelect>
+											data per halaman
+										</label>
+									</div>
+
+									<nav
+										aria-label="Navigasi halaman pengguna"
+										className="flex flex-wrap items-center gap-1.5"
+									>
+										<button
+											type="button"
+											onClick={() => goToPage(currentPage - 1)}
+											disabled={currentPage === 1}
+											className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+										>
 											Sebelumnya
 										</button>
-										<button className="px-3 py-1.5 bg-[#2D7EA0] text-white rounded-lg text-xs font-medium">
-											1
-										</button>
-										<button className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+
+										{paginationRange.map((item) =>
+											typeof item === "number" ? (
+												<button
+													type="button"
+													key={item}
+													onClick={() => goToPage(item)}
+													aria-current={item === currentPage ? "page" : undefined}
+													className={`min-w-8 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+														item === currentPage
+															? "bg-[#2D7EA0] text-white"
+															: "border border-gray-200 text-gray-500 hover:bg-gray-50"
+													}`}
+												>
+													{item}
+												</button>
+											) : (
+												<span
+													key={item}
+													className="px-1 text-xs text-gray-400"
+												>
+													…
+												</span>
+											),
+										)}
+
+										<button
+											type="button"
+											onClick={() => goToPage(currentPage + 1)}
+											disabled={currentPage === totalPages}
+											className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+										>
 											Berikutnya
 										</button>
-									</div>
+									</nav>
 								</div>
 							)}
 						</div>

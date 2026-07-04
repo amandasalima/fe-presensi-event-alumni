@@ -24,12 +24,99 @@ import {
 export type UserStatusFilter = "all" | UserStatus;
 export type UserStatusAction = "approve" | "reject" | "deactivate" | "activate";
 export type BulkUserStatusAction = "approve" | "deactivate" | "reject";
+export type UserSortKey =
+	| "name"
+	| "email"
+	| "phone"
+	| "role"
+	| "status"
+	| "created_at";
+export type SortDirection = "asc" | "desc";
+export type PaginationItem = number | "start-ellipsis" | "end-ellipsis";
 
 export type UserStatusTarget = {
 	user: User;
 	status: Exclude<UserStatus, "pending">;
 	action: UserStatusAction;
 };
+
+function getSortableValue(user: User, sortBy: UserSortKey) {
+	if (sortBy === "phone") return getUserPhone(user);
+	if (sortBy === "created_at") {
+		const timestamp = new Date(user.created_at).getTime();
+		return Number.isNaN(timestamp) ? 0 : timestamp;
+	}
+
+	return user[sortBy] ?? "";
+}
+
+function sortUsers(
+	users: User[],
+	sortBy: UserSortKey | null,
+	direction: SortDirection,
+) {
+	if (!sortBy) return users;
+
+	const multiplier = direction === "asc" ? 1 : -1;
+	return users
+		.map((user, index) => ({ user, index }))
+		.sort((left, right) => {
+			const leftValue = getSortableValue(left.user, sortBy);
+			const rightValue = getSortableValue(right.user, sortBy);
+			const comparison =
+				typeof leftValue === "number" && typeof rightValue === "number"
+					? leftValue - rightValue
+					: String(leftValue).localeCompare(String(rightValue), "id-ID", {
+							numeric: true,
+							sensitivity: "base",
+						});
+
+			return comparison === 0
+				? left.index - right.index
+				: comparison * multiplier;
+		})
+		.map(({ user }) => user);
+}
+
+function paginateUsers(users: User[], currentPage: number, perPage: number) {
+	const start = (currentPage - 1) * perPage;
+	return users.slice(start, start + perPage);
+}
+
+function getPaginationRange(
+	currentPage: number,
+	totalPages: number,
+): PaginationItem[] {
+	if (totalPages <= 7) {
+		return Array.from({ length: totalPages }, (_, index) => index + 1);
+	}
+
+	if (currentPage <= 4) {
+		return [1, 2, 3, 4, 5, "end-ellipsis", totalPages];
+	}
+
+	if (currentPage >= totalPages - 3) {
+		return [
+			1,
+			"start-ellipsis",
+			totalPages - 4,
+			totalPages - 3,
+			totalPages - 2,
+			totalPages - 1,
+			totalPages,
+		];
+	}
+
+	return [
+		1,
+		"start-ellipsis",
+		currentPage - 1,
+		currentPage,
+		currentPage + 1,
+		"end-ellipsis",
+		totalPages,
+	];
+}
 
 function getCurrentAdminId() {
 	if (typeof window === "undefined") return null;
@@ -48,12 +135,16 @@ function getCurrentAdminId() {
 export function useUsersPage() {
 	const [selected, setSelected] = useState<User | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
-	const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all");
+	const [statusFilter, setStatusFilterState] = useState<UserStatusFilter>("all");
 	const [statusTarget, setStatusTarget] =
 		useState<UserStatusTarget | null>(null);
 	const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(
 		() => new Set(),
 	);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [perPage, setPerPageState] = useState(10);
+	const [sortBy, setSortBy] = useState<UserSortKey | null>(null);
+	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 	const [feedback, setFeedback] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -79,29 +170,42 @@ export function useUsersPage() {
 	const {
 		filteredItems: filtered,
 		searchQuery: search,
-		setSearchQuery: setSearch,
+		setSearchQuery,
 	} = useSearchFilter(statusFilteredUsers, (user) => [
 		user.name,
 		user.email,
 		getUserPhone(user),
 	]);
+	const sortedUsers = useMemo(
+		() => sortUsers(filtered, sortBy, sortDirection),
+		[filtered, sortBy, sortDirection],
+	);
+	const totalPages = Math.max(1, Math.ceil(sortedUsers.length / perPage));
+	const visiblePage = Math.min(currentPage, totalPages);
+	const paginatedUsers = useMemo(
+		() => paginateUsers(sortedUsers, visiblePage, perPage),
+		[sortedUsers, visiblePage, perPage],
+	);
+	const paginationRange = getPaginationRange(visiblePage, totalPages);
+	const pageStart = sortedUsers.length === 0 ? 0 : (visiblePage - 1) * perPage + 1;
+	const pageEnd = Math.min(visiblePage * perPage, sortedUsers.length);
 	const isBulkSelectable = (user: User) =>
 		!isAdminUser(user) && user.id !== currentAdminId;
-	const selectableFilteredUsers = useMemo(
+	const selectableVisibleUsers = useMemo(
 		() =>
-			filtered.filter(
+			paginatedUsers.filter(
 				(user) => !isAdminUser(user) && user.id !== currentAdminId,
 			),
-		[filtered, currentAdminId],
+		[paginatedUsers, currentAdminId],
 	);
 	const selectedUsers = useMemo(
 		() => users.filter((user) => selectedUserIds.has(user.id)),
 		[users, selectedUserIds],
 	);
 	const allVisibleSelected =
-		selectableFilteredUsers.length > 0 &&
-		selectableFilteredUsers.every((user) => selectedUserIds.has(user.id));
-	const someVisibleSelected = selectableFilteredUsers.some((user) =>
+		selectableVisibleUsers.length > 0 &&
+		selectableVisibleUsers.every((user) => selectedUserIds.has(user.id));
+	const someVisibleSelected = selectableVisibleUsers.some((user) =>
 		selectedUserIds.has(user.id),
 	);
 
@@ -124,6 +228,35 @@ export function useUsersPage() {
 
 	useEffect(() => clearFeedbackTimeout, []);
 
+	const setSearch = (value: string) => {
+		setSearchQuery(value);
+		setCurrentPage(1);
+	};
+
+	const setStatusFilter = (value: UserStatusFilter) => {
+		setStatusFilterState(value);
+		setCurrentPage(1);
+	};
+
+	const setPerPage = (value: number) => {
+		setPerPageState(value);
+		setCurrentPage(1);
+	};
+
+	const handleSort = (column: UserSortKey) => {
+		if (sortBy === column) {
+			setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+		} else {
+			setSortBy(column);
+			setSortDirection("asc");
+		}
+		setCurrentPage(1);
+	};
+
+	const goToPage = (page: number) => {
+		setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+	};
+
 	const toggleUserSelection = (user: User) => {
 		if (bulkUpdateUserStatus.isPending || !isBulkSelectable(user)) return;
 
@@ -136,16 +269,16 @@ export function useUsersPage() {
 	};
 
 	const toggleSelectAll = () => {
-		if (bulkUpdateUserStatus.isPending || selectableFilteredUsers.length === 0) {
+		if (bulkUpdateUserStatus.isPending || selectableVisibleUsers.length === 0) {
 			return;
 		}
 
 		setSelectedUserIds((current) => {
 			const next = new Set(current);
 			if (allVisibleSelected) {
-				selectableFilteredUsers.forEach((user) => next.delete(user.id));
+				selectableVisibleUsers.forEach((user) => next.delete(user.id));
 			} else {
-				selectableFilteredUsers.forEach((user) => next.add(user.id));
+				selectableVisibleUsers.forEach((user) => next.add(user.id));
 			}
 			return next;
 		});
@@ -314,13 +447,13 @@ export function useUsersPage() {
 	};
 
 	const handleExport = (format: "excel" | "pdf") => {
-		if (filtered.length === 0) {
+		if (sortedUsers.length === 0) {
 			showFeedback({ type: "error", message: "Tidak ada data pengguna untuk diekspor" });
 			return;
 		}
 
 		if (format === "pdf") {
-			const opened = exportUsersToPdf(filtered);
+			const opened = exportUsersToPdf(sortedUsers);
 			showFeedback({
 				type: opened ? "success" : "error",
 				message: opened
@@ -330,7 +463,7 @@ export function useUsersPage() {
 			return;
 		}
 
-		exportUsersToExcel(filtered);
+		exportUsersToExcel(sortedUsers);
 	showFeedback({ type: "success", message: "Data pengguna berhasil diekspor ke Excel" });
 	};
 
@@ -345,13 +478,19 @@ export function useUsersPage() {
 		deleteUser,
 		deleteTarget,
 		feedback,
-		filtered,
+		goToPage,
+		handleSort,
 		isBulkSelectable,
 		handleDelete,
 		handleExport,
 		handleSubmit,
 		isError,
 		isLoading,
+		pageEnd,
+		pageStart,
+		paginatedUsers,
+		paginationRange,
+		perPage,
 		search,
 		requestStatusUpdate,
 		runBulkAction,
@@ -360,13 +499,19 @@ export function useUsersPage() {
 		selectedUsers,
 		setSearch,
 		setSelected,
+		setPerPage,
 		setStatusFilter,
+		sortBy,
+		sortDirection,
 		stats,
 		statusFilter,
 		statusTarget,
 		someVisibleSelected,
 		toggleSelectAll,
 		toggleUserSelection,
+		totalFilteredUsers: sortedUsers.length,
+		totalPages,
+		currentPage: visiblePage,
 		updateUser,
 		updateUserStatus,
 		users,

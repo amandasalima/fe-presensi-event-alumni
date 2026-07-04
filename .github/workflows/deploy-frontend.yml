@@ -51,11 +51,24 @@ jobs:
 
       - name: Prepare standalone package
         run: |
+          set -euo pipefail
+
+          rm -rf deploy-package frontend-release.tar.gz
           mkdir -p deploy-package
+
           cp -R .next/standalone/. deploy-package/
+
           mkdir -p deploy-package/.next
           cp -R .next/static deploy-package/.next/static
-          cp -R public deploy-package/public
+
+          if [ -d public ]; then
+            cp -R public deploy-package/public
+          fi
+
+          test -f deploy-package/server.js
+          test -d deploy-package/.next/static
+          test -d deploy-package/node_modules
+
           tar -czf frontend-release.tar.gz -C deploy-package .
 
       - name: Upload release archive
@@ -81,10 +94,21 @@ jobs:
             set -euo pipefail
 
             RELEASE_DIR="$DEPLOY_PATH/releases/$RELEASE_ID"
+            ARCHIVE_PATH="/tmp/frontend-release.tar.gz"
+
+            test -n "$DEPLOY_PATH"
+            test -n "$SERVICE_NAME"
+            test -n "$RELEASE_ID"
+            test -n "$NEXT_PUBLIC_API_URL"
+            test -n "$BACKEND_URL"
+            test -f "$ARCHIVE_PATH"
+
             mkdir -p "$DEPLOY_PATH/releases" "$DEPLOY_PATH/shared"
+
             rm -rf "$RELEASE_DIR"
             mkdir -p "$RELEASE_DIR"
-            tar -xzf /tmp/frontend-release.tar.gz -C "$RELEASE_DIR"
+
+            tar -xzf "$ARCHIVE_PATH" -C "$RELEASE_DIR"
 
             cat > "$RELEASE_DIR/.env.production" <<EOF
             NODE_ENV=production
@@ -94,8 +118,37 @@ jobs:
             BACKEND_URL=$BACKEND_URL
             EOF
 
+            test -f "$RELEASE_DIR/.env.production"
+            test -f "$RELEASE_DIR/server.js"
+            test -d "$RELEASE_DIR/.next"
+            test -d "$RELEASE_DIR/.next/static"
+            test -d "$RELEASE_DIR/node_modules"
+
+            if id deploy >/dev/null 2>&1; then
+              chown -R deploy:deploy "$RELEASE_DIR"
+            fi
+
             ln -sfn "$RELEASE_DIR" "$DEPLOY_PATH/current"
+
+            if id deploy >/dev/null 2>&1; then
+              chown -h deploy:deploy "$DEPLOY_PATH/current"
+            fi
+
+            sudo -n /usr/bin/systemctl daemon-reload
             sudo -n /usr/bin/systemctl restart "$SERVICE_NAME"
             /usr/bin/systemctl is-active --quiet "$SERVICE_NAME"
 
-            find "$DEPLOY_PATH/releases" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5 | xargs -r rm -rf
+            sleep 2
+            curl -fsSI http://127.0.0.1:3000 >/dev/null
+
+            CURRENT_REALPATH="$(readlink -f "$DEPLOY_PATH/current" || true)"
+
+            find "$DEPLOY_PATH/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+              | sort -n \
+              | head -n -5 \
+              | cut -d' ' -f2- \
+              | while read -r old_release; do
+                  if [ "$old_release" != "$CURRENT_REALPATH" ]; then
+                    rm -rf "$old_release"
+                  fi
+                done

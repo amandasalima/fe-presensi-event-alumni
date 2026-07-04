@@ -51,3 +51,17 @@ export type UpdateUserStatusResponse = {
 		user: RawUser;
 	};
 };
+
+export type BulkUserTargetStatus = Exclude<UserStatus, "pending">;
+
+export type BulkUpdateUserStatusResponse = {
+	success: boolean;
+	message: string;
+	data: {
+		updated_count: number;
+		skipped_count: number;
+		status: BulkUserTargetStatus;
+		updated_user_ids: number[];
+		skipped_user_ids: number[];
+	};
+};

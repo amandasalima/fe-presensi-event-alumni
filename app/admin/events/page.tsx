@@ -521,7 +521,7 @@ function EventCategorySection({
 															onClick={() => onEdit(category)}
 															className="inline-flex items-center gap-1.5 rounded-lg border border-[#7AB2B2]/30 px-3 py-1.5 text-xs font-semibold text-[#2D7EA0] transition hover:bg-[#7AB2B2]/10"
 														>
-											<Pencil size={13} /> Ubah
+															<Pencil size={13} /> Ubah
 														</button>
 														<button
 															type="button"
@@ -976,7 +976,7 @@ function EventFormModal({
 								<div className="mb-3">
 									<img
 										src={event.poster_url}
-									alt="Poster saat ini"
+										alt="Poster saat ini"
 										className="h-24 object-cover rounded-xl border border-gray-200"
 									/>
 								</div>
@@ -986,7 +986,7 @@ function EventFormModal({
 								<div className="mb-3">
 									<img
 										src={URL.createObjectURL(form.poster)}
-									alt="Pratinjau poster"
+										alt="Pratinjau poster"
 										className="h-24 object-cover rounded-xl border border-gray-200"
 									/>
 								</div>
@@ -1000,7 +1000,7 @@ function EventFormModal({
 								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#7AB2B2]/10 file:text-[#236175] hover:file:bg-[#7AB2B2]/20"
 							/>
 							<p className="text-xs text-gray-400 mt-1">
-							Format: JPG, JPEG, PNG, WebP (Maks. 5 MB)
+								Format: JPG, JPEG, PNG, WebP (Maks. 5 MB)
 							</p>
 							{getFieldError("poster") && (
 								<p className="text-xs text-red-500 mt-1">
@@ -1378,7 +1378,7 @@ function BroadcastModal({
 							<div>
 								<div className="flex items-center justify-between mb-2">
 									<label className="block text-sm font-medium text-gray-700">
-									Pesan Khusus
+										Pesan Khusus
 									</label>
 									<span
 										className={`text-xs ${
@@ -1397,7 +1397,7 @@ function BroadcastModal({
 								/>
 								{isMessageTooLong && (
 									<p className="text-xs text-red-500 mt-1">
-									Pesan khusus maksimal 1000 karakter.
+										Pesan khusus maksimal 1000 karakter.
 									</p>
 								)}
 							</div>
@@ -1414,15 +1414,15 @@ function BroadcastModal({
 							</div>
 							<div className="min-h-[320px] text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm">
 								{target === "custom" && parsedNumbers.validNumbers.length === 0
-								? "Masukkan nomor manual untuk menghitung target khusus."
+									? "Masukkan nomor manual untuk menghitung target khusus."
 									: preview.isLoading
-									? "Memuat pratinjau..."
+										? "Memuat pratinjau..."
 										: preview.isError
 											? getApiErrorMessage(
 													preview.error,
-											"Gagal memuat pratinjau",
+													"Gagal memuat pratinjau",
 												)
-										: previewMessage || "Pratinjau belum tersedia"}
+											: previewMessage || "Pratinjau belum tersedia"}
 							</div>
 						</div>
 					</div>
@@ -1651,7 +1651,7 @@ function EventRegistrationsModal({
 										"Angkatan",
 										"Status pendaftaran / kehadiran",
 										"Jam daftar",
-									"Waktu pemindaian QR",
+										"Waktu pemindaian QR",
 									].map((header) => (
 										<th
 											key={header}
@@ -1696,7 +1696,7 @@ function EventRegistrationsModal({
 											>
 												<td className="px-4 py-3 font-medium text-gray-800">
 													{registration.user?.name ??
-												`Pengguna #${registration.user_id}`}
+														`Pengguna #${registration.user_id}`}
 												</td>
 												<td className="px-4 py-3 text-gray-500">
 													{registration.user?.email ?? "-"}
@@ -1909,10 +1909,7 @@ function EventDetailModal({
 									value={`${time} - ${event.end_time?.slice(0, 5) || "-"}`}
 								/>
 								<DetailItem label="Lokasi" value={event.location} />
-								<DetailItem
-									label="Kategori ID"
-									value={event.category_id ?? "-"}
-								/>
+								<DetailItem label="Kategori" value={event.category ?? "-"} />
 								<DetailItem
 									label="Dibuat"
 									value={
@@ -2086,7 +2083,7 @@ function EventCardUpcoming({
 				<button
 					onClick={() => onTogglePublish(event)}
 					disabled={isToggling}
-				title={published ? "Batalkan publikasi event" : "Publikasikan event"}
+					title={published ? "Batalkan publikasi event" : "Publikasikan event"}
 					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
 						published
 							? "border-amber-200 text-amber-700 hover:bg-amber-50"
@@ -2094,7 +2091,11 @@ function EventCardUpcoming({
 					}`}
 				>
 					<Power size={13} />
-				{isToggling ? "Memproses..." : published ? "Batalkan Publikasi" : "Publikasikan"}
+					{isToggling
+						? "Memproses..."
+						: published
+							? "Batalkan Publikasi"
+							: "Publikasikan"}
 				</button>
 			</div>
 		</div>
@@ -2248,7 +2249,7 @@ function EventCardDone({
 				<button
 					onClick={() => onTogglePublish(event)}
 					disabled={isToggling}
-				title={published ? "Batalkan publikasi event" : "Publikasikan event"}
+					title={published ? "Batalkan publikasi event" : "Publikasikan event"}
 					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
 						published
 							? "border-amber-200 text-amber-700 hover:bg-amber-50"
@@ -2256,7 +2257,11 @@ function EventCardDone({
 					}`}
 				>
 					<Power size={13} />
-				{isToggling ? "Memproses..." : published ? "Batalkan Publikasi" : "Publikasikan"}
+					{isToggling
+						? "Memproses..."
+						: published
+							? "Batalkan Publikasi"
+							: "Publikasikan"}
 				</button>
 			</div>
 		</div>

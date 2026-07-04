@@ -1,7 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteUser, updateUser, updateUserStatus } from "./api";
+import {
+	bulkUpdateUserStatus,
+	deleteUser,
+	updateUser,
+	updateUserStatus,
+} from "./api";
 import { userQueryKeys } from "./queryKeys";
-import type { UpdateUserPayload, UserStatus } from "./types";
+import type { BulkUserTargetStatus, UpdateUserPayload, UserStatus } from "./types";
 
 export function useUpdateUser() {
 	const queryClient = useQueryClient();
@@ -32,6 +37,23 @@ export function useUpdateUserStatus() {
 	return useMutation({
 		mutationFn: ({ id, status }: { id: number; status: UserStatus }) =>
 			updateUserStatus(id, status),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
+		},
+	});
+}
+
+export function useBulkUpdateUserStatus() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			userIds,
+			status,
+		}: {
+			userIds: number[];
+			status: BulkUserTargetStatus;
+		}) => bulkUpdateUserStatus(userIds, status),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
 		},

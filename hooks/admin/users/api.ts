@@ -1,5 +1,7 @@
 import { fetchAPI } from "@/lib/api";
 import type {
+	BulkUpdateUserStatusResponse,
+	BulkUserTargetStatus,
 	RawUser,
 	UpdateUserPayload,
 	UpdateUserStatusResponse,
@@ -67,4 +69,14 @@ export function updateUserStatus(id: number, status: UserStatus) {
 		method: "PATCH",
 		body: JSON.stringify({ status }),
 	}) as Promise<UpdateUserStatusResponse>;
+}
+
+export function bulkUpdateUserStatus(
+	userIds: number[],
+	status: BulkUserTargetStatus,
+) {
+	return fetchAPI("/admin/users/bulk-status", {
+		method: "PATCH",
+		body: JSON.stringify({ user_ids: userIds, status }),
+	}) as Promise<BulkUpdateUserStatusResponse>;
 }

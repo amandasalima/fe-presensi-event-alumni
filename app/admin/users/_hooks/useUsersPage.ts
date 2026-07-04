@@ -5,6 +5,7 @@ import {
 	type UpdateUserPayload,
 	type User,
 	type UserStatus,
+	useBulkUpdateUserStatus,
 	useDeleteUser,
 	useUpdateUser,
 	useUpdateUserStatus,
@@ -22,6 +23,7 @@ import {
 
 export type UserStatusFilter = "all" | UserStatus;
 export type UserStatusAction = "approve" | "reject" | "deactivate" | "activate";
+export type BulkUserStatusAction = "approve" | "deactivate" | "reject";
 
 export type UserStatusTarget = {
 	user: User;
@@ -29,12 +31,29 @@ export type UserStatusTarget = {
 	action: UserStatusAction;
 };
 
+function getCurrentAdminId() {
+	if (typeof window === "undefined") return null;
+
+	try {
+		const storedUser = localStorage.getItem("user");
+		if (!storedUser) return null;
+
+		const id = Number((JSON.parse(storedUser) as { id?: unknown }).id);
+		return Number.isFinite(id) ? id : null;
+	} catch {
+		return null;
+	}
+}
+
 export function useUsersPage() {
 	const [selected, setSelected] = useState<User | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 	const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all");
 	const [statusTarget, setStatusTarget] =
 		useState<UserStatusTarget | null>(null);
+	const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(
+		() => new Set(),
+	);
 	const [feedback, setFeedback] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -43,7 +62,9 @@ export function useUsersPage() {
 	const { data: allUsers = [], isLoading, isError } = useUsers();
 	const updateUser = useUpdateUser();
 	const updateUserStatus = useUpdateUserStatus();
+	const bulkUpdateUserStatus = useBulkUpdateUserStatus();
 	const deleteUser = useDeleteUser();
+	const currentAdminId = getCurrentAdminId();
 	const users = useMemo(
 		() => allUsers.filter((user) => !isAdminUser(user)),
 		[allUsers],
@@ -64,6 +85,25 @@ export function useUsersPage() {
 		user.email,
 		getUserPhone(user),
 	]);
+	const isBulkSelectable = (user: User) =>
+		!isAdminUser(user) && user.id !== currentAdminId;
+	const selectableFilteredUsers = useMemo(
+		() =>
+			filtered.filter(
+				(user) => !isAdminUser(user) && user.id !== currentAdminId,
+			),
+		[filtered, currentAdminId],
+	);
+	const selectedUsers = useMemo(
+		() => users.filter((user) => selectedUserIds.has(user.id)),
+		[users, selectedUserIds],
+	);
+	const allVisibleSelected =
+		selectableFilteredUsers.length > 0 &&
+		selectableFilteredUsers.every((user) => selectedUserIds.has(user.id));
+	const someVisibleSelected = selectableFilteredUsers.some((user) =>
+		selectedUserIds.has(user.id),
+	);
 
 	const stats = useMemo(() => getUserStats(users), [users]);
 	const closeModal = () => setSelected(null);
@@ -83,6 +123,95 @@ export function useUsersPage() {
 	};
 
 	useEffect(() => clearFeedbackTimeout, []);
+
+	const toggleUserSelection = (user: User) => {
+		if (bulkUpdateUserStatus.isPending || !isBulkSelectable(user)) return;
+
+		setSelectedUserIds((current) => {
+			const next = new Set(current);
+			if (next.has(user.id)) next.delete(user.id);
+			else next.add(user.id);
+			return next;
+		});
+	};
+
+	const toggleSelectAll = () => {
+		if (bulkUpdateUserStatus.isPending || selectableFilteredUsers.length === 0) {
+			return;
+		}
+
+		setSelectedUserIds((current) => {
+			const next = new Set(current);
+			if (allVisibleSelected) {
+				selectableFilteredUsers.forEach((user) => next.delete(user.id));
+			} else {
+				selectableFilteredUsers.forEach((user) => next.add(user.id));
+			}
+			return next;
+		});
+	};
+
+	const clearSelectedUsers = () => setSelectedUserIds(new Set());
+
+	const runBulkAction = (action: BulkUserStatusAction) => {
+		const eligibleUsers = selectedUsers.filter((user) => {
+			if (!isBulkSelectable(user)) return false;
+			if (action === "approve") {
+				return ["pending", "inactive", "rejected"].includes(user.status ?? "");
+			}
+			if (action === "deactivate") return user.status === "active";
+			return user.status === "pending";
+		});
+
+		if (eligibleUsers.length === 0) {
+			showFeedback({
+				type: "error",
+				message: "Tidak ada pengguna yang sesuai untuk aksi ini.",
+			});
+			return;
+		}
+
+		const targetStatus: Exclude<UserStatus, "pending"> =
+			action === "approve"
+				? "active"
+				: action === "deactivate"
+					? "inactive"
+					: "rejected";
+		const successMessages: Record<BulkUserStatusAction, string> = {
+			approve: "Persetujuan massal selesai.",
+			deactivate: "Penonaktifan massal selesai.",
+			reject: "Penolakan massal selesai.",
+		};
+
+		setFeedback(null);
+		bulkUpdateUserStatus.mutate(
+			{
+				userIds: eligibleUsers.map((user) => user.id),
+				status: targetStatus,
+			},
+			{
+				onSuccess: (result) => {
+					clearSelectedUsers();
+					const { updated_count: updatedCount, skipped_count: skippedCount } =
+						result.data;
+					const skippedSummary =
+						skippedCount > 0 ? `, ${skippedCount} pengguna dilewati` : "";
+
+					showFeedback({
+						type: "success",
+						message: `${successMessages[action]} ${updatedCount} pengguna diperbarui${skippedSummary}.`,
+					});
+				},
+				onError: (error) => {
+					clearSelectedUsers();
+					showFeedback({
+						type: "error",
+						message: getApiErrorMessage(error, "Aksi massal gagal diproses."),
+					});
+				},
+			},
+		);
+	};
 
 	const handleSubmit = (data: UpdateUserPayload) => {
 		if (!selected) return;
@@ -206,6 +335,9 @@ export function useUsersPage() {
 	};
 
 	return {
+		allVisibleSelected,
+		bulkActionLoading: bulkUpdateUserStatus.isPending,
+		clearSelectedUsers,
 		cancelDelete,
 		cancelStatusUpdate,
 		confirmDelete,
@@ -214,6 +346,7 @@ export function useUsersPage() {
 		deleteTarget,
 		feedback,
 		filtered,
+		isBulkSelectable,
 		handleDelete,
 		handleExport,
 		handleSubmit,
@@ -221,13 +354,19 @@ export function useUsersPage() {
 		isLoading,
 		search,
 		requestStatusUpdate,
+		runBulkAction,
 		selected,
+		selectedUserIds,
+		selectedUsers,
 		setSearch,
 		setSelected,
 		setStatusFilter,
 		stats,
 		statusFilter,
 		statusTarget,
+		someVisibleSelected,
+		toggleSelectAll,
+		toggleUserSelection,
 		updateUser,
 		updateUserStatus,
 		users,

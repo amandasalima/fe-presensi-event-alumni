@@ -147,7 +147,7 @@ function TableSkeleton() {
 		<>
 			{[1, 2, 3, 4, 5].map((i) => (
 				<tr key={i} className="border-b animate-pulse">
-					{[1, 2, 3, 4, 5, 6, 7].map((j) => (
+					{[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
 						<td key={j} className="p-5">
 							<div className="h-4 bg-gray-100 rounded w-3/4" />
 						</td>
@@ -427,8 +427,11 @@ function UserStatusActions({
 
 export default function UsersPage() {
 	const {
+		allVisibleSelected,
+		bulkActionLoading,
 		cancelDelete,
 		cancelStatusUpdate,
+		clearSelectedUsers,
 		confirmDelete,
 		confirmStatusUpdate,
 		deleteUser,
@@ -438,17 +441,24 @@ export default function UsersPage() {
 		handleDelete,
 		handleExport,
 		handleSubmit,
+		isBulkSelectable,
 		isError,
 		isLoading,
 		requestStatusUpdate,
+		runBulkAction,
 		search,
 		selected,
+		selectedUserIds,
+		selectedUsers,
 		setSearch,
 		setSelected,
 		setStatusFilter,
 		stats,
 		statusFilter,
 		statusTarget,
+		someVisibleSelected,
+		toggleSelectAll,
+		toggleUserSelection,
 		updateUser,
 		updateUserStatus,
 		users,
@@ -591,6 +601,50 @@ export default function UsersPage() {
 								))}
 							</div>
 
+							{selectedUsers.length > 0 && (
+								<div className="mb-4 flex flex-col gap-3 rounded-xl border border-teal-100 bg-[#7AB2B2]/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+									<p className="text-sm font-semibold text-[#236175]">
+										{bulkActionLoading
+											? "Memproses..."
+											: `${selectedUsers.length} pengguna dipilih`}
+									</p>
+									<div className="flex flex-wrap gap-2">
+										<button
+											type="button"
+											onClick={() => runBulkAction("approve")}
+											disabled={bulkActionLoading || selectedUsers.length === 0}
+											className="rounded-lg bg-[#2D7EA0] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#236175] disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											Setujui
+										</button>
+										<button
+											type="button"
+											onClick={() => runBulkAction("deactivate")}
+											disabled={bulkActionLoading || selectedUsers.length === 0}
+											className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											Nonaktifkan
+										</button>
+										<button
+											type="button"
+											onClick={() => runBulkAction("reject")}
+											disabled={bulkActionLoading || selectedUsers.length === 0}
+											className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											Tolak
+										</button>
+										<button
+											type="button"
+											onClick={clearSelectedUsers}
+											disabled={bulkActionLoading}
+											className="rounded-lg px-3 py-2 text-xs font-semibold text-gray-500 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											Batal Pilih
+										</button>
+									</div>
+								</div>
+							)}
+
 							{isError && (
 								<div className="text-center py-8">
 									<div className="flex justify-center mb-3">
@@ -612,6 +666,27 @@ export default function UsersPage() {
 									<table className="w-full">
 										<thead className="bg-[#7AB2B2]/20">
 											<tr>
+												<th className="w-10 p-3 text-left">
+													<input
+														type="checkbox"
+														checked={allVisibleSelected}
+														onChange={toggleSelectAll}
+														disabled={
+															bulkActionLoading ||
+															!filtered.some(isBulkSelectable)
+														}
+														aria-label="Pilih semua pengguna yang tampil"
+														aria-checked={
+															allVisibleSelected
+																? true
+																: someVisibleSelected
+																	? "mixed"
+																	: false
+														}
+														title="Pilih semua pengguna yang tampil"
+														className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-50"
+													/>
+												</th>
 												{[
 													"Nama",
 													"Email",
@@ -636,7 +711,7 @@ export default function UsersPage() {
 											) : filtered.length === 0 ? (
 												<tr>
 													<td
-														colSpan={7}
+												colSpan={8}
 														className="text-center py-8 text-gray-400"
 													>
 														<div className="flex justify-center mb-3">
@@ -652,12 +727,33 @@ export default function UsersPage() {
 													</td>
 												</tr>
 											) : (
-												filtered.map((user) => (
-													<tr
-														key={user.id}
-														className="border-b hover:bg-gray-50 transition-colors"
-													>
-														<td className="p-3">
+										filtered.map((user) => {
+											const canSelect = isBulkSelectable(user);
+											const selectionTitle = isAdminUser(user)
+												? "Admin tidak dapat diproses secara massal"
+												: canSelect
+													? `Pilih ${user.name}`
+													: "Akun Anda sendiri tidak dapat diproses secara massal";
+
+											return (
+												<tr
+													key={user.id}
+													className={`border-b transition-colors hover:bg-gray-50 ${
+														selectedUserIds.has(user.id) ? "bg-teal-50/60" : ""
+													}`}
+												>
+													<td className="p-3">
+														<input
+															type="checkbox"
+															checked={selectedUserIds.has(user.id)}
+															onChange={() => toggleUserSelection(user)}
+															disabled={bulkActionLoading || !canSelect}
+															aria-label={selectionTitle}
+															title={selectionTitle}
+															className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-40"
+														/>
+													</td>
+												<td className="p-3">
 															<div className="flex items-center gap-2">
 																<div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7AB2B2] to-[#3EBDAF] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
 																	{user.name?.[0]?.toUpperCase() ?? "U"}
@@ -717,8 +813,9 @@ export default function UsersPage() {
 																</button>
 															</div>
 														</td>
-													</tr>
-												))
+												</tr>
+											);
+										})
 											)}
 										</tbody>
 									</table>

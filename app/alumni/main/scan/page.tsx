@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Html5Qrcode } from "html5-qrcode";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Html5Qrcode, type CameraDevice } from "html5-qrcode";
 import { useRouter } from "next/navigation";
 import { useScanQR } from "@/hooks/alumni/useAlumniHooks";
 import { toFriendlyErrorMessage } from "@/lib/api";
@@ -57,6 +57,131 @@ function Icon({
 }
 
 type ScanStatus = "idle" | "scanning" | "success" | "error";
+type CameraFacing = "front" | "back" | "unknown";
+type CameraPermissionState =
+  | "unknown"
+  | "prompt"
+  | "granted"
+  | "denied"
+  | "unsupported";
+
+const BACK_CAMERA_KEYWORDS = [
+  "back",
+  "rear",
+  "environment",
+  "belakang",
+  "world",
+];
+
+const FRONT_CAMERA_KEYWORDS = ["front", "user", "depan", "facetime"];
+
+function detectCameraFacing(label: string): CameraFacing {
+  const normalized = label.toLowerCase();
+
+  if (FRONT_CAMERA_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
+    return "front";
+  }
+
+  if (BACK_CAMERA_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
+    return "back";
+  }
+
+  return "unknown";
+}
+
+function findPreferredCamera(cameras: CameraDevice[]) {
+  return (
+    cameras.find(
+      (camera) => detectCameraFacing(camera.label ?? "") === "back"
+    ) ?? cameras[0]
+  );
+}
+
+function isCameraPermissionDenied(error: unknown) {
+  const errorName =
+    error && typeof error === "object" && "name" in error
+      ? String(error.name)
+      : "";
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : String(error);
+
+  return (
+    errorName === "NotAllowedError" ||
+    /NotAllowedError/i.test(errorMessage) ||
+    /Permission denied/i.test(errorMessage) ||
+    /permission.*denied/i.test(errorMessage) ||
+    /not allowed/i.test(errorMessage)
+  );
+}
+
+async function getCameraPermissionState(): Promise<CameraPermissionState> {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.permissions?.query
+  ) {
+    return "unsupported";
+  }
+
+  try {
+    const permissionStatus = await navigator.permissions.query({
+      name: "camera" as PermissionName,
+    });
+
+    return permissionStatus.state;
+  } catch {
+    return "unsupported";
+  }
+}
+
+function getCameraErrorMessage(error: unknown) {
+  const errorName =
+    error && typeof error === "object" && "name" in error
+      ? String(error.name).toLowerCase()
+      : "";
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
+  const normalizedMessage = errorMessage.toLowerCase();
+
+  if (isCameraPermissionDenied(error)) {
+    return "Izin kamera diblokir. Izinkan akses kamera melalui pengaturan browser, lalu coba lagi.";
+  }
+
+  if (
+    errorName.includes("notfound") ||
+    normalizedMessage.includes("notfound") ||
+    normalizedMessage.includes("camera not found") ||
+    normalizedMessage.includes("kamera tidak ditemukan")
+  ) {
+    return "Kamera tidak ditemukan pada perangkat ini.";
+  }
+
+  if (
+    errorName.includes("notreadable") ||
+    normalizedMessage.includes("notreadable") ||
+    normalizedMessage.includes("trackstarterror") ||
+    normalizedMessage.includes("could not start video source")
+  ) {
+    return "Kamera tidak dapat digunakan. Pastikan kamera tidak sedang digunakan aplikasi lain.";
+  }
+
+  if (normalizedMessage.includes("area pemindai belum siap")) {
+    return "Area pemindai belum siap. Silakan coba lagi.";
+  }
+
+  if (normalizedMessage.includes("koneksi https atau localhost")) {
+    return errorMessage;
+  }
+
+  return "Kamera gagal diaktifkan. Silakan coba lagi.";
+}
 
 function getMessage(value: unknown) {
   if (
@@ -120,38 +245,96 @@ export default function ScanPage() {
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isProcessingRef = useRef(false);
+  const isStartingRef = useRef(false);
+  const isMountedRef = useRef(false);
+  const cameraPermissionRef = useRef<CameraPermissionState>("unknown");
+  const permissionStatusRef = useRef<PermissionStatus | null>(null);
 
-  const [status, setStatus] = useState<ScanStatus>("idle");
-  const [message, setMessage] = useState(
-    "Arahkan kamera ke QR Code event untuk melakukan presensi"
-  );
+  const [status, setStatus] = useState<ScanStatus>("scanning");
+  const [message, setMessage] = useState("Meminta akses kamera...");
   const [cameraReady, setCameraReady] = useState(false);
+  const [isCameraStarting, setIsCameraStarting] = useState(true);
+  const [cameraFacing, setCameraFacing] =
+    useState<CameraFacing>("unknown");
+  const [cameraPermission, setCameraPermission] =
+    useState<CameraPermissionState>("unknown");
   const [manualToken, setManualToken] = useState("");
 
-  const scanQR = useScanQR();
+  const { mutate: scanQr, isPending: isScanPending } = useScanQR();
+  const scanQrRef = useRef(scanQr);
 
-  const stopScanner = async () => {
+  useEffect(() => {
+    scanQrRef.current = scanQr;
+  }, [scanQr]);
+
+  const stopScanner = useCallback(async (scanner = scannerRef.current) => {
     try {
-      if (scannerRef.current?.isScanning) {
-        await scannerRef.current.stop();
+      if (scanner?.isScanning) {
+        await scanner.stop();
       }
     } catch {
       // scanner sudah berhenti
     }
-  };
+  }, []);
 
-  const clearScanner = async () => {
+  const clearScanner = useCallback(async (scanner = scannerRef.current) => {
+    if (!scanner) return;
+
+    await stopScanner(scanner);
+
     try {
-      await scannerRef.current?.clear();
+      await scanner.clear();
     } catch {
       // reader sudah kosong
+    } finally {
+      if (scannerRef.current === scanner) {
+        scannerRef.current = null;
+      }
     }
-  };
+  }, [stopScanner]);
 
-  const startScanner = async () => {
+  const stopAndClearScanner = useCallback(async () => {
     try {
-      setStatus("scanning");
-      setCameraReady(false);
+      await clearScanner();
+    } finally {
+      isStartingRef.current = false;
+    }
+  }, [clearScanner]);
+
+  const startScanner = useCallback(async () => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[ScanPage] startScanner called", {
+        mounted: isMountedRef.current,
+        starting: isStartingRef.current,
+        scanning: scannerRef.current?.isScanning ?? false,
+        readerExists: Boolean(document.getElementById("qr-reader")),
+      });
+    }
+
+    if (isStartingRef.current) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[ScanPage] startScanner skipped: already starting");
+      }
+      return;
+    }
+
+    if (scannerRef.current?.isScanning) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[ScanPage] startScanner skipped: already scanning");
+      }
+      return;
+    }
+
+    isStartingRef.current = true;
+
+    try {
+      if (isMountedRef.current) {
+        setStatus("scanning");
+        setCameraReady(false);
+        setCameraFacing("unknown");
+        setIsCameraStarting(true);
+        setMessage("Meminta akses kamera...");
+      }
 
       if (typeof window !== "undefined" && !window.isSecureContext) {
         throw new Error(
@@ -159,119 +342,342 @@ export default function ScanPage() {
         );
       }
 
-      setMessage("Meminta akses kamera...");
+      const permissionState = await getCameraPermissionState();
+      cameraPermissionRef.current = permissionState;
 
-      if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode("qr-reader");
+      if (isMountedRef.current) {
+        setCameraPermission(permissionState);
       }
 
-      await scannerRef.current.start(
-        {
-          facingMode: "environment",
-        },
-        {
-          fps: 10,
-          qrbox: {
-            width: 240,
-            height: 240,
-          },
-          aspectRatio: 1,
-        },
-        async (decodedText) => {
-          if (isProcessingRef.current) return;
+      if (permissionState === "denied") {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[ScanPage] camera permission denied");
+        }
 
-          isProcessingRef.current = true;
-          setMessage("QR Code terbaca. Memproses presensi...");
+        if (isMountedRef.current) {
+          setStatus("error");
+          setCameraReady(false);
+          setCameraFacing("unknown");
+          setIsCameraStarting(false);
+          setMessage(
+            "Izin kamera diblokir. Buka pengaturan situs pada browser, izinkan akses kamera, lalu coba lagi."
+          );
+        }
+        return;
+      }
 
-          await stopScanner();
+      const readerElement = document.getElementById("qr-reader");
+      if (!readerElement) {
+        throw new Error("Area pemindai belum siap. Silakan coba lagi.");
+      }
 
-          const qrToken = getCleanQrToken(decodedText);
+      type CameraStartOption = {
+        source: string | MediaTrackConstraints;
+        facing: CameraFacing;
+        debugLabel: string;
+      };
 
-          scanQR.mutate(qrToken, {
-            onSuccess: (data) => {
-              if (isFailedResponse(data)) {
-                const failedMessage = getMessage(data);
-                setStatus("error");
-                setCameraReady(false);
-                setMessage(
-                  failedMessage
-                    ? getFriendlyErrorMessage(failedMessage)
-                    : "QR Code tidak dikenali atau Anda belum mendaftar"
-                );
-                setManualToken("");
-                return;
-              }
+      let cameraOptions: CameraStartOption[];
+      let cameras: CameraDevice[] | null = null;
 
-              setStatus("success");
-              setCameraReady(false);
-              setMessage(getMessage(data) || "Presensi berhasil dicatat");
-              setManualToken("");
-            },
-            onError: (error) => {
-              const errMsg =
-                error instanceof Error ? error.message.toLowerCase() : "";
+      try {
+        cameras = await Html5Qrcode.getCameras();
 
-              if (
-                errMsg.includes("belum aktif") ||
-                errMsg.includes("belum mulai") ||
-                errMsg.includes("belum berlaku") ||
-                errMsg.includes("waktu")
-              ) {
-                setStatus("error");
-                setCameraReady(false);
-                setMessage("Anda belum bisa melakukan presensi");
-                setManualToken("");
-              } else if (
-                errMsg.includes("sudah melakukan presensi") ||
-                errMsg.includes("sudah presensi") ||
-                errMsg.includes("sudah tercatat")
-              ) {
-                setStatus("success");
-                setCameraReady(false);
-                setMessage("Anda sudah melakukan presensi");
-                setManualToken("");
-              } else {
-                setStatus("error");
-                setCameraReady(false);
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[ScanPage] available cameras", cameras);
+        }
+      } catch (cameraListError) {
+        if (isCameraPermissionDenied(cameraListError)) {
+          throw cameraListError;
+        }
 
-                const rawMessage =
-                  error instanceof Error
-                    ? error.message
-                    : "Presensi gagal diproses";
-                setMessage(getFriendlyErrorMessage(rawMessage));
-              }
+        if (process.env.NODE_ENV !== "production") {
+          console.error(
+            "[ScanPage] getCameras failed, using facingMode fallback",
+            cameraListError
+          );
+        }
+      }
 
-              isProcessingRef.current = false;
-            },
+      if (cameras) {
+        if (cameras.length === 0) {
+          const noCameraError = new Error(
+            "Kamera tidak ditemukan pada perangkat ini."
+          );
+          noCameraError.name = "NotFoundError";
+          throw noCameraError;
+        }
+
+        const selectedCamera = findPreferredCamera(cameras);
+        const detectedFacing = detectCameraFacing(selectedCamera.label ?? "");
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[ScanPage] selected camera", {
+            id: selectedCamera.id,
+            label: selectedCamera.label,
+            detectedFacing,
           });
-        },
-        () => {}
-      );
+        }
 
+        cameraOptions = [
+          {
+            source: selectedCamera.id,
+            facing: detectedFacing,
+            debugLabel: selectedCamera.label || selectedCamera.id,
+          },
+        ];
+      } else {
+        cameraOptions = [
+          {
+            source: { facingMode: "environment" },
+            facing: "back",
+            debugLabel: "facingMode:environment",
+          },
+          {
+            source: { facingMode: "user" },
+            facing: "front",
+            debugLabel: "facingMode:user",
+          },
+        ];
+      }
+
+      const scannerConfig = {
+        fps: 10,
+        qrbox: {
+          width: 240,
+          height: 240,
+        },
+        aspectRatio: 1,
+      };
+      let scanner: Html5Qrcode | null = null;
+      let selectedFacing: CameraFacing = "unknown";
+      let lastStartError: unknown = null;
+
+      for (const cameraOption of cameraOptions) {
+        if (scannerRef.current) {
+          await clearScanner(scannerRef.current);
+        }
+
+        const candidateScanner = new Html5Qrcode("qr-reader");
+        scannerRef.current = candidateScanner;
+        isProcessingRef.current = false;
+
+        try {
+          await candidateScanner.start(
+            cameraOption.source,
+            scannerConfig,
+            async (decodedText) => {
+              if (isProcessingRef.current) return;
+
+              isProcessingRef.current = true;
+              if (isMountedRef.current) {
+                setMessage("QR Code terbaca. Memproses presensi...");
+              }
+
+              await stopScanner(candidateScanner);
+
+              const qrToken = getCleanQrToken(decodedText);
+
+              scanQrRef.current(qrToken, {
+                onSuccess: (data) => {
+                  if (!isMountedRef.current) return;
+
+                  if (isFailedResponse(data)) {
+                    const failedMessage = getMessage(data);
+                    setStatus("error");
+                    setCameraReady(false);
+                    setMessage(
+                      failedMessage
+                        ? getFriendlyErrorMessage(failedMessage)
+                        : "QR Code tidak dikenali atau Anda belum mendaftar"
+                    );
+                    setManualToken("");
+                    return;
+                  }
+
+                  setStatus("success");
+                  setCameraReady(false);
+                  setMessage(getMessage(data) || "Presensi berhasil dicatat");
+                  setManualToken("");
+                },
+                onError: (error) => {
+                  if (!isMountedRef.current) return;
+
+                  const errMsg =
+                    error instanceof Error ? error.message.toLowerCase() : "";
+
+                  if (
+                    errMsg.includes("belum aktif") ||
+                    errMsg.includes("belum mulai") ||
+                    errMsg.includes("belum berlaku") ||
+                    errMsg.includes("waktu")
+                  ) {
+                    setStatus("error");
+                    setCameraReady(false);
+                    setMessage("Anda belum bisa melakukan presensi");
+                    setManualToken("");
+                  } else if (
+                    errMsg.includes("sudah melakukan presensi") ||
+                    errMsg.includes("sudah presensi") ||
+                    errMsg.includes("sudah tercatat")
+                  ) {
+                    setStatus("success");
+                    setCameraReady(false);
+                    setMessage("Anda sudah melakukan presensi");
+                    setManualToken("");
+                  } else {
+                    setStatus("error");
+                    setCameraReady(false);
+
+                    const rawMessage =
+                      error instanceof Error
+                        ? error.message
+                        : "Presensi gagal diproses";
+                    setMessage(getFriendlyErrorMessage(rawMessage));
+                  }
+
+                  isProcessingRef.current = false;
+                },
+              });
+            },
+            () => {}
+          );
+
+          scanner = candidateScanner;
+          selectedFacing = cameraOption.facing;
+          break;
+        } catch (cameraStartError) {
+          lastStartError = cameraStartError;
+
+          await clearScanner(candidateScanner);
+
+          if (isCameraPermissionDenied(cameraStartError)) {
+            throw cameraStartError;
+          }
+
+          if (process.env.NODE_ENV !== "production") {
+            console.error("[ScanPage] camera attempt failed", {
+              source: cameraOption.debugLabel,
+              error: cameraStartError,
+            });
+          }
+        }
+      }
+
+      if (!scanner) {
+        throw lastStartError ?? new Error("Kamera gagal diaktifkan.");
+      }
+
+      try {
+        const settings = scanner.getRunningTrackSettings();
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[ScanPage] running camera settings", settings);
+        }
+
+        if (settings.facingMode === "user") {
+          selectedFacing = "front";
+        } else if (settings.facingMode === "environment") {
+          selectedFacing = "back";
+        }
+      } catch (settingsError) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[ScanPage] running camera settings unavailable",
+            settingsError
+          );
+        }
+      }
+
+      if (!isMountedRef.current || scannerRef.current !== scanner) {
+        await clearScanner(scanner);
+        return;
+      }
+
+      cameraPermissionRef.current = "granted";
+      setCameraPermission("granted");
       setCameraReady(true);
+      setCameraFacing(selectedFacing);
+      setIsCameraStarting(false);
       setMessage("Kamera aktif. Arahkan ke QR Code event.");
     } catch (error) {
-      setStatus("error");
-      setCameraReady(false);
-      setMessage(
-        error instanceof Error
-          ? getFriendlyErrorMessage(error.message)
-          : "Akses kamera ditolak atau kamera tidak tersedia"
-      );
+      const permissionDenied = isCameraPermissionDenied(error);
+
+      if (process.env.NODE_ENV !== "production") {
+        if (permissionDenied) {
+          console.warn("[ScanPage] camera permission denied", error);
+        } else {
+          console.error("[ScanPage] camera start failed", error);
+        }
+      }
+
+      const failedScanner = scannerRef.current;
+      if (failedScanner && !failedScanner.isScanning) {
+        await clearScanner(failedScanner);
+      }
+
+      if (isMountedRef.current) {
+        if (permissionDenied) {
+          cameraPermissionRef.current = "denied";
+          setCameraPermission("denied");
+        }
+
+        setStatus("error");
+        setCameraReady(false);
+        setCameraFacing("unknown");
+        setIsCameraStarting(false);
+        setMessage(
+          permissionDenied
+            ? "Izin kamera diblokir. Buka pengaturan situs pada browser, izinkan akses kamera, lalu coba lagi."
+            : getCameraErrorMessage(error)
+        );
+      }
+    } finally {
+      isStartingRef.current = false;
     }
-  };
+  }, [clearScanner, stopScanner]);
 
   const resetScanner = async () => {
-    await stopScanner();
-    await clearScanner();
+    await stopAndClearScanner();
 
-    scannerRef.current = null;
     isProcessingRef.current = false;
 
     setStatus("idle");
     setCameraReady(false);
+    setCameraFacing("unknown");
+    setIsCameraStarting(false);
     setMessage("Arahkan kamera ke QR Code event untuk melakukan presensi");
     setManualToken("");
+  };
+
+  const handleRetryCamera = async () => {
+    const permissionState = await getCameraPermissionState();
+    cameraPermissionRef.current = permissionState;
+    setCameraPermission(permissionState);
+
+    if (permissionState === "denied") {
+      isProcessingRef.current = false;
+      isStartingRef.current = false;
+      await stopAndClearScanner();
+
+      setStatus("error");
+      setCameraReady(false);
+      setCameraFacing("unknown");
+      setIsCameraStarting(false);
+      setMessage(
+        "Izin kamera masih diblokir. Izinkan kamera melalui pengaturan situs browser, lalu tekan tombol ini kembali."
+      );
+      return;
+    }
+
+    isProcessingRef.current = false;
+    isStartingRef.current = false;
+
+    await stopAndClearScanner();
+
+    if (isMountedRef.current) {
+      await startScanner();
+    }
   };
 
   const handleManualSubmit = async () => {
@@ -283,7 +689,7 @@ export default function ScanPage() {
 
     const qrToken = getCleanQrToken(manualToken);
 
-    scanQR.mutate(qrToken, {
+    scanQr(qrToken, {
       onSuccess: (data) => {
         if (isFailedResponse(data)) {
           const failedMessage = getMessage(data);
@@ -343,23 +749,123 @@ export default function ScanPage() {
   };
 
   useEffect(() => {
-    return () => {
-      stopScanner();
+    let disposed = false;
+
+    const updatePermissionState = (nextState: CameraPermissionState) => {
+      if (disposed) return;
+
+      const previousState = cameraPermissionRef.current;
+
+      if (nextState === "unsupported" && previousState === "denied") {
+        return;
+      }
+
+      cameraPermissionRef.current = nextState;
+      setCameraPermission(nextState);
+
+      if (nextState === "denied") {
+        setStatus("error");
+        setCameraReady(false);
+        setCameraFacing("unknown");
+        setIsCameraStarting(false);
+        setMessage(
+          "Izin kamera diblokir. Buka pengaturan situs pada browser, izinkan akses kamera, lalu coba lagi."
+        );
+        void stopAndClearScanner();
+      } else if (
+        previousState === "denied" &&
+        nextState === "granted" &&
+        !scannerRef.current?.isScanning
+      ) {
+        setStatus("error");
+        setMessage(
+          "Izin kamera sudah diberikan. Tekan tombol untuk mengaktifkan kamera."
+        );
+      } else if (
+        previousState === "denied" &&
+        nextState === "prompt" &&
+        !scannerRef.current?.isScanning
+      ) {
+        setStatus("error");
+        setMessage(
+          "Izin kamera dapat diminta kembali. Tekan tombol untuk mengaktifkan kamera."
+        );
+      }
     };
-  }, []);
+
+    const handlePermissionChange = () => {
+      const permissionStatus = permissionStatusRef.current;
+      if (permissionStatus) {
+        updatePermissionState(permissionStatus.state);
+      }
+    };
+
+    const watchPermission = async () => {
+      if (!navigator.permissions?.query) {
+        updatePermissionState("unsupported");
+        return;
+      }
+
+      try {
+        const permissionStatus = await navigator.permissions.query({
+          name: "camera" as PermissionName,
+        });
+
+        if (disposed) return;
+
+        permissionStatusRef.current = permissionStatus;
+        updatePermissionState(permissionStatus.state);
+        permissionStatus.addEventListener("change", handlePermissionChange);
+      } catch {
+        updatePermissionState("unsupported");
+      }
+    };
+
+    const handleWindowFocus = async () => {
+      const permissionState = await getCameraPermissionState();
+      updatePermissionState(permissionState);
+    };
+
+    void watchPermission();
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      disposed = true;
+      window.removeEventListener("focus", handleWindowFocus);
+      permissionStatusRef.current?.removeEventListener(
+        "change",
+        handlePermissionChange
+      );
+      permissionStatusRef.current = null;
+    };
+  }, [stopAndClearScanner]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    let cancelled = false;
+
+    const frameId = window.requestAnimationFrame(() => {
+      if (cancelled || !isMountedRef.current) return;
+
+      void startScanner();
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frameId);
+      isMountedRef.current = false;
+      void stopAndClearScanner();
+    };
+  }, [startScanner, stopAndClearScanner]);
 
   return (
-    <div className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-5 pb-6 bg-slate-50">
+    <div className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-4 bg-slate-50">
       <section className="text-center">
-        <div className="w-16 h-16 mx-auto rounded-full bg-[#41A07E] flex items-center justify-center text-white shadow-md shadow-[#B2DE96]/30">
-          <Icon name="camera" className="w-8 h-8" />
-        </div>
-
-        <h1 className="text-xl font-bold text-gray-800 mt-4">
+        <h1 className="text-[19px] font-bold text-gray-800">
           Pindai QR Presensi
         </h1>
 
-        <div className="mt-3 px-2 sm:px-6">
+        <div className="mt-1.5 px-2 sm:px-6">
           {status === "error" && (
             <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl text-sm font-semibold mb-2 shadow-sm animate-in slide-in-from-top-2">
               {message}
@@ -373,16 +879,38 @@ export default function ScanPage() {
           )}
 
           {status !== "error" && status !== "success" && (
-            <p className="text-sm text-gray-500 leading-relaxed font-medium">
+            <p className="text-xs text-gray-500 leading-snug font-medium sm:text-sm">
               {message}
             </p>
           )}
         </div>
       </section>
 
-      <section className="mt-6">
-        <div className="qr-scanner-shell relative bg-slate-950 rounded-[24px] overflow-hidden shadow-2xl aspect-square w-full flex items-center justify-center border border-white/70">
-          <div id="qr-reader" className="qr-scanner-reader w-full h-full" />
+      {cameraPermission === "denied" && (
+        <section className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-amber-900">
+          <h2 className="text-sm font-bold">Izin kamera diblokir</h2>
+          <p className="mt-1 text-xs leading-relaxed">
+            Browser tidak dapat meminta izin kembali secara otomatis. Ubah izin
+            kamera melalui pengaturan situs, lalu cek ulang izin.
+          </p>
+          <ol className="mt-2 list-decimal space-y-0.5 pl-4 text-xs leading-relaxed">
+            <li>Buka ikon kunci atau kamera di address bar.</li>
+            <li>Pilih izin Kamera.</li>
+            <li>Ubah menjadi Izinkan atau Allow.</li>
+            <li>Kembali ke halaman ini.</li>
+            <li>Tekan Cek Ulang Izin Kamera.</li>
+          </ol>
+        </section>
+      )}
+
+      <section className="mt-3">
+        <div className="qr-scanner-shell relative mx-auto aspect-square w-full max-w-[330px] bg-slate-950 rounded-[22px] overflow-hidden shadow-xl flex items-center justify-center border border-white/70">
+          <div
+            id="qr-reader"
+            className={`qr-scanner-reader w-full h-full ${
+              cameraFacing === "front" ? "is-front-camera" : ""
+            }`}
+          />
 
           {!cameraReady && (
             <div className="absolute inset-0 z-20 flex items-center justify-center text-slate-500 bg-slate-950">
@@ -414,21 +942,26 @@ export default function ScanPage() {
           </div>
         </div>
 
-        {(status === "idle" || status === "error") && (
+        {(status === "idle" || status === "error") && !isCameraStarting && (
           <button
-            onClick={startScanner}
-            disabled={scanQR.isPending}
-            className="mt-5 w-full rounded-2xl bg-[#41A07E] py-3.5 font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60"
+            onClick={status === "error" ? handleRetryCamera : startScanner}
+            disabled={isScanPending}
+            className="mt-3 w-full rounded-2xl bg-[#41A07E] py-3 font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <Icon name="camera" className="w-4 h-4" />
-            Aktifkan Kamera
+            {cameraPermission === "denied"
+              ? "Cek Ulang Izin Kamera"
+              : status === "error"
+                ? "Coba Aktifkan Kamera"
+                : "Aktifkan Kamera"}
           </button>
         )}
 
-        {status === "scanning" && (
+        {status === "scanning" && !isCameraStarting && (
           <button
             onClick={resetScanner}
-            className="mt-5 w-full rounded-2xl py-3.5 font-semibold text-[#41A07E] bg-white border border-green-100 transition-colors hover:bg-green-50 active:scale-[0.98]"
+            disabled={isScanPending}
+            className="mt-3 w-full rounded-2xl py-3 font-semibold text-[#41A07E] bg-white border border-green-100 transition-colors hover:bg-green-50 active:scale-[0.98] disabled:opacity-60"
           >
             Matikan Kamera
           </button>
@@ -437,7 +970,7 @@ export default function ScanPage() {
         {status === "success" && (
           <button
             onClick={() => router.push("/alumni/main/riwayat")}
-            className="mt-5 w-full rounded-2xl bg-[#41A07E] py-3.5 font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98]"
+            className="mt-3 w-full rounded-2xl bg-[#41A07E] py-3 font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98]"
           >
             Lihat Riwayat Kehadiran
           </button>
@@ -445,7 +978,7 @@ export default function ScanPage() {
       </section>
 
       {status !== "success" && (
-        <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="font-bold text-gray-800 text-sm mb-2">
             Masukkan Kode Manual
           </h2>
@@ -462,15 +995,15 @@ export default function ScanPage() {
               onChange={(e) => setManualToken(e.target.value)}
               placeholder="Masukkan kode presensi..."
               className="flex-1 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#41A07E] focus:ring-1 focus:ring-[#41A07E] transition-colors"
-              disabled={scanQR.isPending}
+              disabled={isScanPending}
             />
 
             <button
               onClick={handleManualSubmit}
-              disabled={!manualToken.trim() || scanQR.isPending}
+              disabled={!manualToken.trim() || isScanPending}
               className="bg-[#41A07E] hover:bg-[#357f65] text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-md shadow-[#B2DE96]/30 transition-colors active:scale-[0.98] flex items-center justify-center min-w-[80px]"
             >
-              {scanQR.isPending ? (
+              {isScanPending ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 "Kirim"

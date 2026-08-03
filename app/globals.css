@@ -70,8 +70,13 @@ body {
   display: block !important;
 }
 
+#qr-reader video,
 .qr-scanner-reader video {
-  transform: scaleX(-1);
+  transform: none !important;
+}
+
+.qr-scanner-reader.is-front-camera video {
+  transform: scaleX(-1) !important;
 }
 
 .qr-scanner-reader img {

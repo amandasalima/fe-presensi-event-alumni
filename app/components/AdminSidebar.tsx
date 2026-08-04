@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clearAuthStorage } from "@/lib/api";
+import { stopHeartbeat } from "@/lib/heartbeat";
 
 const menuItems = [
   {
@@ -46,6 +47,7 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   const handleLogout = () => {
+    stopHeartbeat();
     clearAuthStorage();
     window.location.href = "/admin/login";
   };

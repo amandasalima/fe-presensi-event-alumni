@@ -192,10 +192,6 @@ export async function getEventQr(eventId: number) {
 	const qrCode = response.data.qr_code;
 
 	if (!qrCode) return null;
-	
-	if (!qrCode.is_active || qrCode.is_expired) {
-		return null;
-	}
 
 	return qrCode;
 }

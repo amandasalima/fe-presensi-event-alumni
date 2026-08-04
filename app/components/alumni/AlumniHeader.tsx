@@ -13,6 +13,7 @@ import {
 } from "@/hooks/alumni/useAlumniHooks";
 import type { AlumniNotification } from "@/hooks/alumni/useAlumniHooks";
 import { clearAuthStorage, getImageUrl } from "@/lib/api";
+import { stopHeartbeat } from "@/lib/heartbeat";
 
 export default function AlumniHeader() {
   const router = useRouter();
@@ -94,6 +95,7 @@ export default function AlumniHeader() {
   });
 
   const handleLogout = () => {
+    stopHeartbeat();
     clearAuthStorage();
     window.location.href = "/alumni/login";
   };

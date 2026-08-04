@@ -2,18 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { startHeartbeat, stopHeartbeat } from "@/lib/heartbeat";
 
 const ADMIN_LOGIN_PATH = "/admin/login";
 const ADMIN_DASHBOARD_PATH = "/admin/dashboard";
 
 function getAdminCredentials() {
   return {
-    token: localStorage.getItem("access_token") || localStorage.getItem("token"),
-    role: localStorage.getItem("role"),
+    // sessionStorage utama, localStorage fallback (migrasi)
+    token: sessionStorage.getItem("access_token") || localStorage.getItem("access_token") || localStorage.getItem("token"),
+    role: sessionStorage.getItem("role") || localStorage.getItem("role"),
   };
 }
 
 function clearAdminCredentials() {
+  // Clear sessionStorage (primary)
+  sessionStorage.removeItem("access_token");
+  sessionStorage.removeItem("role");
+  sessionStorage.removeItem("token_type");
+  sessionStorage.removeItem("user");
+  // Clear localStorage (legacy)
   localStorage.removeItem("access_token");
   localStorage.removeItem("token");
   localStorage.removeItem("role");
@@ -44,17 +52,22 @@ export default function AdminLayout({
 
       if (!token || role !== "admin") {
         clearAdminCredentials();
+        stopHeartbeat();
         setAuthorized(false);
         router.replace(ADMIN_LOGIN_PATH);
         return;
       }
 
+      // Token valid — mulai heartbeat untuk menjaga sesi
+      startHeartbeat();
       setAuthorized(true);
     };
 
     const frameId = window.requestAnimationFrame(verifyAccess);
 
-    return () => window.cancelAnimationFrame(frameId);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [pathname, router]);
 
   if (!authorized) {
@@ -74,3 +87,4 @@ export default function AdminLayout({
 
   return <>{children}</>;
 }
+

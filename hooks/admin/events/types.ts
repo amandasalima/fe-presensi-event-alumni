@@ -126,13 +126,19 @@ export interface EventQrCode {
 	event_id: number;
 	qr_payload?: string;
 	qr_token: string;
-	valid_from: string;
-	timeout_minutes: number;
+	qr_code_image?: string | null;
+	qr_code_url?: string | null;
+	duration_days: number;
+	valid_from_wib: string;
+	expired_at_wib: string;
+	created_at_wib: string;
 	is_active: boolean;
 	created_at: string;
 	expired_at: string;
 	is_valid_now: boolean;
 	is_expired: boolean;
+	valid_from?: string;
+	timeout_minutes?: number;
 }
 
 export type EventQrCodeResponse = ApiResponse<{
@@ -140,8 +146,7 @@ export type EventQrCodeResponse = ApiResponse<{
 }>;
 
 export interface GenerateQrPayload {
-	valid_from: string;
-	timeout_minutes: number;
+	duration_days: number;
 }
 
 export interface EventUser {

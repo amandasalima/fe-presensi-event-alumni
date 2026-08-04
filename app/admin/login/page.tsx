@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormInput } from "@/app/components/FormControl";
 import { API_BASE_URL, toFriendlyErrorMessage } from "@/lib/api";
+import { startHeartbeat } from "@/lib/heartbeat";
 
 type LoginResponse = {
 	success: boolean;
@@ -67,10 +68,14 @@ const AdminLogin = () => {
 				throw new Error("Akun ini bukan admin.");
 			}
 
-			localStorage.setItem("access_token", access_token);
-			localStorage.setItem("token_type", token_type);
-			localStorage.setItem("user", JSON.stringify(user));
-			localStorage.setItem("role", user.role);
+			// Simpan di sessionStorage (hilang saat browser ditutup)
+			sessionStorage.setItem("access_token", access_token);
+			sessionStorage.setItem("token_type", token_type);
+			sessionStorage.setItem("user", JSON.stringify(user));
+			sessionStorage.setItem("role", user.role);
+
+			// Mulai heartbeat untuk menjaga token tetap hidup
+			startHeartbeat();
 
 			router.push("/admin/dashboard");
 		} catch (error) {

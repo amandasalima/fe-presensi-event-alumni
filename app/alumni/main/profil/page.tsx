@@ -31,6 +31,7 @@ import {
 
 import type { UpdateProfilePayload } from "@/types/profile";
 import { clearAuthStorage, getApiErrorMessage, getImageUrl } from "@/lib/api";
+import { stopHeartbeat } from "@/lib/heartbeat";
 
 /* ─── Skeleton loader ─────────────────────────────────────── */
 function ProfileSkeleton() {
@@ -318,6 +319,7 @@ export default function AlumniProfilePage() {
   }
 
   function handleLogout() {
+    stopHeartbeat();
     clearAuthStorage();
     window.location.href = "/alumni/login";
   }

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { handleAutoLogout } from "./heartbeat";
 
 const getBaseUrl = () => {
 	if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
@@ -32,14 +33,16 @@ function getAuthToken() {
 
 	const pathname = window.location.pathname;
 	if (pathname.startsWith("/admin")) {
-		return localStorage.getItem("access_token") || localStorage.getItem("token");
+		// sessionStorage utama, localStorage fallback (migrasi)
+		return sessionStorage.getItem("access_token") || localStorage.getItem("access_token") || localStorage.getItem("token");
 	} else if (pathname.startsWith("/alumni")) {
-		return localStorage.getItem("alumni_token") || sessionStorage.getItem("alumni_token");
+		return sessionStorage.getItem("alumni_token") || localStorage.getItem("alumni_token");
 	}
 
 	return (
-		localStorage.getItem("alumni_token") ||
 		sessionStorage.getItem("alumni_token") ||
+		localStorage.getItem("alumni_token") ||
+		sessionStorage.getItem("access_token") ||
 		localStorage.getItem("access_token") ||
 		localStorage.getItem("token")
 	);
@@ -47,6 +50,7 @@ function getAuthToken() {
 
 export function clearAuthStorage() {
 	if (typeof window === "undefined") return;
+	// Clear localStorage (legacy + migration)
 	localStorage.removeItem("access_token");
 	localStorage.removeItem("admin_token");
 	localStorage.removeItem("alumni_token");
@@ -55,7 +59,12 @@ export function clearAuthStorage() {
 	localStorage.removeItem("user");
 	localStorage.removeItem("role");
 	localStorage.removeItem("dummy_profile");
+	// Clear sessionStorage (primary storage)
 	sessionStorage.removeItem("alumni_token");
+	sessionStorage.removeItem("access_token");
+	sessionStorage.removeItem("token_type");
+	sessionStorage.removeItem("user");
+	sessionStorage.removeItem("role");
 }
 
 const api = axios.create({
@@ -86,27 +95,24 @@ api.interceptors.request.use((config) => {
 	return config;
 });
 
-// Response interceptor: handle 401
+// Response interceptor: handle 401 — auto-logout via heartbeat module
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
 		if (error.response?.status === 401 && typeof window !== "undefined") {
 			const currentPath = window.location.pathname;
 
-			// Don't redirect if already on login/register pages
+			// Don't redirect if already on login/register/forgot/reset pages
 			// Let the form handle showing credential error messages
 			const isAuthPage =
 				currentPath.includes("/login") ||
-				currentPath.includes("/register");
+				currentPath.includes("/register") ||
+				currentPath.includes("/forgot-password") ||
+				currentPath.includes("/reset-password");
 
 			if (!isAuthPage) {
-				clearAuthStorage();
-
-				if (currentPath.startsWith("/admin")) {
-					window.location.href = "/admin/login";
-				} else {
-					window.location.href = "/alumni/login";
-				}
+				// handleAutoLogout akan clear storage + stop heartbeat + redirect
+				handleAutoLogout();
 			}
 		}
 

@@ -202,18 +202,6 @@ function formatDateTime(value?: string | null) {
   });
 }
 
-function toApiDateTime(value: string) {
-  if (!value) return "";
-
-  return value.replace("T", " ") + ":00";
-}
-
-function getDefaultValidFrom() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-
-  return now.toISOString().slice(0, 16);
-}
 
 function getQrPayload(qrCode?: EventQrCode | null) {
   return qrCode?.qr_payload?.trim() || qrCode?.qr_token?.trim() || "";
@@ -277,8 +265,7 @@ function EventListCard({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function GenerateQRPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [validFrom, setValidFrom] = useState(getDefaultValidFrom());
-  const [timeoutMinutes, setTimeoutMinutes] = useState(60);
+  const [durationDays, setDurationDays] = useState<number>(1);
   const [generatedQr, setGeneratedQr] = useState<EventQrCode | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [isGeneratingQrImage, setIsGeneratingQrImage] = useState(false);
@@ -366,8 +353,7 @@ export default function GenerateQRPage() {
       {
         eventId: selectedId,
         data: {
-          valid_from: toApiDateTime(validFrom),
-          timeout_minutes: timeoutMinutes,
+          duration_days: durationDays,
         },
       },
       {
@@ -381,9 +367,8 @@ export default function GenerateQRPage() {
 
   const isGenerateDisabled =
     !selectedId ||
-    !validFrom ||
-    timeoutMinutes < 1 ||
-    timeoutMinutes > 1440 ||
+    durationDays < 1 ||
+    durationDays > 30 ||
     generateQR.isPending;
 
   const showFeedback = (type: "success" | "error", message: string) => {
@@ -508,53 +493,29 @@ export default function GenerateQRPage() {
               )}
 
               {/* QR Settings */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mulai Berlaku
-                  </label>
-
-                  <FormInput
-                    type="datetime-local"
-                    value={validFrom}
-                    onChange={(e) => setValidFrom(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent"
-                    required
-                  />
-
-                  <p className="text-xs text-gray-400 mt-1">
-                    QR baru bisa digunakan mulai waktu ini.
-                  </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Masa Berlaku QR Code
+                </label>
+                <div className="relative">
+                  <FormSelect
+                    value={durationDays}
+                    onChange={(e) => setDurationDays(Number(e.target.value))}
+                    className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent cursor-pointer disabled:bg-gray-100"
+                  >
+                    <option value={1}>1 Hari</option>
+                    <option value={3}>3 Hari</option>
+                    <option value={7}>7 Hari</option>
+                    <option value={14}>14 Hari (2 Minggu)</option>
+                    <option value={30}>30 Hari (1 Bulan)</option>
+                  </FormSelect>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                    ▾
+                  </span>
                 </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Durasi QR
-                  </label>
-
-                  <div className="flex items-center gap-3">
-                    <FormInput
-                      type="number"
-                      min={1}
-                      max={1440}
-                      value={timeoutMinutes}
-                      onChange={(e) =>
-                        setTimeoutMinutes(Number(e.target.value))
-                      }
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent"
-                      required
-                    />
-
-                    <span className="text-sm text-gray-500 whitespace-nowrap">
-                      menit
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-gray-400 mt-1">
-                    QR akan kedaluwarsa setelah sekian menit dari waktu mulai
-                    berlaku.
-                  </p>
-                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  QR Code otomatis aktif sejak dibuat dan berlaku selama durasi hari yang dipilih.
+                </p>
               </div>
 
               {/* Existing QR Info */}
@@ -704,27 +665,34 @@ export default function GenerateQRPage() {
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-500 flex items-center gap-2">
                         <Clock3 size={14} />
-                        Mulai berlaku
+                        Dibuat pada
                       </span>
                       <span className="font-medium text-gray-700 text-right">
-                        {formatDateTime(displayedQr.valid_from)}
+                        {displayedQr.created_at_wib || "-"}
                       </span>
                     </div>
 
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-500 flex items-center gap-2">
                         <TimerReset size={14} />
-                        Kedaluwarsa
+                        Masa Berlaku
                       </span>
                       <span className="font-medium text-gray-700 text-right">
-                        {formatDateTime(displayedQr.expired_at)}
+                        {displayedQr.duration_days} Hari
                       </span>
                     </div>
 
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Durasi</span>
+                      <span className="text-gray-500">Mulai Aktif</span>
                       <span className="font-medium text-gray-700 text-right">
-                        {displayedQr.timeout_minutes} menit
+                        {displayedQr.valid_from_wib || "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">Kedaluwarsa Pada</span>
+                      <span className="font-semibold text-red-600 text-right">
+                        {displayedQr.expired_at_wib || "-"}
                       </span>
                     </div>
 

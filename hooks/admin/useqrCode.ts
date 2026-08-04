@@ -4,8 +4,7 @@ import { fetchAPI } from "@/lib/api";
 type GenerateQrVariables = {
   eventId: number;
   data: {
-    valid_from: string;
-    timeout_minutes: number;
+    duration_days: number;
   };
 };
 

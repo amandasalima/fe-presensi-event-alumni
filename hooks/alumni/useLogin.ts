@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { startHeartbeat } from "@/lib/heartbeat";
 import type { LoginPayload, LoginAuthResponse } from "@/types/auth";
 
 async function loginFn(payload: LoginPayload): Promise<LoginAuthResponse> {
@@ -21,12 +22,18 @@ export function useLogin() {
       mutationFn: loginFn,
       onSuccess: (response, variables) => {
         const token = response.data.access_token;
+
+        // Selalu simpan di sessionStorage (hilang saat browser ditutup)
+        sessionStorage.setItem("alumni_token", token);
+
+        // Jika "ingat saya" dicentang, simpan juga di localStorage
         if (variables.remember) {
           localStorage.setItem("alumni_token", token);
-        } else {
-          sessionStorage.setItem("alumni_token", token);
-          localStorage.setItem("alumni_token", token);
         }
+
+        // Mulai heartbeat untuk menjaga token tetap hidup
+        startHeartbeat();
+
         router.push("/alumni/main/dashboard");
       },
     }

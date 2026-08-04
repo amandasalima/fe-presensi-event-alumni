@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { QueryClientProvider } from "@tanstack/react-query";
 import queryClient from "@/lib/queryClient";
+import { startHeartbeat, stopHeartbeat } from "@/lib/heartbeat";
 
 const ALUMNI_LOGIN_PATH = "/alumni/login";
 const ALUMNI_REGISTER_PATH = "/alumni/register";
@@ -14,12 +15,13 @@ function isPublicAlumniPage(pathname: string) {
 }
 
 function getAlumniToken() {
-  return localStorage.getItem("alumni_token") || sessionStorage.getItem("alumni_token");
+  // sessionStorage utama, localStorage fallback (migrasi)
+  return sessionStorage.getItem("alumni_token") || localStorage.getItem("alumni_token");
 }
 
 function clearAlumniToken() {
-  localStorage.removeItem("alumni_token");
   sessionStorage.removeItem("alumni_token");
+  localStorage.removeItem("alumni_token");
 }
 
 export default function AlumniLayout({
@@ -48,17 +50,22 @@ export default function AlumniLayout({
 
       if (!token) {
         clearAlumniToken();
+        stopHeartbeat();
         setAuthorized(false);
         router.replace(ALUMNI_LOGIN_PATH);
         return;
       }
 
+      // Token valid — mulai heartbeat untuk menjaga sesi
+      startHeartbeat();
       setAuthorized(true);
     };
 
     const frameId = window.requestAnimationFrame(verifyAccess);
 
-    return () => window.cancelAnimationFrame(frameId);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [isPublicPage, pathname, router]);
 
   if (!authorized) {
@@ -86,3 +93,4 @@ export default function AlumniLayout({
     </QueryClientProvider>
   );
 }
+

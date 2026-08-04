@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchAPI } from "@/lib/api";
+import api, { fetchAPI } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AdminProfile {
 	name: string;
 	email: string;
-	avatar?: string;
+	avatar_url?: string | null;
 }
 
 export interface SystemStatus {
@@ -52,25 +52,64 @@ export interface UpdatePasswordPayload {
 
 // ─── Admin Profile ────────────────────────────────────────────────────────────
 
-// GET profil admin
+// GET profil admin via /auth/me
 export function useAdminProfile() {
 	return useQuery<AdminProfile>({
 		queryKey: ["admin-profile"],
-		queryFn: () => fetchAPI("/admin/profile"),
+		queryFn: async () => {
+			const { data } = await api.get("/auth/me");
+			const user = data.data.user;
+			return { name: user.name, email: user.email, avatar_url: user.avatar_url ?? null };
+		},
 	});
 }
 
-// PUT update profil admin (nama, email)
+// PUT update profil admin via /auth/profile
 export function useUpdateAdminProfile() {
 	const queryClient = useQueryClient();
 	return useMutation<AdminProfile, Error, UpdateProfilePayload>({
-		mutationFn: (data) =>
-			fetchAPI("/admin/profile", {
-				method: "PUT",
-				body: JSON.stringify(data),
-			}),
+		mutationFn: async (payload) => {
+			const { data } = await api.put("/auth/profile", payload);
+			return data.data.user;
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin-profile"] });
+		},
+	});
+}
+
+// POST upload avatar admin via /auth/profile/avatar
+export function useUploadAdminAvatar() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (file: File) => {
+			const formData = new FormData();
+			formData.append("avatar", file);
+			const { data } = await api.post("/auth/profile/avatar", formData, {
+				headers: { "Content-Type": "multipart/form-data" },
+			});
+			return data.data as { avatar_url: string };
+		},
+		onSuccess: ({ avatar_url }) => {
+			queryClient.setQueryData<AdminProfile>(["admin-profile"], (old) =>
+				old ? { ...old, avatar_url } : old
+			);
+		},
+	});
+}
+
+// DELETE hapus avatar admin via /auth/profile/avatar
+export function useDeleteAdminAvatar() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async () => {
+			const { data } = await api.delete("/auth/profile/avatar");
+			return data;
+		},
+		onSuccess: () => {
+			queryClient.setQueryData<AdminProfile>(["admin-profile"], (old) =>
+				old ? { ...old, avatar_url: null } : old
+			);
 		},
 	});
 }

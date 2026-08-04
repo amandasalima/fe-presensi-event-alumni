@@ -1,18 +1,22 @@
 "use client";
 
+import { useRef } from "react";
 import {
+	Camera,
 	CheckCircle2,
 	Edit3,
 	Eye,
 	EyeOff,
+	Loader2,
 	PlugZap,
 	Save,
 	ShieldAlert,
+	Trash2,
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
 import { FormInput } from "@/app/components/FormControl";
-import { getApiErrorMessage } from "@/lib/api";
+import { getApiErrorMessage, getImageUrl } from "@/lib/api";
 import { useSettingsPage } from "./_hooks/useSettingsPage";
 import { DEFAULT_FONNTE_API_URL } from "./_utils/waConfig";
 
@@ -72,6 +76,7 @@ export default function SettingsPage() {
 	const {
 		canEditWA,
 		confirmPassword,
+		deleteAvatar,
 		effectiveApiToken,
 		effectiveApiUrl,
 		effectiveEmail,
@@ -114,12 +119,15 @@ export default function SettingsPage() {
 		testingWA,
 		updatePassword,
 		updateProfile,
+		uploadAvatar,
 		waConfig,
 		waConfigError,
 		waError,
 		waFormError,
 		waSuccess,
 	} = useSettingsPage();
+
+	const avatarFileRef = useRef<HTMLInputElement>(null);
 
 	return (
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
@@ -618,12 +626,70 @@ export default function SettingsPage() {
 						<div className="space-y-8">
 							{/* Avatar Card */}
 							<div className="bg-white rounded-3xl p-8 shadow-sm text-center">
-								<div className="w-28 h-28 rounded-full bg-[#2D7EA0] hover:bg-[#236175] text-white flex items-center justify-center text-4xl font-bold mb-5 mx-auto">
-									{loadingProfile
-										? "..."
-										: (profile?.name?.[0]?.toUpperCase() ?? "A")}
+								<div className="relative inline-block">
+									{profile?.avatar_url ? (
+										<img
+											src={getImageUrl(profile.avatar_url)}
+											alt={profile?.name ?? "Admin"}
+											className="w-28 h-28 rounded-full object-cover ring-4 ring-[#7AB2B2]/30 mx-auto"
+										/>
+									) : (
+										<div className="w-28 h-28 rounded-full bg-[#2D7EA0] text-white flex items-center justify-center text-4xl font-bold mx-auto ring-4 ring-[#7AB2B2]/30">
+											{loadingProfile
+												? "..."
+												: (profile?.name?.[0]?.toUpperCase() ?? "A")}
+										</div>
+									)}
+
+									<button
+										type="button"
+										onClick={() => avatarFileRef.current?.click()}
+										disabled={uploadAvatar.isPending || deleteAvatar.isPending}
+										className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#2D7EA0] text-white flex items-center justify-center shadow-md transition hover:bg-[#236175] active:scale-95 disabled:opacity-70"
+									>
+										{uploadAvatar.isPending ? (
+											<Loader2 size={16} className="animate-spin" />
+										) : (
+											<Camera size={16} />
+										)}
+									</button>
+
+									{profile?.avatar_url && (
+										<button
+											type="button"
+											onClick={() => deleteAvatar.mutate()}
+											disabled={uploadAvatar.isPending || deleteAvatar.isPending}
+											className="absolute top-0 right-0 w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md transition hover:bg-red-600 active:scale-95 disabled:opacity-70"
+										>
+											{deleteAvatar.isPending ? (
+												<Loader2 size={16} className="animate-spin" />
+											) : (
+												<Trash2 size={16} />
+											)}
+										</button>
+									)}
+
+									<input
+										ref={avatarFileRef}
+										type="file"
+										accept="image/*"
+										className="hidden"
+										onChange={(e) => {
+											const file = e.target.files?.[0];
+											if (file) {
+												if (file.size > 2 * 1024 * 1024) {
+													alert("Ukuran foto maksimal 2 MB. Silakan pilih foto yang lebih kecil.");
+													e.target.value = "";
+													return;
+												}
+												uploadAvatar.mutate(file);
+											}
+											e.target.value = "";
+										}}
+									/>
 								</div>
-								<h2 className="text-2xl font-bold text-gray-800">
+
+								<h2 className="text-2xl font-bold text-gray-800 mt-5">
 									{loadingProfile
 										? "Memuat..."
 										: (profile?.name ?? "Administrator")}
@@ -636,9 +702,6 @@ export default function SettingsPage() {
 								<span className="inline-block mt-3 text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-3 py-1 rounded-full font-medium">
 									Administrator
 								</span>
-								<button className="mt-5 w-full px-6 py-3 border-2 border-[#3EBDAF] text-[#2D7EA0] rounded-2xl font-semibold hover:bg-[#7AB2B2]/10 transition-colors text-sm">
-									Ubah Foto Profil
-								</button>
 							</div>
 
 						</div>

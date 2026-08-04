@@ -87,6 +87,12 @@ function AvatarSection({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 2 * 1024 * 1024) {
+      onToast("error", "Ukuran foto maksimal 2 MB. Silakan pilih foto yang lebih kecil.");
+      e.target.value = "";
+      return;
+    }
+
     uploadAvatar(file, {
       onSuccess: () => onToast("success", "Foto profil berhasil diperbarui"),
       onError: (err: unknown) => {
@@ -96,6 +102,7 @@ function AvatarSection({
         );
       },
     });
+    e.target.value = "";
   }
 
   function handleDeleteAvatar() {

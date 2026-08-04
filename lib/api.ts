@@ -14,18 +14,26 @@ const BACKEND_HOST = API_BASE_URL.replace("/api", "");
 
 export function getImageUrl(path?: string | null) {
 	if (!path) return "";
+
+	// Use only the origin (protocol + host) to avoid subfolder prefixes
+	// e.g. API_BASE_URL "https://ppalfalah.id/.ppalfalah.id/api" → origin "https://ppalfalah.id"
+	let origin: string;
+	try {
+		origin = new URL(API_BASE_URL).origin;
+	} catch {
+		origin = BACKEND_HOST;
+	}
+
 	if (path.startsWith("http://") || path.startsWith("https://")) {
-		// Extract pathname from absolute URL and reconstruct with BACKEND_HOST
-		// This handles cases where backend's APP_URL differs from how frontend reaches it
 		try {
 			const url = new URL(path);
-			return `${BACKEND_HOST}${url.pathname}`;
+			return `${origin}${url.pathname}`;
 		} catch {
 			return path;
 		}
 	}
-	if (path.startsWith("/")) return `${BACKEND_HOST}${path}`;
-	return `${BACKEND_HOST}/${path}`;
+	if (path.startsWith("/")) return `${origin}${path}`;
+	return `${origin}/${path}`;
 }
 
 function getAuthToken() {

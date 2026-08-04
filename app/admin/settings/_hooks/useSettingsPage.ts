@@ -8,6 +8,8 @@ import {
 	useUpdateAdminProfile,
 	useUpdatePassword,
 	useUpdateWAConfig,
+	useUploadAdminAvatar,
+	useDeleteAdminAvatar,
 	useWAConfig,
 	type WATestResponse,
 } from "@/hooks/admin/useSetting";
@@ -44,6 +46,8 @@ export function useSettingsPage() {
 	const updatePassword = useUpdatePassword();
 	const saveWAConfig = useUpdateWAConfig();
 	const testWAConnection = useTestWAConnection();
+	const uploadAvatar = useUploadAdminAvatar();
+	const deleteAvatar = useDeleteAdminAvatar();
 
 	const readOnlyConnected =
 		Boolean(waConfig?.is_configured && waConfig?.connected) && !isEditingWA;
@@ -211,6 +215,7 @@ export function useSettingsPage() {
 	return {
 		canEditWA,
 		confirmPassword,
+		deleteAvatar,
 		effectiveApiToken,
 		effectiveApiUrl,
 		effectiveEmail,
@@ -253,6 +258,7 @@ export function useSettingsPage() {
 		testingWA,
 		updatePassword,
 		updateProfile,
+		uploadAvatar,
 		waConfig,
 		waConfigError,
 		waError,

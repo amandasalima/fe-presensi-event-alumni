@@ -35,6 +35,36 @@ body {
   overflow-x: hidden;
 }
 
+/* Cursor pointer untuk elemen interaktif */
+button,
+a,
+[role="button"],
+[role="link"],
+[onclick],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+label[for],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Cursor default untuk disabled elements */
+button:disabled,
+[disabled],
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+/* Cursor pointer untuk elemen dengan event handler */
+[class*="onClick"],
+[class*="hover:"] {
+  cursor: pointer;
+}
+
 .qr-scanner-shell::after {
   content: "";
   position: absolute;

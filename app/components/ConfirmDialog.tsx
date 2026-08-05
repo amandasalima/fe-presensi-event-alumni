@@ -59,7 +59,7 @@ export default function ConfirmDialog({
 						type="button"
 						onClick={onCancel}
 						disabled={loading}
-						className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
+						className="flex-1 rounded-xl border-2 border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:border-red-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
 					>
 						{cancelLabel}
 					</button>

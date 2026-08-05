@@ -494,7 +494,7 @@ export default function DashboardPage() {
 			<AdminSidebar />
 
 			<div className="flex-1 ml-56 flex flex-col h-screen">
-				<AdminHeader title="Dasbor" />
+				<AdminHeader title="Dasboard" />
 
 				<main className="flex-1 overflow-y-auto p-5">
 					{/* ── Stat Cards ── */}

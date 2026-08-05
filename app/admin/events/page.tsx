@@ -689,7 +689,7 @@ function CategoryFormModal({
 							type="button"
 							onClick={onClose}
 							disabled={isPending}
-							className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
+							className="rounded-xl border-2 border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:border-red-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
 						>
 							Batal
 						</button>
@@ -1159,7 +1159,7 @@ function EventFormModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+							className="flex-1 border-2 border-red-200 bg-white text-red-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-50 hover:border-red-300 transition-colors active:scale-[0.98]"
 						>
 							Batal
 						</button>
@@ -1489,7 +1489,7 @@ function BroadcastModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+							className="px-5 py-2.5 rounded-xl border-2 border-red-200 bg-white text-red-600 text-sm font-semibold hover:bg-red-50 hover:border-red-300 transition-colors active:scale-[0.98]"
 						>
 							Batal
 						</button>

@@ -424,7 +424,7 @@ export default function AlumniProfilePage() {
             <button
               type="button"
               onClick={cancelEdit}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50 border-2 border-red-200 hover:bg-red-100 hover:border-red-300 transition active:scale-[0.98]"
             >
               <X size={13} />
               Batal

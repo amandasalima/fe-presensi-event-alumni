@@ -155,7 +155,7 @@ function TableSkeleton() {
 	return (
 		<>
 			{[1, 2, 3, 4, 5].map((i) => (
-				<tr key={i} className="border-b animate-pulse">
+				<tr key={i} className="border-b border-gray-200 animate-pulse">
 					{[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
 						<td key={j} className="p-5">
 							<div className="h-4 bg-gray-100 rounded w-3/4" />
@@ -325,10 +325,11 @@ function EditUserModal({
 				<div className="p-6 border-t border-gray-100 flex gap-3">
 					<button
 						onClick={onClose}
-						className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+						className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center active:scale-[0.98]"
 					>
 						Batal
 					</button>
+
 					<button
 						onClick={() => onSubmit(form)}
 						disabled={loading}
@@ -394,7 +395,7 @@ function UserStatusActions({
 					onRequest({ user, status: "inactive", action: "deactivate" })
 				}
 				disabled={isLoading}
-				className={`${buttonClass} border-gray-200 text-gray-600 hover:bg-gray-50`}
+				className={`${buttonClass} border-gray-200 text-gray-600 hover:bg-gray-200`}
 			>
 				Nonaktifkan
 			</button>
@@ -585,8 +586,8 @@ export default function UsersPage() {
 									<button
 										key={format}
 										onClick={() => handleExport(format)}
-									disabled={isLoading || totalFilteredUsers === 0}
-										className="px-4 py-2 border-2 border-[#3EBDAF] rounded-xl text-[#2D7EA0] text-sm font-semibold hover:bg-[#7AB2B2]/10 disabled:opacity-50 disabled:hover:bg-transparent transition-colors flex items-center gap-2"
+										disabled={isLoading || totalFilteredUsers === 0}
+										className="flex items-center gap-2 rounded-xl bg-[#2D7EA0] px-4 py-2 text-sm font-semibold text-white transition-all hover:brightness-110 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 disabled:hover:shadow-none"
 									>
 										<Download size={15} strokeWidth={2.5} />
 										{format === "excel" ? "Excel" : "PDF"}
@@ -658,7 +659,7 @@ export default function UsersPage() {
 											type="button"
 											onClick={clearSelectedUsers}
 											disabled={bulkActionLoading}
-											className="rounded-lg px-3 py-2 text-xs font-semibold text-gray-500 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 transition hover:bg-red-100 hover:border-red-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Batal Pilih
 										</button>
@@ -774,7 +775,7 @@ export default function UsersPage() {
 											return (
 												<tr
 													key={user.id}
-													className={`border-b transition-colors hover:bg-gray-50 ${
+													className={`border-b border-gray-200 transition-colors hover:bg-gray-50 ${
 														selectedUserIds.has(user.id) ? "bg-teal-50/60" : ""
 													}`}
 												>

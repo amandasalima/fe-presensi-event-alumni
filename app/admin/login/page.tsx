@@ -116,9 +116,9 @@ const AdminLogin = () => {
 								/>
 							</svg>
 						</span>
-						Dasbor Admin
+						Dasboard Admin
 					</h1>
-					<p className="mt-1 text-[#A8D5D5] text-xs">Aplikasi Presensi</p>
+					<p className="mt-1 text-[#A8D5D5] text-xs">Aplikasi Kehadiran Kegiatan</p>
 				</div>
 
 				<div>
@@ -133,12 +133,12 @@ const AdminLogin = () => {
 							{
 								icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z",
 								title: "Kelola Event",
-								desc: "Buat dan kelola event dengan mudah",
+								desc: "Buat dan kelola kegiatan dengan mudah",
 							},
 							{
 								icon: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z",
 								title: "Buat QR Code",
-								desc: "QR Code unik untuk setiap event",
+								desc: "QR Code unik untuk setiap kegiatan",
 							},
 							{
 								icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
@@ -147,8 +147,8 @@ const AdminLogin = () => {
 							},
 							{
 								icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
-								title: "Pesan Massal WhatsApp",
-								desc: "Kirim notifikasi kepada peserta melalui WA",
+								title: "Buat Pesan WhatsApp",
+								desc: "Buat pesan WA kepada peserta",
 							},
 						].map((item, i) => (
 							<li
@@ -375,17 +375,17 @@ const AdminLogin = () => {
 									Memproses...
 								</>
 							) : (
-								"Masuk ke Dasbor Admin"
+								"Masuk ke Dasboard Admin"
 							)}
 						</button>
 
 						<div className="text-center text-gray-500 text-xs">
 							<p>atau</p>
 							<Link
-								href="/alumni/login"
+								href="/"
 								className="inline-block mt-1 text-[#2D7EA0] hover:text-[#236175] hover:underline text-xs transition-colors"
 							>
-								← Kembali ke Halaman Masuk Alumni
+								← Kembali ke Halaman Utama
 							</Link>
 						</div>
 					</form>
@@ -394,7 +394,7 @@ const AdminLogin = () => {
 					Jika Anda bukan administrator, silakan masuk sebagai alumni
 					</p>
 					<p className="mt-1 text-center text-gray-300 text-xs">
-						Dilindungi dengan enkripsi ujung ke ujung | Dasbor Admin v1.0.0
+						Dilindungi dengan enkripsi end-to-end | Dasboard Admin v1.0.0
 					</p>
 				</div>
 			</div>

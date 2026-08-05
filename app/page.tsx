@@ -47,7 +47,7 @@ const flow = [
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-cyan-50 via-white to-teal-50 text-slate-800">
+    <div className="min-h-screen bg-gradient-to-b from-cyan-50 via-white to-teal-50 text-slate-800">
       <style>{`
         @keyframes landing-float {
           0%, 100% { transform: translate3d(0, 0, 0); }
@@ -68,22 +68,22 @@ export default function Home() {
         }
       `}</style>
 
-      <div className="pointer-events-none absolute -left-24 top-28 h-72 w-72 rounded-full bg-cyan-200/35 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-72 h-80 w-80 rounded-full bg-teal-200/40 blur-3xl" />
+      <div className="pointer-events-none fixed -left-24 top-28 h-72 w-72 rounded-full bg-cyan-200/35 blur-3xl" />
+      <div className="pointer-events-none fixed -right-24 top-72 h-80 w-80 rounded-full bg-teal-200/40 blur-3xl" />
 
-      <header className="relative z-20 border-b border-white/70 bg-white/75 backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/70 bg-white/75 backdrop-blur-xl shadow-sm">
         <nav
           aria-label="Navigasi utama"
           className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8 lg:px-10"
         >
-          <Link href="/" className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-200/70">
               <ScanLine size={21} aria-hidden="true" />
             </span>
             <span className="font-bold tracking-tight text-slate-900">
               Presensi <span className="text-teal-600">Alumni</span>
             </span>
-          </Link>
+          </div>
 
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 sm:flex">
             <a href="#fitur" className="transition hover:text-teal-600">Fitur</a>
@@ -102,7 +102,7 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:pb-28 lg:pt-28">
+        <section className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 pb-8 pt-12 sm:px-8 sm:pt-14 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:pb-28 lg:pt-24">
           <div className="landing-enter relative z-10">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-4 py-2 text-xs font-semibold text-teal-700 shadow-sm">
               <Sparkles size={15} aria-hidden="true" />
@@ -187,7 +187,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="masuk" className="scroll-mt-24 px-5 py-20 sm:px-8 lg:px-10">
+        <section id="masuk" className="scroll-mt-24 px-5 py-8 sm:px-8 lg:px-10">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-600">Pilih akses Anda</p>

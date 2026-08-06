@@ -1,16 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Info, Plus, Trash2 } from "lucide-react";
+import { Clipboard, ClipboardCheck, Info, MessageCircle, Plus, Trash2 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
-import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { FormInput, FormSelect, FormTextarea } from "@/app/components/FormControl";
-import { ApiError, getApiErrorMessage } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api";
 import {
 	type EventBroadcastTarget,
 	useEventBroadcastPreview,
-	useSendEventBroadcast,
 } from "@/hooks/admin/useBroadcast";
 import { useEvents, type Event } from "@/hooks/admin/useEvents";
 import {
@@ -52,42 +50,6 @@ function formatEventDate(event: Event | null) {
 	});
 }
 
-type BroadcastDebugDetail = {
-	totalSent?: number;
-	fonnte?: unknown;
-	senderStatus?: unknown;
-	blockedReason?: unknown;
-};
-
-function getBroadcastDebugDetail(source: unknown): BroadcastDebugDetail | null {
-	const payload =
-		source instanceof ApiError
-			? (source.data as Record<string, unknown> | null)
-			: (source as Record<string, unknown> | null);
-
-	if (!payload || typeof payload !== "object") return null;
-
-	const data =
-		payload.data && typeof payload.data === "object"
-			? (payload.data as Record<string, unknown>)
-			: {};
-	const detail = {
-		fonnte: data.fonnte ?? payload.fonnte,
-		senderStatus: data.sender_status ?? payload.sender_status,
-		blockedReason: data.blocked_reason ?? payload.blocked_reason,
-	};
-
-	if (
-		detail.fonnte === undefined &&
-		detail.senderStatus === undefined &&
-		detail.blockedReason === undefined
-	) {
-		return null;
-	}
-
-	return detail;
-}
-
 const targetDescriptions: Record<
 	EventBroadcastTarget,
 	{ label: string; description: string }
@@ -114,18 +76,9 @@ export default function BroadcastPage() {
 	const [target, setTarget] = useState<EventBroadcastTarget>("all");
 	const [manualNumbers, setManualNumbers] = useState([""]);
 	const [customMessage, setCustomMessage] = useState("");
-	const [successMessage, setSuccessMessage] = useState("");
-	const [errorMessage, setErrorMessage] = useState("");
-	const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
-	const [sendDetail, setSendDetail] = useState<{
-		totalSent: number;
-		fonnte?: unknown;
-		senderStatus?: unknown;
-		blockedReason?: unknown;
-	} | null>(null);
+	const [copyStatus, setCopyStatus] = useState<"message" | "numbers" | "" >("");
 
 	const { data: events = [], isLoading: loadingEvents } = useEvents();
-	const sendBroadcast = useSendEventBroadcast();
 	const selectedEvent =
 		events.find((event: Event) => event.id === selectedEventId) ?? null;
 	const numbersInput = useMemo(() => manualNumbers.join("\n"), [manualNumbers]);
@@ -151,16 +104,32 @@ export default function BroadcastPage() {
 			? parsedNumbers.validNumbers.length
 			: (previewData?.total_targets ?? 0);
 	const isMessageTooLong = customMessage.length > 1000;
-	const isSubmitDisabled =
-		!selectedEventId ||
-		sendBroadcast.isPending ||
-		isMessageTooLong ||
-		(target === "custom" && parsedNumbers.validNumbers.length === 0);
+	const messageToSend = customMessage.trim() || previewMessage;
 
-	const resetResult = () => {
-		setSuccessMessage("");
-		setErrorMessage("");
-		setSendDetail(null);
+	const resetResult = () => setCopyStatus("");
+
+	const copyToClipboard = async (
+		value: string,
+		status: "message" | "numbers",
+	) => {
+		if (!value) return;
+
+		try {
+			await navigator.clipboard.writeText(value);
+			setCopyStatus(status);
+			window.setTimeout(() => setCopyStatus(""), 2500);
+		} catch {
+			setCopyStatus("");
+		}
+	};
+
+	const openWhatsApp = (phoneNumber?: string) => {
+		if (!messageToSend) return;
+		const normalizedNumber = phoneNumber?.replace(/\D/g, "");
+		const baseUrl = normalizedNumber
+			? `https://wa.me/${normalizedNumber}`
+			: "https://wa.me/";
+		window.open(`${baseUrl}?text=${encodeURIComponent(messageToSend)}`, "_blank", "noopener,noreferrer");
 	};
 
 	const updateManualNumber = (index: number, value: string) => {
@@ -182,60 +151,6 @@ export default function BroadcastPage() {
 			const next = current.filter((_, itemIndex) => itemIndex !== index);
 			return next.length > 0 ? next : [""];
 		});
-	};
-
-	const handleSubmit = () => {
-		resetResult();
-
-		if (!selectedEventId || isSubmitDisabled) return;
-
-		setIsSendConfirmOpen(true);
-	};
-
-	const confirmSendBroadcast = () => {
-		if (!selectedEventId || isSubmitDisabled) return;
-
-		resetResult();
-		sendBroadcast.mutate(
-			{
-				eventId: selectedEventId,
-				payload: {
-					target,
-					...(target === "custom"
-						? { numbers: parsedNumbers.validNumbers }
-						: {}),
-					custom_message: customMessage.trim() || previewMessage || null,
-				},
-			},
-			{
-				onSuccess: (response) => {
-					setIsSendConfirmOpen(false);
-					const totalSent = response.data?.total_sent ?? 0;
-					setSuccessMessage(
-						`${response.message || "Pesan massal berhasil dikirim"} Total terkirim: ${totalSent}.`,
-					);
-					setSendDetail({
-						totalSent,
-						fonnte: response.data?.fonnte ?? response.fonnte,
-						senderStatus:
-							response.data?.sender_status ?? response.sender_status,
-						blockedReason:
-							response.data?.blocked_reason ?? response.blocked_reason,
-					});
-				},
-				onError: (error) => {
-					setIsSendConfirmOpen(false);
-					setErrorMessage(getApiErrorMessage(error, "Gagal mengirim pesan massal"));
-					const detail = getBroadcastDebugDetail(error);
-					if (detail) {
-						setSendDetail({
-							totalSent: 0,
-							...detail,
-						});
-					}
-				},
-			},
-		);
 	};
 
 	return (
@@ -285,27 +200,12 @@ export default function BroadcastPage() {
 						<div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
 							<div>
 								<h2 className="text-base font-bold text-gray-800">
-									Kirim Pesan Massal Event
+									Pesan WhatsApp Event
 								</h2>
 								<p className="text-xs text-gray-400">
-									Pratinjau dan pengiriman menggunakan endpoint admin event.
+									Mode kirim manual: pesan tidak akan dikirim otomatis oleh sistem.
 								</p>
 							</div>
-							<button
-								type="button"
-								onClick={handleSubmit}
-								disabled={isSubmitDisabled}
-								className="flex items-center gap-2 rounded-xl bg-[#2D7EA0] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#236175] disabled:cursor-not-allowed disabled:opacity-60"
-							>
-								{sendBroadcast.isPending ? (
-									<>
-										<span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-										Mengirim...
-									</>
-								) : (
-									"Kirim Pesan Massal"
-								)}
-							</button>
 						</div>
 
 						<div className="space-y-5 p-5">
@@ -419,6 +319,22 @@ export default function BroadcastPage() {
 											? `, tidak valid: ${parsedNumbers.invalidCount}`
 											: ""}
 									</p>
+									{parsedNumbers.validNumbers.length > 0 && (
+										<div className="mt-3 flex flex-wrap gap-2">
+											{parsedNumbers.validNumbers.map((number) => (
+												<button
+													key={number}
+													type="button"
+													onClick={() => openWhatsApp(number)}
+													disabled={!messageToSend}
+													className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
+												>
+													<MessageCircle className="h-3.5 w-3.5" />
+													Buka chat {number}
+												</button>
+											))}
+										</div>
+									)}
 								</div>
 							)}
 
@@ -478,62 +394,41 @@ export default function BroadcastPage() {
 																)
 													: previewMessage || "Pratinjau belum tersedia"}
 										</div>
+										<div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+											Pesan dapat diedit melalui kolom <span className="font-medium">Pesan Khusus</span>. Setelah itu salin atau buka WhatsApp; sistem tidak mengirim pesan secara otomatis.
+										</div>
+										<div className="mt-3 flex flex-wrap gap-2">
+											<button
+												type="button"
+												onClick={() => copyToClipboard(messageToSend, "message")}
+												disabled={!messageToSend}
+												className="inline-flex items-center gap-2 rounded-xl bg-[#2D7EA0] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#236175] disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												{copyStatus === "message" ? <ClipboardCheck className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+												{copyStatus === "message" ? "Pesan tersalin" : "Salin Pesan"}
+											</button>
+											<button
+												type="button"
+												onClick={() => openWhatsApp()}
+												disabled={!messageToSend}
+												className="inline-flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												<MessageCircle className="h-4 w-4" />
+												Buka WhatsApp
+											</button>
+											{target === "custom" && (
+												<button
+													type="button"
+													onClick={() => copyToClipboard(parsedNumbers.validNumbers.join("\n"), "numbers")}
+													disabled={parsedNumbers.validNumbers.length === 0}
+													className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+												>
+													{copyStatus === "numbers" ? <ClipboardCheck className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+													{copyStatus === "numbers" ? "Nomor tersalin" : "Salin Nomor"}
+												</button>
+											)}
+										</div>
 									</div>
-
-									{successMessage && (
-										<div className="space-y-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-											<p>{successMessage}</p>
-											<p className="text-xs">
-												Total sent: {sendDetail?.totalSent ?? 0}
-											</p>
-											{sendDetail?.fonnte !== undefined && (
-												<details className="text-xs">
-													<summary className="cursor-pointer font-medium">
-														Detail teknis Fonnte
-													</summary>
-													<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
-														{JSON.stringify(sendDetail.fonnte, null, 2)}
-													</pre>
-												</details>
-											)}
-											{sendDetail?.senderStatus !== undefined && (
-												<p className="text-xs">
-											Status pengirim: {String(sendDetail.senderStatus)}
-												</p>
-											)}
-											{sendDetail?.blockedReason !== undefined && (
-												<p className="text-xs">
-													Blocked reason: {String(sendDetail.blockedReason)}
-												</p>
-											)}
-										</div>
-									)}
-
-									{errorMessage && (
-										<div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-											<p>{errorMessage}</p>
-											{sendDetail?.senderStatus !== undefined && (
-												<p className="text-xs">
-											Status pengirim: {String(sendDetail.senderStatus)}
-												</p>
-											)}
-											{sendDetail?.blockedReason !== undefined && (
-												<p className="text-xs">
-													Blocked reason: {String(sendDetail.blockedReason)}
-												</p>
-											)}
-											{sendDetail?.fonnte !== undefined && (
-												<details className="text-xs">
-													<summary className="cursor-pointer font-medium">
-														Detail teknis Fonnte
-													</summary>
-													<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 p-3 text-gray-600">
-														{JSON.stringify(sendDetail.fonnte, null, 2)}
-													</pre>
-												</details>
-											)}
-										</div>
-									)}
 								</div>
 							</div>
 						</div>
@@ -545,18 +440,6 @@ export default function BroadcastPage() {
 				</main>
 			</div>
 
-			<ConfirmDialog
-				isOpen={isSendConfirmOpen}
-				title="Kirim pesan massal WhatsApp?"
-				message={`Target: ${targetDescriptions[target].label}. Jumlah penerima: ${estimatedTargets}. Event: ${
-					selectedEvent?.event_title ?? "-"
-				}.`}
-				confirmLabel="Kirim"
-				tone="default"
-				loading={sendBroadcast.isPending}
-				onCancel={() => setIsSendConfirmOpen(false)}
-				onConfirm={confirmSendBroadcast}
-			/>
 		</div>
 	);
 }

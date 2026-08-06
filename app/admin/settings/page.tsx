@@ -73,6 +73,8 @@ function SectionCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
+	// WhatsApp/Fonnte UI is temporarily hidden while the integration is paused.
+	const showWhatsAppSettings = false;
 	const {
 		canEditWA,
 		confirmPassword,
@@ -138,7 +140,7 @@ export default function SettingsPage() {
 
 				<main className="flex-1 overflow-y-auto p-8">
 					{/* ── Stat Cards ── */}
-					<div className="grid grid-cols-3 gap-6 mb-8">
+					<div className="grid grid-cols-2 gap-6 mb-8">
 						{[
 							{
 								label: "Status Sistem",
@@ -158,15 +160,19 @@ export default function SettingsPage() {
 								sub: "MySQL aktif",
 								color: "text-[#2D7EA0]",
 							},
-							{
-								label: "WhatsApp API",
-								accent: "border-purple-400",
-								value: loadingStatus
-									? "..."
-									: getStatusText(status?.whatsapp_api ?? "Connected"),
-								sub: "API terhubung",
-								color: "text-green-600",
-							},
+							...(showWhatsAppSettings
+								? [
+									{
+										label: "WhatsApp API",
+										accent: "border-purple-400",
+										value: loadingStatus
+											? "..."
+											: getStatusText(status?.whatsapp_api ?? "Connected"),
+										sub: "API terhubung",
+										color: "text-green-600",
+									},
+									]
+								: []),
 						].map((s, i) => (
 							<div
 								key={i}
@@ -328,7 +334,7 @@ export default function SettingsPage() {
 							</SectionCard>
 
 							{/* Konfigurasi WhatsApp API */}
-							<SectionCard
+							{showWhatsAppSettings && <SectionCard
 								title="Konfigurasi Pesan Massal WhatsApp"
 								desc="Atur koneksi Fonnte untuk pesan massal WhatsApp"
 							>
@@ -619,7 +625,7 @@ export default function SettingsPage() {
 									{waSuccess ? "berhasil" : ""}
 									</div>
 								</div>
-							</SectionCard>
+							</SectionCard>}
 						</div>
 
 						{/* ── Right Column ── */}

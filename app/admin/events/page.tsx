@@ -1213,13 +1213,11 @@ function BroadcastModal({
 		parsedNumbers,
 		estimatedTargets,
 		isMessageTooLong,
-		isSubmitDisabled,
 		updateManualNumber,
 		addManualNumber,
 		removeManualNumber,
 		setCustomMessage,
 		handleTargetChange,
-		handleSubmit,
 		confirmSubmit,
 		cancelConfirmSubmit,
 		targetLabel,
@@ -1248,7 +1246,7 @@ function BroadcastModal({
 					</button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="p-6 space-y-5">
+				<form onSubmit={(formEvent) => formEvent.preventDefault()} className="p-6 space-y-5">
 					<div className="grid grid-cols-3 gap-4">
 						<StatCard
 							label="Alumni Ber-HP"
@@ -1494,18 +1492,13 @@ function BroadcastModal({
 							Batal
 						</button>
 						<button
-							type="submit"
-							disabled={isSubmitDisabled}
-							className="px-5 py-2.5 rounded-xl bg-[#2D7EA0] hover:bg-[#236175] text-white text-sm font-medium transition-colors disabled:opacity-60 flex items-center gap-2"
+							type="button"
+							onClick={() => {
+								window.location.href = "/admin/broadcast";
+							}}
+							className="px-5 py-2.5 rounded-xl bg-[#2D7EA0] hover:bg-[#236175] text-white text-sm font-medium transition-colors"
 						>
-							{sendEventBroadcast.isPending ? (
-								<>
-									<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-									Mengirim...
-								</>
-							) : (
-								"Kirim Pesan Massal"
-							)}
+							Buka Pesan Manual
 						</button>
 					</div>
 				</form>

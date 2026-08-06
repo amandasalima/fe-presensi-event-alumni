@@ -31,11 +31,18 @@ export async function getBroadcastPreview(
 export async function sendBroadcast(
 	eventId: number,
 	payload: EventBroadcastPayload,
-) {
-	return (await fetchAPI(`/admin/events/${eventId}/broadcast`, {
-		method: "POST",
-		body: JSON.stringify(payload),
-	})) as EventBroadcastResponse;
+): Promise<EventBroadcastResponse> {
+	void eventId;
+	void payload;
+	// WhatsApp API is temporarily disabled. Keep the original request here so it
+	// can be restored intentionally after the backend integration is re-enabled.
+	// return (await fetchAPI(`/admin/events/${eventId}/broadcast`, {
+	// 	method: "POST",
+	// 	body: JSON.stringify(payload),
+	// }));
+	throw new Error(
+		"Pengiriman otomatis WhatsApp sedang dinonaktifkan. Gunakan kirim manual.",
+	);
 }
 
 export function getBroadcasts() {

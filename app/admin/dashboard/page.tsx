@@ -23,7 +23,6 @@ import {
 	QrCode,
 	Server,
 	Users,
-	Wifi,
 	X,
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
@@ -629,11 +628,6 @@ export default function DashboardPage() {
 										label: "QR Generator",
 										status: "Active",
 										icon: <QrCode size={14} />,
-									},
-									{
-										label: "WhatsApp API",
-										status: "Connected",
-										icon: <Wifi size={14} />,
 									},
 									{
 										label: "Database",

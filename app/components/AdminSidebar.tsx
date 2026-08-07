@@ -7,7 +7,7 @@ import { stopHeartbeat } from "@/lib/heartbeat";
 
 const menuItems = [
   {
-    name: "Dasboard",
+    name: "Dashboard",
     path: "/admin/dashboard",
     icon: "M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z",
   },
@@ -75,7 +75,7 @@ export default function AdminSidebar() {
           </span>
           <div>
             <h1 className="font-bold text-base">Presensi Kegiatan</h1>
-            <p className="text-xs text-[#7AB2B2]">Dasboard Admin</p>
+            <p className="text-xs text-[#7AB2B2]">Dashboard Admin</p>
           </div>
         </div>
       </div>

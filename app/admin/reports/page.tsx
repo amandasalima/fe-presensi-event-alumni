@@ -100,10 +100,10 @@ export default function ReportsPage() {
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
 			<AdminSidebar />
 
-			<div className="flex-1 ml-56 flex flex-col h-screen">
+			<div className="flex-1 min-w-0 ml-56 flex flex-col h-screen">
 				<AdminHeader title="Kehadiran" />
 
-				<main className="flex-1 overflow-y-auto p-5">
+				<main className="flex-1 min-w-0 overflow-y-auto p-5">
 					{/* ── Stat Cards ── */}
 					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-5">
 						{[
@@ -156,8 +156,7 @@ export default function ReportsPage() {
 					</div>
 
 					{/* ── Pilih Event ── */}
-					<section className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100 mb-5">
-						<div className="flex items-center gap-3 mb-4">
+					<section className="min-w-0 bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100 mb-5">						<div className="flex items-center gap-3 mb-4">
 							<Icon3D variant="teal" size="md">
 								<CalendarDays size={20} strokeWidth={2.5} />
 							</Icon3D>
@@ -237,8 +236,8 @@ export default function ReportsPage() {
 								</div>
 
 								{/* Detail table */}
-								<div className="overflow-x-auto">
-									<table className="w-full text-sm">
+								<div className="w-full max-w-full overflow-x-auto">
+  									<table className="w-full min-w-[900px] text-sm">
 										<thead>
 											<tr className="bg-gray-50 border-b border-gray-100">
 												{[
@@ -341,8 +340,8 @@ export default function ReportsPage() {
 								</p>
 							</div>
 						</div>
-						<div className="overflow-x-auto">
-							<table className="w-full text-sm">
+						<div className="w-full max-w-full overflow-x-auto">
+  							<table className="w-full min-w-[900px] text-sm">
 								<thead>
 									<tr className="bg-[#7AB2B2]/10">
 										{[

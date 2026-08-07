@@ -497,24 +497,22 @@ export default function GenerateQRPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Masa Berlaku QR Code
                 </label>
-                <div className="relative">
-                  <FormSelect
+                <div className="flex items-center gap-3">
+                  <FormInput
+                    type="number"
+                    min={1}
+                    max={30}
                     value={durationDays}
                     onChange={(e) => setDurationDays(Number(e.target.value))}
-                    className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent cursor-pointer disabled:bg-gray-100"
-                  >
-                    <option value={1}>1 Hari</option>
-                    <option value={3}>3 Hari</option>
-                    <option value={7}>7 Hari</option>
-                    <option value={14}>14 Hari (2 Minggu)</option>
-                    <option value={30}>30 Hari (1 Bulan)</option>
-                  </FormSelect>
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    ▾
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent"
+                    required
+                  />
+                  <span className="text-sm text-gray-500 whitespace-nowrap">
+                    Hari
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
-                  QR Code otomatis aktif sejak dibuat dan berlaku selama durasi hari yang dipilih.
+                  Masukkan durasi aktif QR Code dalam satuan hari (1 - 30 hari).
                 </p>
               </div>
 

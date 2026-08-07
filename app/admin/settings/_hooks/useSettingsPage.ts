@@ -66,7 +66,23 @@ export function useSettingsPage() {
 	const testingWA = testWAConnection.isPending;
 
 	const handleSaveProfile = () => {
-		updateProfile.mutate({ name: effectiveName, email: effectiveEmail });
+	const nextName = effectiveName.trim();
+	const nextEmail = effectiveEmail.trim();
+
+	if (!nextName || !nextEmail) return;
+
+	updateProfile.mutate(
+		{
+		name: nextName,
+		email: nextEmail,
+		},
+		{
+		onSuccess: () => {
+			setName(null);
+			setEmail(null);
+		},
+		},
+	);
 	};
 
 	const handleUpdatePassword = () => {

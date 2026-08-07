@@ -103,13 +103,12 @@ export default function ReportsPage() {
 			<div className="flex-1 ml-56 flex flex-col h-screen">
 				<AdminHeader title="Kehadiran" />
 
-				<main className="flex-1 overflow-y-auto p-5 space-y-5">
+				<main className="flex-1 overflow-y-auto p-5">
 					{/* ── Stat Cards ── */}
-					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-5">
 						{[
 							{
 								label: "Total",
-								accent: "border-[#7AB2B2]",
 								value: loadingEvents ? "..." : selesai,
 								sub: "Event Terlaksana",
 								icon: (
@@ -120,7 +119,6 @@ export default function ReportsPage() {
 							},
 							{
 								label: "Peserta",
-								accent: "border-blue-400",
 								value: loadingAttendanceSummaries ? "..." : totalHadir,
 								sub: "Total Kehadiran",
 								icon: (
@@ -131,7 +129,6 @@ export default function ReportsPage() {
 							},
 							{
 								label: "Rate",
-								accent: "border-emerald-400",
 								value:
 									loadingEvents || loadingAttendanceSummaries ? "..." : `${avgRate}%`,
 								sub: "Rata-rata Kehadiran",
@@ -144,58 +141,56 @@ export default function ReportsPage() {
 						].map((s, i) => (
 							<div
 								key={i}
-								className={`bg-white border-l-4 ${s.accent} rounded-2xl p-5 shadow-sm shadow-gray-200/70 flex items-start gap-4`}
+								className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
 							>
-								{s.icon}
-
-								<div className="flex-1">
-									<div className="flex items-center justify-between gap-3">
-										<p className="text-3xl font-bold text-gray-800">
-											{s.value}
-										</p>
-										<span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-											{s.label}
-										</span>
-									</div>
-
-									<p className="text-sm text-gray-400 mt-1">{s.sub}</p>
+								<p className="text-gray-500 text-xs">{s.label}</p>
+								<div className="flex items-center gap-3 mt-1">
+									{s.icon}
+									<h2 className="text-3xl font-bold text-gray-800">
+										{s.value}
+									</h2>
 								</div>
+								<p className="text-gray-400 text-xs mt-1">{s.sub}</p>
 							</div>
 						))}
 					</div>
 
 					{/* ── Pilih Event ── */}
-					<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm shadow-gray-200/70 space-y-4">
-						<div>
-							<h3 className="font-semibold text-gray-800 flex items-center gap-2">
-								<Icon3D variant="teal" size="sm">
-									<CalendarDays size={16} strokeWidth={2.5} />
-								</Icon3D>
-								Pilih Event untuk Detail Kehadiran
-							</h3>
-							<p className="text-sm text-gray-400 mt-1 ml-10">
-								Pilih event atau klik baris event di bawah untuk melihat siapa saja yang hadir saat pemindaian QR
-								kehadiran
-							</p>
+					<section className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100 mb-5">
+						<div className="flex items-center gap-3 mb-4">
+							<Icon3D variant="teal" size="md">
+								<CalendarDays size={20} strokeWidth={2.5} />
+							</Icon3D>
+							<div>
+								<h2 className="text-base font-bold text-gray-800 mb-1">
+									Pilih Event untuk Detail Kehadiran
+								</h2>
+								<p className="text-gray-500 text-xs">
+									Pilih event atau klik baris event di bawah untuk melihat siapa saja yang hadir saat pemindaian QR kehadiran
+								</p>
+							</div>
 						</div>
+
+						<div className="space-y-4">
 
 						<div className="relative">
 							<FormSelect
 								value={selectedEventId ?? ""}
 								onChange={(e) =>
-									setSelectedEventId(Number(e.target.value) || null)
+								setSelectedEventId(Number(e.target.value) || null)
 								}
-								className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+								className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent cursor-pointer"
 							>
 								<option value="">Pilih event...</option>
 
 								{events.map((event: ReportEvent) => (
-									<option key={event.id} value={event.id}>
-										{event.event_title} —{" "}
-										{formatDate(event.event_date ?? event.event_datetime)}
-									</option>
+								<option key={event.id} value={event.id}>
+									{event.event_title} —{" "}
+									{formatDate(event.event_date ?? event.event_datetime)}
+								</option>
 								))}
 							</FormSelect>
+
 							<span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
 								▾
 							</span>
@@ -205,7 +200,7 @@ export default function ReportsPage() {
 						{selectedAttendanceEvent && (
 							<div className="border border-[#7AB2B2]/20 rounded-2xl overflow-hidden">
 								{/* Header detail */}
-								<div className="bg-[#7AB2B2]/10 px-5 py-4 flex items-center justify-between gap-4">
+								<div className="bg-[#7AB2B2]/10 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 									<div>
 										<p className="font-semibold text-teal-800">
 											{selectedAttendanceEvent.event_title}
@@ -227,12 +222,12 @@ export default function ReportsPage() {
 											Total kehadiran: {totalAttendances}
 										</p>
 									</div>
-									<div className="flex gap-2">
+									<div className="flex flex-wrap gap-2">
 										{(["PDF", "Excel"] as const).map((f) => (
 											<button
 												key={f}
 												onClick={() => handleDownload(f)}
-												className="text-xs bg-[#2D7EA0] hover:bg-[#236175] text-white px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+												className="inline-flex items-center gap-1.5 rounded-xl bg-[#2D7EA0] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#236175] hover:shadow-md active:scale-[0.98]"
 											>
 												<Download size={13} strokeWidth={2.5} />
 												{f}
@@ -291,7 +286,7 @@ export default function ReportsPage() {
 															className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
 														>
 															<td className="px-5 py-3 font-medium text-gray-800">
-											{attendance.user?.name ?? `Pengguna #${attendance.user_id}`}
+																	{attendance.user?.name ?? `Pengguna #${attendance.user_id}`}
 															</td>
 
 															<td className="px-5 py-3 text-gray-500">
@@ -328,20 +323,23 @@ export default function ReportsPage() {
 								</div>
 							</div>
 						)}
-					</div>
+						</div>
+					</section>
 
 					{/* ── Semua Event Table ── */}
-					<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm shadow-gray-200/70">
-						<div className="mb-5">
-							<h3 className="font-semibold text-gray-800 flex items-center gap-2">
-								<Icon3D variant="teal" size="sm">
-									<ClipboardList size={16} strokeWidth={2.5} />
-								</Icon3D>
-								Semua Event
-							</h3>
-							<p className="text-sm text-gray-400 mt-1 ml-10">
-								Ringkasan kehadiran semua event yang telah berlangsung
-							</p>
+					<section className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
+						<div className="flex items-center gap-3 mb-4">
+							<Icon3D variant="teal" size="md">
+								<ClipboardList size={20} strokeWidth={2.5} />
+							</Icon3D>
+							<div>
+								<h2 className="text-base font-bold text-gray-800 mb-1">
+									Semua Event
+								</h2>
+								<p className="text-gray-500 text-xs">
+									Ringkasan kehadiran semua event yang telah berlangsung
+								</p>
+							</div>
 						</div>
 						<div className="overflow-x-auto">
 							<table className="w-full text-sm">
@@ -385,7 +383,7 @@ export default function ReportsPage() {
 											return (
 												<tr
 													key={e.id}
-											className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+																											className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
 													onClick={() => setSelectedEventId(e.id)}
 												>
 													<td className="px-5 py-4 font-medium text-gray-800">
@@ -433,11 +431,11 @@ export default function ReportsPage() {
 								</tbody>
 							</table>
 						</div>
-					</div>
+					</section>
 
-					<p className="text-center text-xs text-gray-400 pb-4">
+					<footer className="mt-6 text-center text-gray-400 text-xs pb-4">
 						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
-					</p>
+					</footer>
 				</main>
 			</div>
 

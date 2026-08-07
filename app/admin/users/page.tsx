@@ -587,8 +587,8 @@ export default function UsersPage() {
 										key={format}
 										onClick={() => handleExport(format)}
 										disabled={isLoading || totalFilteredUsers === 0}
-										className="flex items-center gap-2 rounded-xl bg-[#2D7EA0] px-4 py-2 text-sm font-semibold text-white transition-all hover:brightness-110 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 disabled:hover:shadow-none"
-									>
+										className="flex items-center gap-2 rounded-xl bg-[#2D7EA0] px-4 py-2 text-sm font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:brightness-110 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:brightness-100 disabled:hover:shadow-none"
+										>
 										<Download size={15} strokeWidth={2.5} />
 										{format === "excel" ? "Excel" : "PDF"}
 									</button>

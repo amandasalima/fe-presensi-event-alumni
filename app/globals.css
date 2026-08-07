@@ -65,6 +65,20 @@ button:disabled,
   cursor: pointer;
 }
 
+/* Hover effect untuk semua button di admin section */
+.admin-layout button:not(:disabled):not([disabled]) {
+  transition: all 200ms ease-out;
+}
+
+.admin-layout button:not(:disabled):not([disabled]):hover {
+  transform: translateY(-2px);
+}
+
+.admin-layout button:disabled:hover,
+.admin-layout button[disabled]:hover {
+  transform: translateY(0);
+}
+
 .qr-scanner-shell::after {
   content: "";
   position: absolute;

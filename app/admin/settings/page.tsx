@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
-	Camera,
+	MoreVertical,
 	CheckCircle2,
+	XCircle,
 	Edit3,
 	Eye,
 	EyeOff,
@@ -15,40 +16,11 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { FormInput } from "@/app/components/FormControl";
 import { getApiErrorMessage, getImageUrl } from "@/lib/api";
 import { useSettingsPage } from "./_hooks/useSettingsPage";
 import { DEFAULT_FONNTE_API_URL } from "./_utils/waConfig";
-
-// ─── Status Badge ─────────────────────────────────────────────────────────────
-function getStatusText(status: string) {
-	return (
-		{
-			Connected: "Terhubung",
-			Disconnected: "Terputus",
-			Online: "Beroperasi",
-			Offline: "Tidak Beroperasi",
-			Active: "Aktif",
-			Running: "Berjalan",
-		}[status] ?? status
-	);
-}
-
-function StatusBadge({ status }: { status: string }) {
-	const isOk = ["Connected", "Online", "Active", "Running"].includes(status);
-	return (
-		<span
-			className={`px-3 py-1.5 rounded-xl text-sm font-semibold flex items-center gap-1.5 ${
-				isOk ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
-			}`}
-		>
-			<span
-				className={`w-2 h-2 rounded-full ${isOk ? "bg-green-500 animate-pulse" : "bg-red-400"}`}
-			/>
-			{getStatusText(status)}
-		</span>
-	);
-}
 
 // ─── Section Card ─────────────────────────────────────────────────────────────
 function SectionCard({
@@ -61,12 +33,12 @@ function SectionCard({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-			<div className="p-8 bg-[#7AB2B2]/10 border-b">
-				<h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-				<p className="text-gray-500 mt-1 text-sm">{desc}</p>
+		<div className="bg-white rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/70 overflow-hidden">
+			<div className="px-5 py-4 bg-[#7AB2B2]/10 border-b border-[#7AB2B2]/20">
+				<h2 className="text-base font-bold text-gray-800">{title}</h2>
+				<p className="text-xs text-gray-400 mt-1">{desc}</p>
 			</div>
-			<div className="p-8">{children}</div>
+			<div className="p-5">{children}</div>
 		</div>
 	);
 }
@@ -86,21 +58,17 @@ export default function SettingsPage() {
 		effectiveSenderNumber,
 		editingWA,
 		handleCancelEditWA,
-		handleSaveProfile,
 		handleSaveWAConfig,
 		handleStartEditWA,
 		handleTestWA,
-		handleUpdatePassword,
 		isWABlocked,
 		isWAConfigError,
 		isWAConfigured,
 		isWATestSuccess,
 		loadingProfile,
-		loadingStatus,
 		loadingWA,
 		newPassword,
 		oldPassword,
-		passwordError,
 		profile,
 		readOnlyConnected,
 		saveWAConfig,
@@ -115,7 +83,6 @@ export default function SettingsPage() {
 		setShowToken,
 		setWAFormError,
 		showToken,
-		status,
 		testError,
 		testResult,
 		testingWA,
@@ -130,133 +97,320 @@ export default function SettingsPage() {
 	} = useSettingsPage();
 
 	const avatarFileRef = useRef<HTMLInputElement>(null);
+	const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
+	const [isDeleteAvatarConfirmOpen, setIsDeleteAvatarConfirmOpen] = useState(false);
+	const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
+	const [profilePopup, setProfilePopup] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
+	const [passwordPopup, setPasswordPopup] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
+	const [passwordVisibility, setPasswordVisibility] = useState({
+		old: false,
+		new: false,
+		confirm: false,
+	});
+
+	const handleSaveProfileWithPopup = () => {
+		const nextName = effectiveName.trim();
+		const nextEmail = effectiveEmail.trim();
+
+		if (!nextName || !nextEmail) {
+			setProfilePopup({
+				type: "error",
+				message: "Nama dan email administrator wajib diisi.",
+			});
+			return;
+		}
+
+		updateProfile.mutate(
+			{
+				name: nextName,
+				email: nextEmail,
+			},
+			{
+				onSuccess: () => {
+					setName(null);
+					setEmail(null);
+					setProfilePopup({
+						type: "success",
+						message: "Profil administrator berhasil diperbarui.",
+					});
+				},
+				onError: (error) => {
+					setProfilePopup({
+						type: "error",
+						message: getApiErrorMessage(
+							error,
+							"Profil administrator gagal diperbarui.",
+						),
+					});
+				},
+			},
+		);
+	};
+
+
+	const handleUpdatePasswordWithPopup = () => {
+		setPasswordPopup(null);
+
+		if (!oldPassword.trim()) {
+			setPasswordPopup({
+				type: "error",
+				message: "Kata sandi lama wajib diisi.",
+			});
+			return;
+		}
+
+		if (!newPassword.trim()) {
+			setPasswordPopup({
+				type: "error",
+				message: "Kata sandi baru wajib diisi.",
+			});
+			return;
+		}
+
+		if (newPassword.length < 8) {
+			setPasswordPopup({
+				type: "error",
+				message: "Kata sandi baru minimal 8 karakter.",
+			});
+			return;
+		}
+
+		if (newPassword !== confirmPassword) {
+			setPasswordPopup({
+				type: "error",
+				message: "Kata sandi baru dan konfirmasi tidak cocok.",
+			});
+			return;
+		}
+
+		if (oldPassword === newPassword) {
+			setPasswordPopup({
+				type: "error",
+				message: "Kata sandi baru tidak boleh sama dengan kata sandi lama.",
+			});
+			return;
+		}
+
+		updatePassword.mutate(
+			{
+				current_password: oldPassword,
+				new_password: newPassword,
+				new_password_confirmation: confirmPassword,
+			},
+			{
+				onSuccess: () => {
+					setOldPassword("");
+					setNewPassword("");
+					setConfirmPassword("");
+					setPasswordVisibility({
+						old: false,
+						new: false,
+						confirm: false,
+					});
+					setPasswordPopup({
+						type: "success",
+						message: "Kata sandi administrator berhasil diperbarui.",
+					});
+				},
+				onError: (error) => {
+					setPasswordPopup({
+						type: "error",
+						message: getApiErrorMessage(
+							error,
+							"Kata sandi belum berhasil diperbarui. Periksa kembali kata sandi lama Anda.",
+						),
+					});
+				},
+			},
+		);
+	};
 
 	return (
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
 			<AdminSidebar />
 
-			<div className="flex-1 ml-72 flex flex-col h-screen">
+			<div className="flex-1 ml-56 flex flex-col h-screen">
 				<AdminHeader title="Pengaturan Sistem" />
 
-				<main className="flex-1 overflow-y-auto p-8">
-					{/* ── Stat Cards ── */}
-					<div className="grid grid-cols-2 gap-6 mb-8">
-						{[
-							{
-								label: "Status Sistem",
-								accent: "border-[#7AB2B2]",
-								value: loadingStatus
-									? "..."
-									: getStatusText(status?.system ?? "Online"),
-								sub: "Sistem berjalan normal",
-								color: "text-green-600",
-							},
-							{
-								label: "Database",
-								accent: "border-green-400",
-								value: loadingStatus
-									? "..."
-									: getStatusText(status?.database ?? "Connected"),
-								sub: "MySQL aktif",
-								color: "text-[#2D7EA0]",
-							},
-							...(showWhatsAppSettings
-								? [
-									{
-										label: "WhatsApp API",
-										accent: "border-purple-400",
-										value: loadingStatus
-											? "..."
-											: getStatusText(status?.whatsapp_api ?? "Connected"),
-										sub: "API terhubung",
-										color: "text-green-600",
-									},
-									]
-								: []),
-						].map((s, i) => (
-							<div
-								key={i}
-								className={`bg-white rounded-3xl p-7 border-2 ${s.accent}`}
-							>
-								<p className="text-gray-500 text-lg">{s.label}</p>
-								<h2
-									className={`text-3xl font-bold mt-3 ${s.color} flex items-center gap-2`}
-								>
-									{!loadingStatus && (
-										<span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-									)}
-									{s.value}
-								</h2>
-								<p className="text-gray-400 mt-2 text-sm">{s.sub}</p>
-							</div>
-						))}
-					</div>
-
-					<div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+				<main className="flex-1 overflow-y-auto p-5">
+					<div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
 						{/* ── Left Column ── */}
-						<div className="xl:col-span-2 space-y-8">
+						<div className="xl:col-span-3 space-y-5">
 							{/* Profil Admin */}
 							<SectionCard
 								title="Profil Administrator"
 								desc="Informasi akun dan identitas admin"
 							>
-								<div className="space-y-5">
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											Nama Administrator
-										</label>
+								<div className="grid grid-cols-1 gap-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-start">
+									{/* Foto Profil */}
+									<div className="flex flex-col items-center rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center lg:items-center">
+										<p className="mb-4 text-sm font-semibold text-gray-700">
+											Foto Profil
+										</p>
+
+										<div className="relative w-full">
+											{/* Menu aksi foto profil */}
+											<div className="absolute right-0 top-0 z-20">
+												<button
+													type="button"
+													onClick={() => setIsAvatarMenuOpen((current) => !current)}
+													className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-white hover:text-gray-700 hover:shadow-sm"
+													aria-label="Menu foto profil"
+													aria-expanded={isAvatarMenuOpen}
+												>
+													<MoreVertical size={19} />
+												</button>
+
+												{isAvatarMenuOpen && (
+													<div className="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl border border-gray-100 bg-white py-1.5 text-left shadow-xl">
+														<button
+															type="button"
+															disabled={!profile?.avatar_url}
+															onClick={() => {
+																setIsAvatarMenuOpen(false);
+																setIsAvatarPreviewOpen(true);
+															}}
+															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+														>
+															<Eye size={16} />
+															Lihat
+														</button>
+
+														<button
+															type="button"
+															disabled={uploadAvatar.isPending || deleteAvatar.isPending}
+															onClick={() => {
+																setIsAvatarMenuOpen(false);
+																avatarFileRef.current?.click();
+															}}
+															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+														>
+															{uploadAvatar.isPending ? (
+																<Loader2 size={16} className="animate-spin" />
+															) : (
+																<Edit3 size={16} />
+															)}
+															Ubah
+														</button>
+
+														<button
+															type="button"
+															disabled={!profile?.avatar_url || uploadAvatar.isPending || deleteAvatar.isPending}
+															onClick={() => {
+																setIsAvatarMenuOpen(false);
+																setIsDeleteAvatarConfirmOpen(true);
+															}}
+															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+														>
+															{deleteAvatar.isPending ? (
+																<Loader2 size={16} className="animate-spin" />
+															) : (
+																<Trash2 size={16} />
+															)}
+															Hapus
+														</button>
+													</div>
+												)}
+											</div>
+
+											<div className="flex justify-center pt-2">
+												{profile?.avatar_url ? (
+													<img
+														src={getImageUrl(profile.avatar_url)}
+														alt={profile?.name ?? "Admin"}
+														className="h-24 w-24 rounded-full object-cover ring-4 ring-[#7AB2B2]/30"
+													/>
+												) : (
+													<div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#2D7EA0] text-3xl font-bold text-white ring-4 ring-[#7AB2B2]/30">
+														{loadingProfile
+															? "..."
+															: (profile?.name?.[0]?.toUpperCase() ?? "A")}
+													</div>
+												)}
+											</div>
+
+											<input
+												ref={avatarFileRef}
+												type="file"
+												accept="image/*"
+												className="hidden"
+												onChange={(e) => {
+													const file = e.target.files?.[0];
+													if (file) {
+														if (file.size > 2 * 1024 * 1024) {
+															alert(
+																"Ukuran foto maksimal 2 MB. Silakan pilih foto yang lebih kecil.",
+															);
+															e.target.value = "";
+															return;
+														}
+														uploadAvatar.mutate(file);
+													}
+													e.target.value = "";
+												}}
+											/>
+										</div>
+
+										<span className="mt-4 inline-block rounded-full border border-teal-200 bg-[#7AB2B2]/10 px-3 py-1 text-xs font-medium text-[#2D7EA0]">
+											Administrator
+										</span>
+										<p className="mt-3 text-xs leading-5 text-gray-400">
+											JPG, PNG, atau WebP. Maksimal 2 MB.
+										</p>
+									</div>
+
+									{/* Informasi Akun */}
+									<div className="space-y-4">
+										<div>
+											<label className="mb-1.5 block text-sm font-medium text-gray-700">
+												Nama Administrator
+											</label>
 											<FormInput
 												type="text"
 												value={effectiveName}
 												onChange={(e) => setName(e.target.value)}
-											placeholder={
-												loadingProfile ? "Memuat..." : "Nama administrator"
-											}
-											disabled={loadingProfile}
-											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
-										/>
-									</div>
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											Email Administrator
-										</label>
+												placeholder={
+													loadingProfile ? "Memuat..." : "Nama administrator"
+												}
+												disabled={loadingProfile}
+												className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 disabled:bg-gray-50"
+											/>
+										</div>
+
+										<div>
+											<label className="mb-1.5 block text-sm font-medium text-gray-700">
+												Email Administrator
+											</label>
 											<FormInput
 												type="email"
 												value={effectiveEmail}
 												onChange={(e) => setEmail(e.target.value)}
-											placeholder={
-												loadingProfile ? "Memuat..." : "email@pesantren.ac.id"
-											}
-											disabled={loadingProfile}
-											className="w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm disabled:bg-gray-50"
-										/>
-									</div>
+												placeholder={
+													loadingProfile ? "Memuat..." : "email@pesantren.ac.id"
+												}
+												disabled={loadingProfile}
+												className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 disabled:bg-gray-50"
+											/>
+										</div>
 
-									{updateProfile.isSuccess && (
-										<p className="text-sm text-green-600 flex items-center gap-2">
-											<span>✅</span> Profil berhasil diperbarui
-										</p>
-									)}
-									{updateProfile.isError && (
-										<p className="text-sm text-red-500 flex items-center gap-2">
-											<span>⚠️</span>{" "}
-											{getApiErrorMessage(
-												updateProfile.error,
-												"Profil belum berhasil diperbarui. Silakan coba lagi.",
+
+										<button
+											onClick={handleSaveProfileWithPopup}
+											disabled={updateProfile.isPending || loadingProfile}
+											className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2D7EA0] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#236175] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											{updateProfile.isPending && (
+												<span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
 											)}
-										</p>
-									)}
-
-									<button
-										onClick={handleSaveProfile}
-										disabled={updateProfile.isPending || loadingProfile}
-										className="px-8 py-4 bg-[#2D7EA0] hover:bg-[#236175] text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-									>
-										{updateProfile.isPending && (
-											<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-										)}
-										Simpan Profil
-									</button>
+											Simpan Profil
+										</button>
+									</div>
 								</div>
 							</SectionCard>
 
@@ -265,65 +419,72 @@ export default function SettingsPage() {
 								title="Keamanan Akun"
 								desc="Ubah kata sandi administrator"
 							>
-								<div className="space-y-5">
+								<div className="space-y-4">
 									{[
 										{
+											key: "old" as const,
 											label: "Kata Sandi Lama",
 											value: oldPassword,
 											set: setOldPassword,
 											placeholder: "Masukkan kata sandi lama",
 										},
 										{
+											key: "new" as const,
 											label: "Kata Sandi Baru",
 											value: newPassword,
 											set: setNewPassword,
 											placeholder: "Minimal 8 karakter",
 										},
 										{
+											key: "confirm" as const,
 											label: "Konfirmasi Kata Sandi Baru",
 											value: confirmPassword,
 											set: setConfirmPassword,
 											placeholder: "Ulangi kata sandi baru",
 										},
-									].map((field, i) => (
-										<div key={i}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">
+									].map((field) => (
+										<div key={field.key}>
+											<label className="block text-sm font-medium text-gray-700 mb-1.5">
 												{field.label}
 											</label>
-											<FormInput
-												type="password"
-												value={field.value}
-												onChange={(e) => field.set(e.target.value)}
-												placeholder={field.placeholder}
-												className="text-gray-500 w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm"
-											/>
+											<div className="relative">
+												<FormInput
+													type={passwordVisibility[field.key] ? "text" : "password"}
+													value={field.value}
+													onChange={(e) => field.set(e.target.value)}
+													placeholder={field.placeholder}
+													className="text-gray-500 w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm"
+												/>
+												<button
+													type="button"
+													onClick={() =>
+														setPasswordVisibility((current) => ({
+															...current,
+															[field.key]: !current[field.key],
+														}))
+													}
+													className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600"
+													aria-label={
+														passwordVisibility[field.key]
+															? `Sembunyikan ${field.label.toLowerCase()}`
+															: `Tampilkan ${field.label.toLowerCase()}`
+													}
+												>
+													{passwordVisibility[field.key] ? (
+														<EyeOff size={18} />
+													) : (
+														<Eye size={18} />
+													)}
+												</button>
+											</div>
 										</div>
 									))}
 
-									{passwordError && (
-										<p className="text-sm text-red-500 flex items-center gap-2">
-											<span>⚠️</span> {passwordError}
-										</p>
-									)}
-									{updatePassword.isSuccess && (
-										<p className="text-sm text-green-600 flex items-center gap-2">
-											<span>✅</span> Kata sandi berhasil diperbarui
-										</p>
-									)}
-									{updatePassword.isError && (
-										<p className="text-sm text-red-500 flex items-center gap-2">
-											<span>⚠️</span>{" "}
-											{getApiErrorMessage(
-												updatePassword.error,
-												"Kata sandi belum berhasil diperbarui. Periksa kembali kata sandi Anda.",
-											)}
-										</p>
-									)}
 
 									<button
-										onClick={handleUpdatePassword}
+										onClick={handleUpdatePasswordWithPopup}
 										disabled={updatePassword.isPending}
-										className="px-8 py-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-2xl font-semibold shadow hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+										className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										{updatePassword.isPending && (
 											<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -413,7 +574,7 @@ export default function SettingsPage() {
 										) : (
 											<div className="space-y-5">
 												<div>
-													<label className="block text-sm font-semibold text-gray-700 mb-2">
+													<label className="block text-sm font-medium text-gray-700 mb-1.5">
 												Penyedia
 													</label>
 													<FormInput
@@ -425,7 +586,7 @@ export default function SettingsPage() {
 												</div>
 
 												<div>
-													<label className="block text-sm font-semibold text-gray-700 mb-2">
+													<label className="block text-sm font-medium text-gray-700 mb-1.5">
 														URL API Fonnte
 													</label>
 													<FormInput
@@ -628,94 +789,170 @@ export default function SettingsPage() {
 							</SectionCard>}
 						</div>
 
-						{/* ── Right Column ── */}
-						<div className="space-y-8">
-							{/* Avatar Card */}
-							<div className="bg-white rounded-3xl p-8 shadow-sm text-center">
-								<div className="relative inline-block">
-									{profile?.avatar_url ? (
-										<img
-											src={getImageUrl(profile.avatar_url)}
-											alt={profile?.name ?? "Admin"}
-											className="w-28 h-28 rounded-full object-cover ring-4 ring-[#7AB2B2]/30 mx-auto"
-										/>
-									) : (
-										<div className="w-28 h-28 rounded-full bg-[#2D7EA0] text-white flex items-center justify-center text-4xl font-bold mx-auto ring-4 ring-[#7AB2B2]/30">
-											{loadingProfile
-												? "..."
-												: (profile?.name?.[0]?.toUpperCase() ?? "A")}
-										</div>
-									)}
+					</div>
 
+					<footer className="mt-6 text-center text-gray-400 text-xs pb-4">
+						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
+					</footer>
+
+					{isAvatarPreviewOpen && profile?.avatar_url && (
+						<div
+							className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+							onClick={() => setIsAvatarPreviewOpen(false)}
+						>
+							<div
+								className="w-full max-w-xl rounded-3xl bg-white p-4 shadow-2xl"
+								onClick={(event) => event.stopPropagation()}
+							>
+								<div className="mb-4 flex items-center justify-between gap-3 px-1">
+									<div>
+										<h3 className="text-base font-bold text-gray-800">Foto Profil</h3>
+										<p className="mt-0.5 text-xs text-gray-400">
+											{profile?.name ?? "Administrator"}
+										</p>
+									</div>
 									<button
 										type="button"
-										onClick={() => avatarFileRef.current?.click()}
-										disabled={uploadAvatar.isPending || deleteAvatar.isPending}
-										className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#2D7EA0] text-white flex items-center justify-center shadow-md transition hover:bg-[#236175] active:scale-95 disabled:opacity-70"
+										onClick={() => setIsAvatarPreviewOpen(false)}
+										className="rounded-xl px-3 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
 									>
-										{uploadAvatar.isPending ? (
-											<Loader2 size={16} className="animate-spin" />
-										) : (
-											<Camera size={16} />
-										)}
+										Tutup
 									</button>
+								</div>
 
-									{profile?.avatar_url && (
-										<button
-											type="button"
-											onClick={() => deleteAvatar.mutate()}
-											disabled={uploadAvatar.isPending || deleteAvatar.isPending}
-											className="absolute top-0 right-0 w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md transition hover:bg-red-600 active:scale-95 disabled:opacity-70"
-										>
-											{deleteAvatar.isPending ? (
-												<Loader2 size={16} className="animate-spin" />
-											) : (
-												<Trash2 size={16} />
-											)}
-										</button>
-									)}
-
-									<input
-										ref={avatarFileRef}
-										type="file"
-										accept="image/*"
-										className="hidden"
-										onChange={(e) => {
-											const file = e.target.files?.[0];
-											if (file) {
-												if (file.size > 2 * 1024 * 1024) {
-													alert("Ukuran foto maksimal 2 MB. Silakan pilih foto yang lebih kecil.");
-													e.target.value = "";
-													return;
-												}
-												uploadAvatar.mutate(file);
-											}
-											e.target.value = "";
-										}}
+								<div className="overflow-hidden rounded-2xl bg-gray-100">
+									<img
+										src={getImageUrl(profile.avatar_url)}
+										alt={profile?.name ?? "Foto profil admin"}
+										className="max-h-[65vh] w-full object-contain"
 									/>
 								</div>
 
-								<h2 className="text-2xl font-bold text-gray-800 mt-5">
-									{loadingProfile
-										? "Memuat..."
-										: (profile?.name ?? "Administrator")}
-								</h2>
-								<p className="text-gray-500 mt-1 text-sm">
-									{loadingProfile
-										? ""
-										: (profile?.email ?? "admin@pesantren.ac.id")}
-								</p>
-								<span className="inline-block mt-3 text-xs bg-[#7AB2B2]/10 text-[#2D7EA0] border border-teal-200 px-3 py-1 rounded-full font-medium">
-									Administrator
-								</span>
+								<div className="mt-4 flex justify-end gap-3">
+									<button
+										type="button"
+										onClick={() => setIsDeleteAvatarConfirmOpen(true)}
+										disabled={deleteAvatar.isPending}
+										className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+									>
+										<Trash2 size={16} />
+										Hapus Foto
+									</button>
+								</div>
 							</div>
-
 						</div>
-					</div>
+					)}
 
-					<footer className="mt-10 text-center text-gray-400 text-xs pb-8">
-						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
-					</footer>
+					{profilePopup && (
+						<div
+							className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-[2px]"
+							onClick={() => setProfilePopup(null)}
+						>
+							<div
+								className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+								onClick={(event) => event.stopPropagation()}
+							>
+								<div
+									className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
+										profilePopup.type === "success"
+											? "bg-emerald-50 text-emerald-500"
+											: "bg-red-50 text-red-500"
+									}`}
+								>
+									{profilePopup.type === "success" ? (
+										<CheckCircle2 size={30} />
+									) : (
+										<XCircle size={30} />
+									)}
+								</div>
+
+								<h3 className="text-lg font-bold text-gray-800">
+									{profilePopup.type === "success" ? "Berhasil" : "Gagal"}
+								</h3>
+
+								<p className="mt-2 text-sm leading-6 text-gray-500">
+									{profilePopup.message}
+								</p>
+
+								<button
+									type="button"
+									onClick={() => setProfilePopup(null)}
+									className={`mt-5 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] ${
+										profilePopup.type === "success"
+											? "bg-[#2D7EA0] hover:bg-[#236175]"
+											: "bg-red-500 hover:bg-red-600"
+									}`}
+								>
+									Oke
+								</button>
+							</div>
+						</div>
+					)}
+
+
+					{passwordPopup && (
+						<div
+							className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-[2px]"
+							onClick={() => setPasswordPopup(null)}
+						>
+							<div
+								className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+								onClick={(event) => event.stopPropagation()}
+							>
+								<div
+									className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
+										passwordPopup.type === "success"
+											? "bg-emerald-50 text-emerald-500"
+											: "bg-red-50 text-red-500"
+									}`}
+								>
+									{passwordPopup.type === "success" ? (
+										<CheckCircle2 size={30} />
+									) : (
+										<XCircle size={30} />
+									)}
+								</div>
+
+								<h3 className="text-lg font-bold text-gray-800">
+									{passwordPopup.type === "success" ? "Berhasil" : "Gagal"}
+								</h3>
+
+								<p className="mt-2 text-sm leading-6 text-gray-500">
+									{passwordPopup.message}
+								</p>
+
+								<button
+									type="button"
+									onClick={() => setPasswordPopup(null)}
+									className={`mt-5 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] ${
+										passwordPopup.type === "success"
+											? "bg-[#2D7EA0] hover:bg-[#236175]"
+											: "bg-red-500 hover:bg-red-600"
+									}`}
+								>
+									Oke
+								</button>
+							</div>
+						</div>
+					)}
+
+					<ConfirmDialog
+						isOpen={isDeleteAvatarConfirmOpen}
+						title="Hapus foto profil?"
+						message="Foto profil akan dihapus dan avatar akan kembali menggunakan inisial nama administrator."
+						confirmLabel="Hapus"
+						tone="danger"
+						loading={deleteAvatar.isPending}
+						onCancel={() => setIsDeleteAvatarConfirmOpen(false)}
+						onConfirm={() => {
+							deleteAvatar.mutate(undefined, {
+								onSuccess: () => {
+									setIsDeleteAvatarConfirmOpen(false);
+									setIsAvatarPreviewOpen(false);
+								},
+							});
+						}}
+					/>
 				</main>
 			</div>
 		</div>

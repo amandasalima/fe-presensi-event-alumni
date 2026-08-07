@@ -537,44 +537,68 @@ export default function DashboardPage() {
 								</div>
 							</div>
 							<div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
-								<select
+								{/* Tahun */}
+								<div className="relative">
+									<select
 									value={String(chartYear)}
 									onChange={(event) => setChartYear(Number(event.target.value))}
-									className="h-9 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20"
+									className="w-full h-9 appearance-none rounded-xl border border-gray-200 bg-white px-3 pr-10 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20 cursor-pointer"
 									aria-label="Filter tahun grafik"
-								>
+									>
 									{chartYears.map((year) => (
 										<option key={year} value={year}>
-											{year}
+										{year}
 										</option>
 									))}
-								</select>
-								<select
+									</select>
+
+									<span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+									▾
+									</span>
+								</div>
+
+								{/* Rentang Bulan */}
+								<div className="relative">
+									<select
 									value={chartRange}
 									onChange={(event) =>
 										setChartRange(event.target.value as ChartRange)
 									}
-									className="h-9 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20"
+									className="w-full h-9 appearance-none rounded-xl border border-gray-200 bg-white px-3 pr-10 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20 cursor-pointer"
 									aria-label="Filter rentang bulan grafik"
-								>
+									>
 									<option value="3">3 bulan terakhir</option>
 									<option value="6">6 bulan terakhir</option>
 									<option value="12">12 bulan terakhir</option>
-								</select>
-								<select
+									</select>
+
+									<span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+									▾
+									</span>
+								</div>
+
+								{/* Event */}
+								<div className="relative">
+									<select
 									value={chartEventId}
 									onChange={(event) => setChartEventId(event.target.value)}
-									className="h-9 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20"
+									className="w-full h-9 appearance-none rounded-xl border border-gray-200 bg-white px-3 pr-10 text-xs font-medium text-gray-700 outline-none focus:border-[#2D7EA0] focus:ring-2 focus:ring-[#7AB2B2]/20 cursor-pointer"
 									aria-label="Filter event grafik"
-								>
+									>
 									<option value="all">Semua event</option>
+
 									{events.map((event: Event) => (
 										<option key={event.id} value={event.id}>
-											{event.event_title}
+										{event.event_title}
 										</option>
 									))}
-								</select>
-							</div>
+									</select>
+
+									<span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+									▾
+									</span>
+								</div>
+								</div>
 							{loadingChart ? (
 								<div className="h-40 rounded-xl bg-gray-50 animate-pulse" />
 							) : (

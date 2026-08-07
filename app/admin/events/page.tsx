@@ -418,15 +418,17 @@ function EventCategorySection({
 				<div className="flex shrink-0 items-center gap-3">
 					{!isLoading && !isError && (
 						<span className="hidden rounded-full bg-[#7AB2B2]/10 px-2.5 py-1 text-xs font-semibold text-[#2D7EA0] sm:inline">
-							{categories.length} kategori
+						{categories.length} kategori
 						</span>
 					)}
-					<ChevronDown
-						size={19}
+
+					<span
 						className={`text-gray-400 transition-transform duration-200 ${
-							isExpanded ? "rotate-180" : ""
+						isExpanded ? "rotate-180" : ""
 						}`}
-					/>
+					>
+						▾
+					</span>
 				</div>
 			</button>
 
@@ -689,7 +691,7 @@ function CategoryFormModal({
 							type="button"
 							onClick={onClose}
 							disabled={isPending}
-							className="rounded-xl border-2 border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:border-red-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+							className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
 						>
 							Batal
 						</button>
@@ -931,29 +933,35 @@ function EventFormModal({
 								Kategori
 							</label>
 
-							<FormSelect
-								name="category_id"
-								value={form.category_id}
-								onChange={handleChange}
-								disabled={isCategoryLoading || categories.length === 0}
-								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-								required
-							>
-								{isCategoryLoading && (
+							<div className="relative">
+								<FormSelect
+									name="category_id"
+									value={form.category_id}
+									onChange={handleChange}
+									disabled={isCategoryLoading || categories.length === 0}
+									className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 pr-10 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+									required
+								>
+									{isCategoryLoading && (
 									<option value={0}>Memuat kategori...</option>
-								)}
+									)}
 
-								{!isCategoryLoading && categories.length === 0 && (
+									{!isCategoryLoading && categories.length === 0 && (
 									<option value={0}>Kategori belum tersedia</option>
-								)}
+									)}
 
-								{!isCategoryLoading &&
+									{!isCategoryLoading &&
 									categories.map((category) => (
 										<option key={category.id} value={category.id}>
-											{category.category_name}
+										{category.category_name}
 										</option>
 									))}
-							</FormSelect>
+								</FormSelect>
+
+								<span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+									▾
+								</span>
+								</div>
 
 							{isCategoryError && (
 								<p className="text-xs text-red-500 mt-1">
@@ -1159,7 +1167,7 @@ function EventFormModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex-1 border-2 border-red-200 bg-white text-red-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-50 hover:border-red-300 transition-colors active:scale-[0.98]"
+							className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600 transition-colors active:scale-[0.98]"
 						>
 							Batal
 						</button>
@@ -1294,19 +1302,31 @@ function BroadcastModal({
 								<label className="block text-sm font-medium text-gray-700 mb-2">
 									Target Penerima
 								</label>
-								<FormSelect
-									value={target}
-									onChange={(e) =>
+								<div className="relative">
+									<FormSelect
+										value={target}
+										onChange={(e) =>
 										handleTargetChange(e.target.value as EventBroadcastTarget)
-									}
-									className="text-gray-500 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-gray-50"
-								>
-									<option value="all">Semua alumni yang punya nomor HP</option>
-									<option value="registered">
+										}
+										className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-gray-50 cursor-pointer"
+									>
+										<option value="all">
+										Semua alumni yang punya nomor HP
+										</option>
+
+										<option value="registered">
 										Alumni yang sudah daftar event
-									</option>
-									<option value="custom">Nomor manual</option>
-								</FormSelect>
+										</option>
+
+										<option value="custom">
+										Nomor manual
+										</option>
+									</FormSelect>
+
+									<span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+										▾
+									</span>
+								</div>
 								<div className="mt-3 flex gap-3 rounded-xl border border-[#7AB2B2]/20 bg-[#7AB2B2]/10 p-3 text-sm text-teal-800">
 									<Info className="mt-0.5 h-4 w-4 shrink-0" />
 									<div>
@@ -1487,7 +1507,7 @@ function BroadcastModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-5 py-2.5 rounded-xl border-2 border-red-200 bg-white text-red-600 text-sm font-semibold hover:bg-red-50 hover:border-red-300 transition-colors active:scale-[0.98]"
+							className="px-5 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors active:scale-[0.98]"
 						>
 							Batal
 						</button>

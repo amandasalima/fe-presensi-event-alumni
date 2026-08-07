@@ -85,6 +85,6 @@ export default function AdminLayout({
     );
   }
 
-  return <>{children}</>;
+  return <div className="admin-layout">{children}</div>;
 }
 

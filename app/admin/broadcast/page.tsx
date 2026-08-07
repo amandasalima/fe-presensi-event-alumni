@@ -210,66 +210,93 @@ export default function BroadcastPage() {
 
 						<div className="space-y-5 p-5">
 							<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+								{/* Dropdown Event */}
 								<div>
 									<label className="mb-2 block text-sm font-medium text-gray-700">
-										Event
+									Event
 									</label>
+
+									<div className="relative">
 									<FormSelect
 										value={selectedEventId ?? ""}
 										onChange={(event) => {
-											resetResult();
-											setSelectedEventId(Number(event.target.value) || null);
+										resetResult();
+										setSelectedEventId(Number(event.target.value) || null);
 										}}
 										disabled={loadingEvents}
-										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] disabled:cursor-not-allowed disabled:bg-gray-100"
+										className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-100"
 									>
 										<option value="">
-											{loadingEvents ? "Memuat event..." : "Pilih event"}
+										{loadingEvents ? "Memuat event..." : "Pilih event"}
 										</option>
+
 										{events.map((event: Event) => (
-											<option key={event.id} value={event.id}>
-												{event.event_title}
-											</option>
+										<option key={event.id} value={event.id}>
+											{event.event_title}
+										</option>
 										))}
 									</FormSelect>
+
+									<span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+										▾
+									</span>
+									</div>
+
 									<p className="mt-1 text-xs text-gray-400">
-										{selectedEvent
-											? `${formatEventDate(selectedEvent)} - ${selectedEvent.location}`
+									{selectedEvent
+										? `${formatEventDate(selectedEvent)} - ${selectedEvent.location}`
 										: "Pesan massal wajib dikaitkan dengan event."}
 									</p>
 								</div>
 
+								{/* Dropdown Target Penerima */}
 								<div>
 									<label className="mb-2 block text-sm font-medium text-gray-700">
-										Target Penerima
+									Target Penerima
 									</label>
+
+									<div className="relative">
 									<FormSelect
 										value={target}
 										onChange={(event) => {
-											resetResult();
-											setTarget(event.target.value as EventBroadcastTarget);
+										resetResult();
+										setTarget(event.target.value as EventBroadcastTarget);
 										}}
-										className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+										className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] cursor-pointer"
 									>
-										<option value="all">Semua alumni yang punya nomor HP</option>
-										<option value="registered">
-											Alumni yang sudah daftar event
+										<option value="all">
+										Semua alumni yang punya nomor HP
 										</option>
-										<option value="custom">Nomor manual</option>
+
+										<option value="registered">
+										Alumni yang sudah daftar event
+										</option>
+
+										<option value="custom">
+										Nomor manual
+										</option>
 									</FormSelect>
+
+									<span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+										▾
+									</span>
+									</div>
+
 									<div className="mt-3 flex gap-3 rounded-xl border border-[#7AB2B2]/20 bg-[#7AB2B2]/10 p-3 text-sm text-teal-800">
-										<Info className="mt-0.5 h-4 w-4 shrink-0" />
-										<div>
-											<p className="font-medium">
-												{targetDescriptions[target].label}
-											</p>
-											<p className="mt-0.5 text-xs text-[#236175]">
-												{targetDescriptions[target].description}
-											</p>
-										</div>
+									<Info className="mt-0.5 h-4 w-4 shrink-0" />
+
+									<div>
+										<p className="font-medium">
+										{targetDescriptions[target].label}
+										</p>
+
+										<p className="mt-0.5 text-xs text-[#236175]">
+										{targetDescriptions[target].description}
+										</p>
+									</div>
 									</div>
 								</div>
-							</div>
+								</div>
 
 							{target === "custom" && (
 								<div>

@@ -66,16 +66,31 @@ export function useAdminProfile() {
 
 // PUT update profil admin via /auth/profile
 export function useUpdateAdminProfile() {
-	const queryClient = useQueryClient();
-	return useMutation<AdminProfile, Error, UpdateProfilePayload>({
-		mutationFn: async (payload) => {
-			const { data } = await api.put("/auth/profile", payload);
-			return data.data.user;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["admin-profile"] });
-		},
-	});
+  const queryClient = useQueryClient();
+
+  return useMutation<AdminProfile, Error, UpdateProfilePayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.put("/auth/profile", payload);
+
+      return data.data.user;
+    },
+
+    onSuccess: (updatedProfile, variables) => {
+      queryClient.setQueryData<AdminProfile>(
+        ["admin-profile"],
+        (old) => ({
+          ...old,
+          ...updatedProfile,
+          name: variables.name,
+          email: variables.email,
+        }),
+      );
+
+      // queryClient.invalidateQueries({
+      //   queryKey: ["admin-profile"],
+      // });
+    },
+  });
 }
 
 // POST upload avatar admin via /auth/profile/avatar

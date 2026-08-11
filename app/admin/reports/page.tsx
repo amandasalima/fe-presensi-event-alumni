@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
 	CalendarDays,
 	ClipboardList,
@@ -188,37 +188,26 @@ export default function ReportsPage() {
 		1,
 		Math.ceil(events.length / EVENT_PER_PAGE),
 	);
+	const safeEventPage = Math.min(eventPage, eventTotalPages);
 
 	const paginatedEvents = useMemo(() => {
-		const start = (eventPage - 1) * EVENT_PER_PAGE;
+		const start = (safeEventPage - 1) * EVENT_PER_PAGE;
 		return events.slice(start, start + EVENT_PER_PAGE);
-	}, [events, eventPage]);
+	}, [events, safeEventPage]);
 
 	const attendanceTotalPages = Math.max(
 		1,
 		Math.ceil(attendances.length / ATTENDANCE_PER_PAGE),
 	);
+	const safeAttendancePage = Math.min(
+		attendancePage,
+		attendanceTotalPages,
+	);
 
 	const paginatedAttendances = useMemo(() => {
-		const start = (attendancePage - 1) * ATTENDANCE_PER_PAGE;
+		const start = (safeAttendancePage - 1) * ATTENDANCE_PER_PAGE;
 		return attendances.slice(start, start + ATTENDANCE_PER_PAGE);
-	}, [attendances, attendancePage]);
-
-	useEffect(() => {
-		if (eventPage > eventTotalPages) {
-			setEventPage(eventTotalPages);
-		}
-	}, [eventPage, eventTotalPages]);
-
-	useEffect(() => {
-		if (attendancePage > attendanceTotalPages) {
-			setAttendancePage(attendanceTotalPages);
-		}
-	}, [attendancePage, attendanceTotalPages]);
-
-	useEffect(() => {
-		setAttendancePage(1);
-	}, [selectedEventId]);
+	}, [attendances, safeAttendancePage]);
 
 	const openEventDetail = (eventId: number) => {
 		setSelectedEventId(eventId);
@@ -468,7 +457,7 @@ export default function ReportsPage() {
 
 							{!loadingEvents && events.length > 0 && (
 								<Pagination
-									currentPage={eventPage}
+									currentPage={safeEventPage}
 									totalPages={eventTotalPages}
 									onPageChange={setEventPage}
 								/>
@@ -513,10 +502,7 @@ export default function ReportsPage() {
 								<div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
 									<span className="flex items-center gap-1.5">
 										<CalendarDays size={14} className="text-[#2D7EA0]" />
-										{formatDate(
-											selectedAttendanceEvent.event_date ??
-												selectedAttendanceEvent.event_datetime,
-										)}
+										{formatDate(selectedAttendanceEvent.event_date)}
 									</span>
 
 									{selectedAttendanceEvent.location && (
@@ -668,7 +654,7 @@ export default function ReportsPage() {
 
 								{!loadingAttendances && attendances.length > 0 && (
 									<Pagination
-										currentPage={attendancePage}
+										currentPage={safeAttendancePage}
 										totalPages={attendanceTotalPages}
 										onPageChange={setAttendancePage}
 									/>

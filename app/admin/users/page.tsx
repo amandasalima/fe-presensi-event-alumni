@@ -684,8 +684,8 @@ export default function UsersPage() {
 							)}
 
 							{!isError && (
-								<div className="overflow-x-auto">
-									<table className="w-full">
+								<div className="overflow-x-auto rounded-xl border border-gray-200">
+									<table className="w-full overflow-hidden rounded-xl">
 										<thead className="bg-[#7AB2B2]/20">
 											<tr>
 												<th className="w-10 p-3 text-left">

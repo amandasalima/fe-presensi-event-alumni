@@ -14,7 +14,6 @@ import {
 	Power,
 	Megaphone,
 	Search,
-	Eye,
 	Users,
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
@@ -147,6 +146,47 @@ function getQuotaLabel(event: Event) {
 function getRemainingQuotaLabel(event: Event) {
 	const remainingQuota = getRemainingQuota(event);
 	return remainingQuota === null ? "Tidak terbatas" : remainingQuota;
+}
+
+const eventCategoryStyles = [
+  "bg-rose-100 text-rose-700 ring-1 ring-rose-200",
+  "bg-orange-100 text-orange-700 ring-1 ring-orange-200",
+  "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
+  "bg-lime-100 text-lime-800 ring-1 ring-lime-200",
+  "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200",
+  "bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200",
+  "bg-blue-100 text-blue-700 ring-1 ring-blue-200",
+  "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200",
+  "bg-fuchsia-100 text-fuchsia-700 ring-1 ring-fuchsia-200",
+  "bg-stone-200 text-stone-700 ring-1 ring-stone-300",
+];
+
+function getEventCategoryLabel(category: Event["category"] | CategoryObject | null | undefined) {
+	if (typeof category === "string") return category || "Tanpa kategori";
+	if (category && typeof category === "object") {
+		return category.category_name || "Tanpa kategori";
+	}
+	return "Tanpa kategori";
+}
+
+function getEventCategoryStyle(
+	category: Event["category"],
+	categoryId: number | null | undefined,
+	categories: EventCategory[],
+) {
+	const label = getEventCategoryLabel(category).trim().toLowerCase();
+	const orderedCategories = [...categories].sort((a, b) => a.id - b.id);
+
+	const categoryIndex = orderedCategories.findIndex((item) => {
+		if (categoryId != null && item.id === categoryId) return true;
+
+		return item.category_name.trim().toLowerCase() === label;
+	});
+
+	const colorIndex =
+		categoryIndex >= 0 ? categoryIndex % eventCategoryStyles.length : 0;
+
+	return eventCategoryStyles[colorIndex];
 }
 
 function getEventPublicationStatus(event: Event): EventActiveStatus {
@@ -480,17 +520,21 @@ function EventCategorySection({
 					)}
 
 					{!isLoading && !isError && categories.length > 0 && (
-						<div className="overflow-x-auto rounded-xl border border-gray-100">
-							<table className="min-w-full divide-y divide-gray-100 text-left">
-								<thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+						<div className="cursor-default overflow-x-auto rounded-xl border border-gray-200">
+							<table className="w-full cursor-default overflow-hidden rounded-xl">
+								<thead className="cursor-default bg-[#7AB2B2]/20">
 									<tr>
-										<th className="px-4 py-3">Nama kategori</th>
-										<th className="px-4 py-3">Deskripsi</th>
-										<th className="px-4 py-3 text-center">Jumlah event</th>
-										<th className="px-4 py-3 text-right">Aksi</th>
+										<th className="cursor-default px-3 py-2 text-left text-xs font-semibold text-gray-700">
+											Nama kategori
+										</th>
+										<th className="cursor-default px-3 py-2 text-left text-xs font-semibold text-gray-700">
+											Deskripsi
+										</th>
+										<th className="cursor-default px-3 py-2 text-center text-xs font-semibold text-gray-700">Jumlah event</th>
+										<th className="w-56 cursor-default px-3 py-2 text-center text-xs font-semibold text-gray-700">Aksi</th>
 									</tr>
 								</thead>
-								<tbody className="divide-y divide-gray-100">
+								<tbody className="cursor-default">
 									{categories.map((category) => {
 										const usageCount = getCategoryUsageCount(category, events);
 										const deleteDisabled =
@@ -504,39 +548,49 @@ function EventCategorySection({
 													: "Hapus kategori";
 
 										return (
-											<tr key={category.id} className="text-sm text-gray-600">
-												<td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-800">
-													{category.category_name}
+											<tr
+												key={category.id}
+												className="cursor-default border-b border-gray-200 transition-colors hover:bg-gray-50"
+											>
+												<td className="cursor-default px-3 py-2">
+											<span className="cursor-default text-sm font-semibold text-gray-800">
+														{category.category_name}
+													</span>
 												</td>
-												<td className="max-w-md px-4 py-3 text-gray-500">
+												<td className="max-w-md cursor-default px-3 py-2 text-xs text-gray-500">
 													{category.description || "-"}
 												</td>
-												<td className="px-4 py-3 text-center">
-													{isUsageLoading || isUsageUnavailable
-														? "..."
-														: usageCount}
+												<td className="cursor-default px-3 py-2 text-center">
+											<span className="inline-flex min-w-8 cursor-default items-center justify-center rounded-lg bg-[#7AB2B2]/20 px-2.5 py-1 text-xs font-medium text-cyan-700">
+														{isUsageLoading || isUsageUnavailable
+															? "..."
+															: usageCount}
+													</span>
 												</td>
-												<td className="px-4 py-3">
-													<div className="flex justify-end gap-2">
+												<td className="w-56 cursor-default px-3 py-2">
+													<div className="flex cursor-default items-center justify-center gap-1">
 														<button
 															type="button"
 															onClick={() => onEdit(category)}
-															className="inline-flex items-center gap-1.5 rounded-lg border border-[#7AB2B2]/30 px-3 py-1.5 text-xs font-semibold text-[#2D7EA0] transition hover:bg-[#7AB2B2]/10"
+															className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#2D7EA0] transition-colors hover:bg-[#7AB2B2]/10"
+															title={`Ubah ${category.category_name}`}
+															aria-label={`Ubah ${category.category_name}`}
 														>
-															<Pencil size={13} /> Ubah
+															<Pencil size={15} strokeWidth={2.5} />
 														</button>
 														<button
 															type="button"
 															onClick={() => onDelete(category)}
 															disabled={deleteDisabled}
 															title={deleteTitle}
-															className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-300"
+															aria-label={`Hapus ${category.category_name}`}
+															className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-red-400 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
 														>
-															<Trash2 size={13} /> Hapus
+															<Trash2 size={15} strokeWidth={2.5} />
 														</button>
 													</div>
 													{usageCount > 0 && !isUsageLoading && (
-														<p className="mt-1 text-right text-[11px] text-gray-400">
+														<p className="mt-0.5 cursor-default whitespace-nowrap text-center text-[11px] text-gray-400">
 															Kategori masih digunakan oleh event
 														</p>
 													)}
@@ -1747,11 +1801,13 @@ function EventRegistrationsModal({
 function EventDetailModal({
 	eventId,
 	fallbackEvent,
+	categories,
 	isOpen,
 	onClose,
 }: {
 	eventId: number | null;
 	fallbackEvent: Event | null;
+	categories: EventCategory[];
 	isOpen: boolean;
 	onClose: () => void;
 }) {
@@ -1771,6 +1827,20 @@ function EventDetailModal({
 		: { date: "-", time: "-" };
 	const registered = event ? getRegisteredCount(event) : 0;
 	const quotaPercent = event ? getQuotaPercent(event) : 0;
+	const isUnpublished = event
+		? getEventPublicationStatus(event) === "inactive"
+		: false;
+	const detailStatusLabel = event
+		? isUnpublished
+			? "Tidak Dipublikasikan"
+			: getEventTimeStatus(event)
+		: "";
+	const detailStatusStyle =
+		detailStatusLabel === "Tidak Dipublikasikan"
+			? "border-yellow-400 bg-yellow-100/70 text-yellow-700"
+			: detailStatusLabel === "Mendatang"
+				? "border-blue-400 bg-blue-100/70 text-blue-700"
+				: "border-green-400 bg-green-100/70 text-green-700";
 
 	return (
 		<div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -1837,16 +1907,18 @@ function EventDetailModal({
 								<div className="flex-1 min-w-0">
 									<div className="flex flex-wrap items-center gap-2 mb-3">
 										<span
-											className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
-												event.status_event === "Mendatang"
-													? "bg-[#7AB2B2]/10 text-[#2D7EA0] border-teal-200"
-													: "bg-gray-50 text-gray-500 border-gray-200"
-											}`}
+											className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${detailStatusStyle}`}
 										>
-											{event.status_event}
+											{detailStatusLabel}
 										</span>
-										<span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-											{event.category}
+										<span
+											className={`rounded-full px-2.5 py-1 text-xs font-medium ${getEventCategoryStyle(
+												event.category,
+												event.category_id,
+												categories,
+											)}`}
+										>
+											{getEventCategoryLabel(event.category)}
 										</span>
 										{event.is_quota_full && (
 											<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-full font-medium">
@@ -1951,6 +2023,7 @@ function EventDetailModal({
 // ─── Event Card (Mendatang) ───────────────────────────────────────────────────
 function EventCardUpcoming({
 	event,
+	categoryStyle,
 	onDetail,
 	onEdit,
 	onTogglePublish,
@@ -1960,6 +2033,7 @@ function EventCardUpcoming({
 	statusLabel = "Mendatang",
 }: {
 	event: Event;
+	categoryStyle: string;
 	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
 	onTogglePublish: (event: Event) => void;
@@ -1976,29 +2050,44 @@ function EventCardUpcoming({
 	const isUnpublished = statusLabel === "Tidak Dipublikasikan";
 
 	return (
-		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+		<div
+			role="button"
+			tabIndex={0}
+			aria-label={`Lihat detail ${event.event_title}`}
+			onClick={() => onDetail(event)}
+			onKeyDown={(keyboardEvent) => {
+				if (keyboardEvent.target !== keyboardEvent.currentTarget) return;
+				if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+					keyboardEvent.preventDefault();
+					onDetail(event);
+				}
+			}}
+			className="relative h-full bg-white rounded-2xl p-5 shadow-sm cursor-pointer transform-gpu transition-all duration-300 ease-out hover:z-10 hover:scale-[1.02] hover:shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2D7EA0]/40"
+		>
 			<div className="flex items-start justify-between mb-3">
 				<h3 className="font-semibold text-gray-800 text-base leading-tight">
 					{event.event_title}
 				</h3>
 				<span
-					className={`ml-2 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${
+					className={`ml-2 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${
 						isUnpublished
-							? "border-amber-200 bg-amber-50 text-amber-700"
-							: "border-teal-200 bg-[#7AB2B2]/10 text-[#2D7EA0]"
+							? "border-yellow-400 bg-yellow-100/70 text-yellow-700"
+							: "border-blue-400 bg-blue-100/70 text-blue-700"
 					}`}
 				>
 					{statusLabel}
 				</span>
 				{event.is_quota_full && (
-					<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+					<span className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">
 						Penuh
 					</span>
 				)}
 			</div>
 
-			<span className="inline-block text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full mb-3">
-				{event.category}
+			<span
+				className={`inline-block rounded-full px-3 py-1 mb-3 text-xs font-medium ${categoryStyle}`}
+			>
+				{getEventCategoryLabel(event.category)}
 			</span>
 
 			<div className="space-y-1.5 text-sm text-gray-500">
@@ -2060,47 +2149,53 @@ function EventCardUpcoming({
 				)}
 			</div>
 
-			<div className="grid grid-cols-2 gap-2 mt-4">
+			<div className="grid grid-cols-3 gap-2 mt-4">
 				<button
-					onClick={() => onDetail(event)}
-					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-				>
-					<Eye size={13} />
-					Detail
-				</button>
-
-				<button
-					onClick={() => onRegistrations(event)}
-					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onRegistrations(event);
+					}}
+					className="text-xs bg-blue-400 text-white hover:bg-blue-700 py-2 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
 				>
 					<Users size={13} />
 					Pendaftar
 				</button>
 
 				<button
-					onClick={() => onEdit(event)}
-					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onEdit(event);
+					}}
+					className="text-xs bg-[#2D7EA0] text-white hover:bg-[#236175] py-2 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
 				>
 					<Pencil size={13} />
 					Ubah
 				</button>
 
 				<button
-					onClick={() => onBroadcast(event)}
-					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onBroadcast(event);
+					}}
+					className="text-xs bg-emerald-600 text-white hover:bg-emerald-700 py-2 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
 				>
 					<Megaphone size={13} />
 					WA
 				</button>
 
 				<button
-					onClick={() => onTogglePublish(event)}
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onTogglePublish(event);
+					}}
 					disabled={isToggling}
 					title={published ? "Batalkan publikasi event" : "Publikasikan event"}
-					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
-						published
-							? "border-amber-200 text-amber-700 hover:bg-amber-50"
-							: "border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10"
+					className={`col-span-3 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-white shadow-sm hover:shadow-lg transition-all disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none ${
+						published ? "bg-amber-500 hover:bg-amber-600" : "bg-[#3EBDAF] hover:bg-[#32A99D]"
 					}`}
 				>
 					<Power size={13} />
@@ -2118,6 +2213,7 @@ function EventCardUpcoming({
 // ─── Event Card (Selesai) ─────────────────────────────────────────────────────
 function EventCardDone({
 	event,
+	categoryStyle,
 	onDetail,
 	onEdit,
 	onTogglePublish,
@@ -2127,6 +2223,7 @@ function EventCardDone({
 	statusLabel = "Selesai",
 }: {
 	event: Event;
+	categoryStyle: string;
 	onDetail: (event: Event) => void;
 	onEdit: (event: Event) => void;
 	onTogglePublish: (event: Event) => void;
@@ -2143,30 +2240,45 @@ function EventCardDone({
 	const isUnpublished = statusLabel === "Tidak Dipublikasikan";
 
 	return (
-		<div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+		<div
+			role="button"
+			tabIndex={0}
+			aria-label={`Lihat detail ${event.event_title}`}
+			onClick={() => onDetail(event)}
+			onKeyDown={(keyboardEvent) => {
+				if (keyboardEvent.target !== keyboardEvent.currentTarget) return;
+				if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+					keyboardEvent.preventDefault();
+					onDetail(event);
+				}
+			}}
+			className="relative h-full bg-white rounded-2xl p-5 shadow-sm cursor-pointer transform-gpu transition-all duration-300 ease-out hover:z-10 hover:scale-[1.02] hover:shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2D7EA0]/40"
+		>
 			<div className="flex items-start justify-between mb-3">
 				<h3 className="font-semibold text-gray-800 text-base leading-tight">
 					{event.event_title}
 				</h3>
 
 				<span
-					className={`ml-2 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${
+					className={`ml-2 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${
 						isUnpublished
-							? "border-amber-200 bg-amber-50 text-amber-700"
-							: "border-gray-200 bg-gray-100 text-gray-500"
+							? "border-yellow-400 bg-yellow-100/70 text-yellow-700"
+							: "border-green-400 bg-green-100/70 text-green-700"
 					}`}
 				>
 					{statusLabel}
 				</span>
 				{event.is_quota_full && (
-					<span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+					<span className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">
 						Penuh
 					</span>
 				)}
 			</div>
 
-			<span className="inline-block text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full mb-3">
-				{event.category}
+			<span
+				className={`inline-block rounded-full px-3 py-1 mb-3 text-xs font-medium ${categoryStyle}`}
+			>
+				{getEventCategoryLabel(event.category)}
 			</span>
 
 			<div className="space-y-1.5 text-sm text-gray-500 mb-4">
@@ -2226,47 +2338,53 @@ function EventCardDone({
 				)}
 			</div>
 
-			<div className="grid grid-cols-2 gap-2 mt-4">
+			<div className="grid grid-cols-3 gap-2 mt-4">
 				<button
-					onClick={() => onDetail(event)}
-					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-				>
-					<Eye size={13} />
-					Detail
-				</button>
-
-				<button
-					onClick={() => onRegistrations(event)}
-					className="flex-1 text-xs border border-blue-100 text-blue-600 hover:bg-blue-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onRegistrations(event);
+					}}
+					className="text-xs bg-blue-500 text-white hover:bg-blue-600 py-2 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
 				>
 					<Users size={13} />
 					Pendaftar
 				</button>
 
 				<button
-					onClick={() => onEdit(event)}
-					className="flex-1 text-xs border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onEdit(event);
+					}}
+					className="text-xs bg-[#2D7EA0] text-white hover:bg-[#236175] py-2 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
 				>
 					<Pencil size={13} />
 					Ubah
 				</button>
 
 				<button
-					onClick={() => onBroadcast(event)}
-					className="flex-1 text-xs border border-green-200 text-green-600 hover:bg-green-50 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onBroadcast(event);
+					}}
+					className="text-xs bg-emerald-500 text-white hover:bg-emerald-600 py-2 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
 				>
 					<Megaphone size={13} />
 					WA
 				</button>
 
 				<button
-					onClick={() => onTogglePublish(event)}
+					type="button"
+					onClick={(clickEvent) => {
+						clickEvent.stopPropagation();
+						onTogglePublish(event);
+					}}
 					disabled={isToggling}
 					title={published ? "Batalkan publikasi event" : "Publikasikan event"}
-					className={`col-span-2 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
-						published
-							? "border-amber-200 text-amber-700 hover:bg-amber-50"
-							: "border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10"
+					className={`col-span-3 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs text-black shadow-sm hover:shadow-lg transition-all disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none ${
+						published ? "bg-amber-300 hover:bg-amber-400" : "bg-[#3EBDAF] hover:bg-[#32A99D]"
 					}`}
 				>
 					<Power size={13} />
@@ -2310,6 +2428,7 @@ export default function KelolEventPage() {
 	const [activeTab, setActiveTab] = useState<
 		"upcoming" | "done" | "unpublished"
 	>("upcoming");
+	const [currentPage, setCurrentPage] = useState(1);
 
 	const showToast = (
 		message: string,
@@ -2458,6 +2577,30 @@ export default function KelolEventPage() {
 		(event) => getEventPublicationStatus(event) === "inactive",
 	);
 
+	const eventsPerPage = 3;
+	const activeEvents =
+		activeTab === "upcoming"
+			? upcoming
+			: activeTab === "done"
+				? done
+				: unpublished;
+	const totalPages = Math.max(1, Math.ceil(activeEvents.length / eventsPerPage));
+	const pageStartIndex = (currentPage - 1) * eventsPerPage;
+	const paginatedEvents = activeEvents.slice(
+		pageStartIndex,
+		pageStartIndex + eventsPerPage,
+	);
+
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [search, activeTab]);
+
+	useEffect(() => {
+		if (currentPage > totalPages) {
+			setCurrentPage(totalPages);
+		}
+	}, [currentPage, totalPages]);
+
 	const totalPeserta = events.reduce((sum, event) => {
 		return sum + (event.quota_used ?? event.registered ?? 0);
 	}, 0);
@@ -2583,8 +2726,8 @@ export default function KelolEventPage() {
 												onClick={() => setActiveTab("upcoming")}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
 													activeTab === "upcoming"
-														? "bg-white text-gray-800 shadow-sm"
-														: "text-gray-500 hover:text-gray-700"
+														? "border border-blue-300 bg-blue-100/70 text-blue-700 shadow-sm"
+														: "border border-transparent text-gray-500 hover:text-gray-700"
 												}`}
 											>
 												Mendatang ({upcoming.length})
@@ -2593,8 +2736,8 @@ export default function KelolEventPage() {
 												onClick={() => setActiveTab("done")}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
 													activeTab === "done"
-														? "bg-white text-gray-800 shadow-sm"
-														: "text-gray-500 hover:text-gray-700"
+														? "border border-green-300 bg-green-100/70 text-green-700 shadow-sm"
+														: "border border-transparent text-gray-500 hover:text-gray-700"
 												}`}
 											>
 												Selesai ({done.length})
@@ -2603,8 +2746,8 @@ export default function KelolEventPage() {
 												onClick={() => setActiveTab("unpublished")}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
 													activeTab === "unpublished"
-														? "bg-white text-amber-700 shadow-sm"
-														: "text-gray-500 hover:text-gray-700"
+														? "border border-yellow-300 bg-yellow-100/70 text-yellow-700 shadow-sm"
+														: "border border-transparent text-gray-500 hover:text-gray-700"
 												}`}
 											>
 												Tidak Dipublikasikan ({unpublished.length})
@@ -2620,10 +2763,15 @@ export default function KelolEventPage() {
 													</div>
 												) : (
 													<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-														{upcoming.map((e) => (
+														{paginatedEvents.map((e) => (
 															<EventCardUpcoming
 																key={e.id}
 																event={e}
+																categoryStyle={getEventCategoryStyle(
+																	e.category,
+																	e.category_id,
+																	categories,
+																)}
 																onDetail={handleDetail}
 																onEdit={handleEdit}
 																onTogglePublish={handleTogglePublish}
@@ -2648,11 +2796,16 @@ export default function KelolEventPage() {
 														<p className="text-sm">Tidak ada event selesai</p>
 													</div>
 												) : (
-													<div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-														{done.map((e) => (
+													<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+														{paginatedEvents.map((e) => (
 															<EventCardDone
 																key={e.id}
 																event={e}
+																categoryStyle={getEventCategoryStyle(
+																	e.category,
+																	e.category_id,
+																	categories,
+																)}
 																onDetail={handleDetail}
 																onEdit={handleEdit}
 																onTogglePublish={handleTogglePublish}
@@ -2679,9 +2832,14 @@ export default function KelolEventPage() {
 													</div>
 												) : (
 													<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-														{unpublished.map((event) => {
+														{paginatedEvents.map((event) => {
 															const cardProps = {
 																event,
+																categoryStyle: getEventCategoryStyle(
+																	event.category,
+																	event.category_id,
+																	categories,
+																),
 																onDetail: handleDetail,
 																onEdit: handleEdit,
 																onTogglePublish: handleTogglePublish,
@@ -2706,6 +2864,55 @@ export default function KelolEventPage() {
 												)}
 											</div>
 										)}
+
+								{activeEvents.length > eventsPerPage && (
+									<div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+										<p className="text-xs text-gray-400">
+											Menampilkan {pageStartIndex + 1}-
+											{Math.min(pageStartIndex + eventsPerPage, activeEvents.length)}
+											dari {activeEvents.length} event
+										</p>
+
+										<div className="flex flex-wrap items-center gap-2">
+											<button
+												type="button"
+												onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+												disabled={currentPage === 1}
+												className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+											>
+												Sebelumnya
+											</button>
+
+											{Array.from({ length: totalPages }, (_, index) => index + 1).map(
+												(page) => (
+													<button
+														type="button"
+														key={page}
+														onClick={() => setCurrentPage(page)}
+														className={`h-8 min-w-8 rounded-lg border px-2 text-xs font-semibold transition ${
+															currentPage === page
+																? "border-[#2D7EA0] bg-[#2D7EA0] text-white"
+																: "border-gray-200 text-gray-500 hover:bg-gray-50"
+														}`}
+													>
+														{page}
+													</button>
+												),
+											)}
+
+											<button
+												type="button"
+												onClick={() =>
+													setCurrentPage((page) => Math.min(totalPages, page + 1))
+												}
+												disabled={currentPage === totalPages}
+												className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+											>
+												Berikutnya
+											</button>
+										</div>
+									</div>
+								)}
 									</>
 								)}
 							</>
@@ -2739,6 +2946,7 @@ export default function KelolEventPage() {
 			<EventDetailModal
 				eventId={detailEvent?.id ?? null}
 				fallbackEvent={detailEvent}
+				categories={categories}
 				isOpen={!!detailEvent}
 				onClose={() => setDetailEvent(null)}
 			/>

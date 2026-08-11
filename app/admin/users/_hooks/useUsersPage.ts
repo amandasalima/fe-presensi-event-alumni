@@ -23,7 +23,7 @@ import {
 
 export type UserStatusFilter = "all" | UserStatus;
 export type UserStatusAction = "approve" | "reject" | "deactivate" | "activate";
-export type BulkUserStatusAction = "approve" | "deactivate" | "reject";
+export type BulkUserStatusAction = "approve" | "deactivate" | "activate" | "reject";
 export type UserSortKey =
 	| "name"
 	| "email"
@@ -190,13 +190,21 @@ export function useUsersPage() {
 	const pageStart = sortedUsers.length === 0 ? 0 : (visiblePage - 1) * perPage + 1;
 	const pageEnd = Math.min(visiblePage * perPage, sortedUsers.length);
 	const isBulkSelectable = (user: User) =>
-		!isAdminUser(user) && user.id !== currentAdminId;
+		statusFilter !== "all" &&
+		user.status === statusFilter &&
+		!isAdminUser(user) &&
+		user.id !== currentAdminId;
 	const selectableVisibleUsers = useMemo(
 		() =>
-			paginatedUsers.filter(
-				(user) => !isAdminUser(user) && user.id !== currentAdminId,
-			),
-		[paginatedUsers, currentAdminId],
+			statusFilter === "all"
+				? []
+				: paginatedUsers.filter(
+						(user) =>
+							user.status === statusFilter &&
+							!isAdminUser(user) &&
+							user.id !== currentAdminId,
+					),
+		[paginatedUsers, currentAdminId, statusFilter],
 	);
 	const selectedUsers = useMemo(
 		() => users.filter((user) => selectedUserIds.has(user.id)),
@@ -235,6 +243,7 @@ export function useUsersPage() {
 
 	const setStatusFilter = (value: UserStatusFilter) => {
 		setStatusFilterState(value);
+		setSelectedUserIds(new Set());
 		setCurrentPage(1);
 	};
 
@@ -289,10 +298,19 @@ export function useUsersPage() {
 	const runBulkAction = (action: BulkUserStatusAction) => {
 		const eligibleUsers = selectedUsers.filter((user) => {
 			if (!isBulkSelectable(user)) return false;
+
 			if (action === "approve") {
-				return ["pending", "inactive", "rejected"].includes(user.status ?? "");
+				return user.status === "pending" || user.status === "rejected";
 			}
-			if (action === "deactivate") return user.status === "active";
+
+			if (action === "activate") {
+				return user.status === "inactive";
+			}
+
+			if (action === "deactivate") {
+				return user.status === "active";
+			}
+
 			return user.status === "pending";
 		});
 
@@ -305,13 +323,18 @@ export function useUsersPage() {
 		}
 
 		const targetStatus: Exclude<UserStatus, "pending"> =
-			action === "approve"
+			action === "approve" || action === "activate"
 				? "active"
 				: action === "deactivate"
 					? "inactive"
 					: "rejected";
+
 		const successMessages: Record<BulkUserStatusAction, string> = {
-			approve: "Persetujuan massal selesai.",
+			approve:
+				statusFilter === "rejected"
+					? "Persetujuan ulang massal selesai."
+					: "Persetujuan massal selesai.",
+			activate: "Pengaktifan massal selesai.",
 			deactivate: "Penonaktifan massal selesai.",
 			reject: "Penolakan massal selesai.",
 		};
@@ -464,7 +487,7 @@ export function useUsersPage() {
 		}
 
 		exportUsersToExcel(sortedUsers);
-	showFeedback({ type: "success", message: "Data pengguna berhasil diekspor ke Excel" });
+		showFeedback({ type: "success", message: "Data pengguna berhasil diekspor ke Excel" });
 	};
 
 	return {

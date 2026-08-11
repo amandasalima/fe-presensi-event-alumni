@@ -9,7 +9,11 @@ import {
 	Users,
 	UserCheck,
 	Clock3,
+	Clock,
 	CalendarPlus,
+	Calendar,
+	MapPin,
+	CheckCircle,
 	UserCog,
 	Search,
 	AlertCircle,
@@ -28,7 +32,6 @@ import type {
 import {
 	type UserSortKey,
 	type UserStatusAction,
-	type UserStatusTarget,
 	useUsersPage,
 } from "./_hooks/useUsersPage";
 import {
@@ -48,35 +51,34 @@ const STATUS_OPTIONS: Array<{ value: UserStatus; label: string }> = [
 	{ value: "rejected", label: "Ditolak" },
 ];
 
-const STATUS_CONFIRMATIONS: Record<
-	UserStatusAction,
-	{ title: string; message: string; confirmLabel: string; tone: "danger" | "default" }
+const BULK_ACTION_BY_STATUS: Partial<
+	Record<
+		UserStatus,
+		{ action: UserStatusAction; label: string; className: string }
+	>
 > = {
-	approve: {
-		title: "Setujui pengguna?",
-		message: "Yakin ingin menyetujui pengguna ini?",
-		confirmLabel: "Setujui",
-		tone: "default",
+	pending: {
+		action: "approve",
+		label: "Setujui Semua",
+		className: "bg-[#2D7EA0] text-white hover:bg-[#236175]",
 	},
-	reject: {
-		title: "Tolak pengguna?",
-		message: "Yakin ingin menolak pengguna ini?",
-		confirmLabel: "Tolak",
-		tone: "danger",
+	active: {
+		action: "deactivate",
+		label: "Nonaktifkan Semua",
+		className: "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
 	},
-	deactivate: {
-		title: "Nonaktifkan pengguna?",
-		message: "Yakin ingin menonaktifkan pengguna ini?",
-		confirmLabel: "Nonaktifkan",
-		tone: "danger",
+	inactive: {
+		action: "activate",
+		label: "Aktifkan Semua",
+		className: "bg-[#2D7EA0] text-white hover:bg-[#236175]",
 	},
-	activate: {
-		title: "Aktifkan pengguna?",
-		message: "Yakin ingin mengaktifkan pengguna ini?",
-		confirmLabel: "Aktifkan",
-		tone: "default",
+	rejected: {
+		action: "approve",
+		label: "Setujui Ulang Semua",
+		className: "bg-[#2D7EA0] text-white hover:bg-[#236175]",
 	},
 };
+
 const GENDER_OPTIONS = ["Laki-laki", "Perempuan"];
 const USER_TABLE_HEADERS: Array<{ label: string; sortKey: UserSortKey }> = [
 	{ label: "Nama", sortKey: "name" },
@@ -159,16 +161,20 @@ function Icon3D({
 	);
 }
 
-function TableSkeleton() {
+function TableSkeleton({ showSelection }: { showSelection: boolean }) {
+	const columnCount = showSelection ? 8 : 7;
+
 	return (
 		<>
 			{[1, 2, 3, 4, 5].map((i) => (
 				<tr key={i} className="border-b border-gray-200 animate-pulse">
-					{[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
-						<td key={j} className="p-5">
-							<div className="h-4 bg-gray-100 rounded w-3/4" />
-						</td>
-					))}
+					{Array.from({ length: columnCount }, (_, index) => index + 1).map(
+						(j) => (
+							<td key={j} className="p-5">
+								<div className="h-4 bg-gray-100 rounded w-3/4" />
+							</td>
+						),
+					)}
 				</tr>
 			))}
 		</>
@@ -354,93 +360,174 @@ function EditUserModal({
 	);
 }
 
-function UserStatusActions({
+
+type DummyPresence = {
+	id: number;
+	event: {
+		event_title: string;
+		event_date: string;
+		location: string;
+	};
+	scanned_at: string;
+};
+
+const DUMMY_PRESENCES: DummyPresence[] = [
+	{
+		id: 1,
+		event: {
+			event_title: "Silaturahmi Alumni",
+			event_date: "2026-08-10",
+			location: "Aula Pondok Pesantren",
+		},
+		scanned_at: "2026-08-10T08:15:00",
+	},
+	{
+		id: 2,
+		event: {
+			event_title: "Reuni Akbar",
+			event_date: "2026-07-20",
+			location: "Lapangan Utama",
+		},
+		scanned_at: "2026-07-20T07:45:00",
+	},
+	{
+		id: 3,
+		event: {
+			event_title: "Kajian dan Temu Alumni",
+			event_date: "2026-06-15",
+			location: "Masjid Pondok Pesantren",
+		},
+		scanned_at: "2026-06-15T09:10:00",
+	},
+];
+
+function formatHistoryDate(date: string) {
+	return new Date(date).toLocaleDateString("id-ID", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	});
+}
+
+function formatHistoryScannedAt(date: string) {
+	const value = new Date(date);
+	const formattedDate = value.toLocaleDateString("id-ID", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	});
+	const formattedTime = value.toLocaleTimeString("id-ID", {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+
+	return `${formattedDate} • ${formattedTime} WIB`;
+}
+
+function UserPresenceHistoryModal({
 	user,
-	onRequest,
-	isLoading,
+	onClose,
 }: {
 	user: User;
-	onRequest: (target: UserStatusTarget) => void;
-	isLoading: boolean;
+	onClose: () => void;
 }) {
-	if (isAdminUser(user) || !user.status) return null;
-
-	const buttonClass =
-		"rounded-lg border px-2 py-1 text-[10px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
-
-	if (user.status === "pending") {
-		return (
-			<>
-				<button
-					type="button"
-					onClick={() =>
-						onRequest({ user, status: "active", action: "approve" })
-					}
-					disabled={isLoading}
-					className={`${buttonClass} border-green-200 text-green-700 hover:bg-green-50`}
-				>
-					Setujui
-				</button>
-				<button
-					type="button"
-					onClick={() =>
-						onRequest({ user, status: "rejected", action: "reject" })
-					}
-					disabled={isLoading}
-					className={`${buttonClass} border-red-200 text-red-600 hover:bg-red-50`}
-				>
-					Tolak
-				</button>
-			</>
-		);
-	}
-
-	if (user.status === "active") {
-		return (
-			<button
-				type="button"
-				onClick={() =>
-					onRequest({ user, status: "inactive", action: "deactivate" })
-				}
-				disabled={isLoading}
-				className={`${buttonClass} border-gray-200 text-gray-600 hover:bg-gray-200`}
+	return (
+		<div
+			className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+			onClick={onClose}
+			role="presentation"
+		>
+			<div
+				className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl"
+				onClick={(event) => event.stopPropagation()}
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="presence-history-title"
 			>
-				Nonaktifkan
-			</button>
-		);
-	}
+				<div className="flex items-center justify-between border-b border-gray-100 p-5">
+					<div className="min-w-0">
+						<h2
+							id="presence-history-title"
+							className="text-lg font-bold text-gray-900"
+						>
+							Riwayat Kehadiran
+						</h2>
+						<p className="mt-0.5 truncate text-sm font-medium text-gray-600">
+							{user.name}
+						</p>
+						<p className="truncate text-xs text-gray-400">{user.email}</p>
+					</div>
 
-	if (user.status === "inactive") {
-		return (
-			<button
-				type="button"
-				onClick={() =>
-					onRequest({ user, status: "active", action: "activate" })
-				}
-				disabled={isLoading}
-				className={`${buttonClass} border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10`}
-			>
-				Aktifkan
-			</button>
-		);
-	}
+					<button
+						type="button"
+						onClick={onClose}
+						className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+						aria-label="Tutup riwayat kehadiran"
+					>
+						<X size={18} />
+					</button>
+				</div>
 
-	if (user.status === "rejected") {
-		return (
-			<button
-				type="button"
-				onClick={() =>
-					onRequest({ user, status: "active", action: "approve" })
-				}
-				disabled={isLoading}
-				className={`${buttonClass} border-green-200 text-green-700 hover:bg-green-50`}
-			>
-				Setujui Ulang
-			</button>
-		);
-	}
+				<div className="border-b border-gray-100 bg-[#7AB2B2]/10 px-5 py-3">
+					<p className="text-xs font-semibold text-[#236175]">
+						Total kehadiran sementara: {DUMMY_PRESENCES.length} event
+					</p>
+					<p className="mt-0.5 text-[11px] text-gray-500">
+						Data ini masih dummy dan nanti akan diganti dengan data dari API.
+					</p>
+				</div>
 
-	return null;
+				<div className="max-h-[65vh] overflow-y-auto p-5">
+					<div className="space-y-3">
+						{DUMMY_PRESENCES.map((presence) => (
+							<div
+								key={presence.id}
+								className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+							>
+								<div className="flex items-start justify-between gap-4">
+									<div className="min-w-0 space-y-2">
+										<h3 className="text-sm font-bold text-gray-800">
+											{presence.event.event_title}
+										</h3>
+
+										<div className="flex items-center gap-2 text-xs text-gray-500">
+											<Calendar size={14} className="shrink-0" />
+											<span>
+												{formatHistoryDate(presence.event.event_date)}
+											</span>
+										</div>
+
+										<div className="flex items-center gap-2 text-xs text-gray-500">
+											<MapPin size={14} className="shrink-0" />
+											<span>{presence.event.location}</span>
+										</div>
+									</div>
+
+									<span className="flex shrink-0 items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600">
+										<CheckCircle size={12} />
+										Hadir
+									</span>
+								</div>
+
+								<div className="mt-4 flex items-start gap-2 border-t border-gray-100 pt-3 text-xs text-gray-500">
+									<Clock
+										size={14}
+										className="mt-0.5 shrink-0 text-teal-600"
+									/>
+									<span>
+										Diverifikasi:{" "}
+										<span className="font-medium text-gray-700">
+											{formatHistoryScannedAt(presence.scanned_at)}
+										</span>
+									</span>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default function UsersPage() {
@@ -448,10 +535,8 @@ export default function UsersPage() {
 		allVisibleSelected,
 		bulkActionLoading,
 		cancelDelete,
-		cancelStatusUpdate,
 		clearSelectedUsers,
 		confirmDelete,
-		confirmStatusUpdate,
 		currentPage,
 		deleteUser,
 		deleteTarget,
@@ -469,7 +554,6 @@ export default function UsersPage() {
 		paginatedUsers,
 		paginationRange,
 		perPage,
-		requestStatusUpdate,
 		runBulkAction,
 		search,
 		selected,
@@ -483,17 +567,17 @@ export default function UsersPage() {
 		sortDirection,
 		stats,
 		statusFilter,
-		statusTarget,
 		someVisibleSelected,
 		toggleSelectAll,
 		toggleUserSelection,
 		totalFilteredUsers,
 		totalPages,
 		updateUser,
-		updateUserStatus,
 		users,
 		closeModal,
 	} = useUsersPage();
+	const [historyUser, setHistoryUser] = useState<User | null>(null);
+
 	const statusTabs = [
 		{ value: "all" as const, label: "Semua", count: users.length },
 		{
@@ -513,9 +597,16 @@ export default function UsersPage() {
 			count: stats.rejectedUsers,
 		},
 	];
-	const statusConfirmation = statusTarget
-		? STATUS_CONFIRMATIONS[statusTarget.action]
-		: STATUS_CONFIRMATIONS.approve;
+	const bulkAction =
+		statusFilter === "all" ? null : BULK_ACTION_BY_STATUS[statusFilter] ?? null;
+
+	const handleStatusTabChange = (
+		value: (typeof statusTabs)[number]["value"],
+	) => {
+		clearSelectedUsers();
+		setStatusFilter(value);
+	};
+
 
 	return (
 		<div className="h-screen bg-gray-100 flex overflow-hidden">
@@ -619,7 +710,7 @@ export default function UsersPage() {
 									<button
 										type="button"
 										key={tab.value}
-										onClick={() => setStatusFilter(tab.value)}
+										onClick={() => handleStatusTabChange(tab.value)}
 										className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
 											statusFilter === tab.value
 												? "bg-white text-[#2D7EA0] shadow-sm"
@@ -631,7 +722,7 @@ export default function UsersPage() {
 								))}
 							</div>
 
-							{selectedUsers.length > 0 && (
+							{bulkAction && selectedUsers.length > 0 && (
 								<div className="mb-4 flex flex-col gap-3 rounded-xl border border-teal-100 bg-[#7AB2B2]/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 									<p className="text-sm font-semibold text-[#236175]">
 										{bulkActionLoading
@@ -641,33 +732,17 @@ export default function UsersPage() {
 									<div className="flex flex-wrap gap-2">
 										<button
 											type="button"
-											onClick={() => runBulkAction("approve")}
+											onClick={() => runBulkAction(bulkAction.action)}
 											disabled={bulkActionLoading || selectedUsers.length === 0}
-											className="rounded-lg bg-[#2D7EA0] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#236175] disabled:cursor-not-allowed disabled:opacity-50"
+											className={`rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${bulkAction.className}`}
 										>
-											Setujui
-										</button>
-										<button
-											type="button"
-											onClick={() => runBulkAction("deactivate")}
-											disabled={bulkActionLoading || selectedUsers.length === 0}
-											className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											Nonaktifkan
-										</button>
-										<button
-											type="button"
-											onClick={() => runBulkAction("reject")}
-											disabled={bulkActionLoading || selectedUsers.length === 0}
-											className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											Tolak
+											{bulkAction.label}
 										</button>
 										<button
 											type="button"
 											onClick={clearSelectedUsers}
 											disabled={bulkActionLoading}
-											className="rounded-lg px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 transition hover:bg-red-100 hover:border-red-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Batal Pilih
 										</button>
@@ -696,27 +771,29 @@ export default function UsersPage() {
 									<table className="w-full overflow-hidden rounded-xl">
 										<thead className="bg-[#7AB2B2]/20">
 											<tr>
-												<th className="w-10 px-2.5 py-2 text-center">
-													<input
-														type="checkbox"
-														checked={allVisibleSelected}
-														onChange={toggleSelectAll}
-														disabled={
-															bulkActionLoading ||
-															!paginatedUsers.some(isBulkSelectable)
-														}
-														aria-label="Pilih semua pengguna yang tampil"
-														aria-checked={
-															allVisibleSelected
-																? true
-																: someVisibleSelected
-																	? "mixed"
-																	: false
-														}
-														title="Pilih semua pengguna yang tampil"
-														className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-50"
-													/>
-												</th>
+												{statusFilter !== "all" && (
+													<th className="w-10 px-2.5 py-2 text-center">
+														<input
+															type="checkbox"
+															checked={allVisibleSelected}
+															onChange={toggleSelectAll}
+															disabled={
+																bulkActionLoading ||
+																!paginatedUsers.some(isBulkSelectable)
+															}
+															aria-label="Pilih semua pengguna yang tampil"
+															aria-checked={
+																allVisibleSelected
+																	? true
+																	: someVisibleSelected
+																		? "mixed"
+																		: false
+															}
+															title="Pilih semua pengguna yang tampil"
+															className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-50"
+														/>
+													</th>
+												)}
 												{USER_TABLE_HEADERS.map((header) => (
 													<th
 														key={header.sortKey}
@@ -756,11 +833,11 @@ export default function UsersPage() {
 										</thead>
 										<tbody>
 											{isLoading ? (
-												<TableSkeleton />
+												<TableSkeleton showSelection={statusFilter !== "all"} />
 											) : totalFilteredUsers === 0 ? (
 												<tr>
 													<td
-												colSpan={8}
+												colSpan={statusFilter === "all" ? 7 : 8}
 														className="text-center py-8 text-gray-400"
 													>
 														<div className="flex justify-center mb-3">
@@ -776,33 +853,44 @@ export default function UsersPage() {
 													</td>
 												</tr>
 											) : (
-										paginatedUsers.map((user) => {
-											const canSelect = isBulkSelectable(user);
+										paginatedUsers.map((user, index) => {
+											const canSelect = statusFilter !== "all" && isBulkSelectable(user);
 											const avatarUrl = getUserAvatarUrl(user);
-											const selectionTitle = isAdminUser(user)
-												? "Admin tidak dapat diproses secara massal"
-												: canSelect
-													? `Pilih ${user.name}`
-													: "Akun Anda sendiri tidak dapat diproses secara massal";
+											const selectionTitle =
+												statusFilter === "all"
+													? "Pilih salah satu tab status untuk aksi massal"
+													: isAdminUser(user)
+														? "Admin tidak dapat diproses secara massal"
+														: canSelect
+															? `Pilih ${user.name}`
+															: "Akun Anda sendiri tidak dapat diproses secara massal";
 
 											return (
 												<tr
 													key={user.id}
-													className={`border-b border-gray-200 transition-colors hover:bg-gray-50 ${
-														selectedUserIds.has(user.id) ? "bg-teal-50/60" : ""
+													onClick={() => setHistoryUser(user)}
+													className={`cursor-pointer border-b border-gray-200 transition-colors ${
+														selectedUserIds.has(user.id)
+															? "bg-blue-100 hover:bg-blue-200"
+															: index % 2 === 0
+																? "bg-white hover:bg-gray-100"
+																: "bg-blue-50 hover:bg-blue-100"
 													}`}
 												>
-													<td className="p-3">
-														<input
-															type="checkbox"
-															checked={selectedUserIds.has(user.id)}
-															onChange={() => toggleUserSelection(user)}
-															disabled={bulkActionLoading || !canSelect}
-															aria-label={selectionTitle}
-															title={selectionTitle}
-															className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-40"
-														/>
-													</td>
+													{statusFilter !== "all" && (
+														<td className="p-3">
+															<input
+																type="checkbox"
+																onClick={(event) => event.stopPropagation()}
+																checked={selectedUserIds.has(user.id)}
+																onChange={() => toggleUserSelection(user)}
+																disabled={bulkActionLoading || !canSelect}
+																aria-label={selectionTitle}
+																title={selectionTitle}
+																className="h-4 w-4 rounded border-gray-300 accent-[#2D7EA0] disabled:cursor-not-allowed disabled:opacity-40"
+															/>
+														</td>
+													)}
 												<td className="p-3">
 															<div className="flex items-center gap-2">
 																<div
@@ -833,33 +921,28 @@ export default function UsersPage() {
 														<td className="p-3 text-gray-500 text-xs">
 															{getUserPhone(user)}
 														</td>
-														<td className="p-3">
-															<span className="px-2.5 py-1 bg-[#7AB2B2]/20 text-cyan-700 rounded-lg text-xs font-medium">
+														<td className="p-3 text-center">
+															<span className="inline-block px-2.5 py-1 bg-[#7AB2B2]/20 text-cyan-700 rounded-lg text-xs font-medium">
 																{formatLabel(user.role)}
 															</span>
 														</td>
-														<td className="p-3">
+														<td className="p-3 text-center">
 															<span
-																className={`px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusClass(user.status)}`}
+																className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusClass(user.status)}`}
 															>
 																{getStatusLabel(user.status)}
 															</span>
 														</td>
-														<td className="p-3 text-gray-500 text-xs">
+														<td className="p-3 text-center text-gray-500 text-xs">
 															{formatDate(user.created_at)}
 														</td>
 														<td className="p-3">
-															<div className="flex flex-wrap gap-1.5">
-																<UserStatusActions
-																	user={user}
-																	onRequest={requestStatusUpdate}
-																	isLoading={
-																		updateUserStatus.isPending &&
-																		statusTarget?.user.id === user.id
-																	}
-																/>
+															<div className="flex flex-wrap justify-end gap-1.5">
 																<button
-																	onClick={() => setSelected(user)}
+																	onClick={(event) => {
+																						event.stopPropagation();
+																						setSelected(user);
+																					}}
 																	className="rounded-lg p-1 text-[#2D7EA0] transition-colors hover:bg-[#7AB2B2]/10"
 														title="Ubah"
 														aria-label={`Ubah ${user.name}`}
@@ -867,7 +950,10 @@ export default function UsersPage() {
 																	<Edit3 size={14} strokeWidth={2.5} />
 																</button>
 																<button
-																	onClick={() => handleDelete(user)}
+																	onClick={(event) => {
+																						event.stopPropagation();
+																						handleDelete(user);
+																					}}
 																	disabled={deleteUser.isPending}
 																	className="rounded-lg p-1 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-50"
 																	title="Hapus"
@@ -978,17 +1064,6 @@ export default function UsersPage() {
 			)}
 
 			<ConfirmDialog
-				isOpen={!!statusTarget}
-				title={statusConfirmation.title}
-				message={statusConfirmation.message}
-				confirmLabel={statusConfirmation.confirmLabel}
-				tone={statusConfirmation.tone}
-				loading={updateUserStatus.isPending}
-				onCancel={cancelStatusUpdate}
-				onConfirm={confirmStatusUpdate}
-			/>
-
-			<ConfirmDialog
 				isOpen={!!deleteTarget}
 				title="Hapus pengguna?"
 				message={
@@ -1001,6 +1076,13 @@ export default function UsersPage() {
 				onCancel={cancelDelete}
 				onConfirm={confirmDelete}
 			/>
+
+			{historyUser && (
+				<UserPresenceHistoryModal
+					user={historyUser}
+					onClose={() => setHistoryUser(null)}
+				/>
+			)}
 
 			{feedback && (
 				<FeedbackToast type={feedback.type} message={feedback.message} />

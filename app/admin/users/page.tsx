@@ -116,6 +116,14 @@ function getDateInputValue(value?: string | null) {
 	return date.toISOString().slice(0, 10);
 }
 
+type UserWithAvatar = User & {
+	avatar_url?: string | null;
+};
+
+function getUserAvatarUrl(user: User) {
+	return (user as UserWithAvatar).avatar_url?.trim() || null;
+}
+
 function Icon3D({
 	children,
 	variant = "teal",
@@ -358,7 +366,7 @@ function UserStatusActions({
 	if (isAdminUser(user) || !user.status) return null;
 
 	const buttonClass =
-		"rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
+		"rounded-lg border px-2 py-1 text-[10px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
 
 	if (user.status === "pending") {
 		return (
@@ -688,7 +696,7 @@ export default function UsersPage() {
 									<table className="w-full overflow-hidden rounded-xl">
 										<thead className="bg-[#7AB2B2]/20">
 											<tr>
-												<th className="w-10 p-3 text-left">
+												<th className="w-10 px-2.5 py-2 text-center">
 													<input
 														type="checkbox"
 														checked={allVisibleSelected}
@@ -712,7 +720,11 @@ export default function UsersPage() {
 												{USER_TABLE_HEADERS.map((header) => (
 													<th
 														key={header.sortKey}
-														className="p-3 text-left text-xs font-semibold text-gray-700"
+														className={`px-2.5 py-2 text-[11px] font-semibold text-gray-700 ${
+															["name", "email", "phone"].includes(header.sortKey)
+																? "text-left"
+																: "text-center"
+														}`}
 													>
 														<button
 															type="button"
@@ -737,7 +749,7 @@ export default function UsersPage() {
 														</button>
 													</th>
 												))}
-												<th className="p-3 text-left text-xs font-semibold text-gray-700">
+												<th className="px-2.5 py-2 text-center text-[11px] font-semibold text-gray-700">
 													Aksi
 												</th>
 											</tr>
@@ -766,6 +778,7 @@ export default function UsersPage() {
 											) : (
 										paginatedUsers.map((user) => {
 											const canSelect = isBulkSelectable(user);
+											const avatarUrl = getUserAvatarUrl(user);
 											const selectionTitle = isAdminUser(user)
 												? "Admin tidak dapat diproses secara massal"
 												: canSelect
@@ -792,10 +805,24 @@ export default function UsersPage() {
 													</td>
 												<td className="p-3">
 															<div className="flex items-center gap-2">
-																<div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7AB2B2] to-[#3EBDAF] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-																	{user.name?.[0]?.toUpperCase() ?? "U"}
+																<div
+																	className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-cover bg-center text-[11px] font-bold text-white ${
+																		avatarUrl
+																			? "bg-gray-100 ring-1 ring-gray-200"
+																			: "bg-gradient-to-br from-[#7AB2B2] to-[#3EBDAF]"
+																	}`}
+																	style={
+																		avatarUrl
+																			? { backgroundImage: `url("${avatarUrl}")` }
+																			: undefined
+																	}
+																	aria-label={
+																		avatarUrl ? `Foto profil ${user.name}` : undefined
+																	}
+																>
+																	{!avatarUrl && (user.name?.[0]?.toUpperCase() ?? "U")}
 																</div>
-																<span className="font-semibold text-gray-800 text-sm">
+																<span className="text-xs font-semibold text-gray-800">
 																	{user.name}
 																</span>
 															</div>
@@ -833,20 +860,20 @@ export default function UsersPage() {
 																/>
 																<button
 																	onClick={() => setSelected(user)}
-																	className="p-1.5 hover:bg-[#7AB2B2]/10 rounded-lg transition-colors text-[#2D7EA0]"
+																	className="rounded-lg p-1 text-[#2D7EA0] transition-colors hover:bg-[#7AB2B2]/10"
 														title="Ubah"
 														aria-label={`Ubah ${user.name}`}
 																>
-																	<Edit3 size={15} strokeWidth={2.5} />
+																	<Edit3 size={14} strokeWidth={2.5} />
 																</button>
 																<button
 																	onClick={() => handleDelete(user)}
 																	disabled={deleteUser.isPending}
-																	className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-red-400 disabled:opacity-50"
+																	className="rounded-lg p-1 text-red-400 transition-colors hover:bg-red-50 disabled:opacity-50"
 																	title="Hapus"
 																	aria-label={`Hapus ${user.name}`}
 																>
-																	<Trash2 size={15} strokeWidth={2.5} />
+																	<Trash2 size={14} strokeWidth={2.5} />
 																</button>
 															</div>
 														</td>

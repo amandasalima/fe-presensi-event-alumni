@@ -10,6 +10,7 @@ export interface User {
 	gender?: string | null;
 	graduation_year?: string | null;
 	birth_date?: string | null;
+	avatar_url?: string | null;
 	role: string;
 	status?: UserStatus | null;
 	created_at: string;

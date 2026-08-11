@@ -2585,21 +2585,12 @@ export default function KelolEventPage() {
 				? done
 				: unpublished;
 	const totalPages = Math.max(1, Math.ceil(activeEvents.length / eventsPerPage));
-	const pageStartIndex = (currentPage - 1) * eventsPerPage;
+	const effectiveCurrentPage = Math.min(currentPage, totalPages);
+	const pageStartIndex = (effectiveCurrentPage - 1) * eventsPerPage;
 	const paginatedEvents = activeEvents.slice(
 		pageStartIndex,
 		pageStartIndex + eventsPerPage,
 	);
-
-	useEffect(() => {
-		setCurrentPage(1);
-	}, [search, activeTab]);
-
-	useEffect(() => {
-		if (currentPage > totalPages) {
-			setCurrentPage(totalPages);
-		}
-	}, [currentPage, totalPages]);
 
 	const totalPeserta = events.reduce((sum, event) => {
 		return sum + (event.quota_used ?? event.registered ?? 0);
@@ -2680,7 +2671,10 @@ export default function KelolEventPage() {
 							wrapperClassName="flex items-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-4 focus-within:border-[#3EBDAF] bg-white"
 							placeholder="Cari event..."
 							value={search}
-							onValueChange={setSearch}
+							onValueChange={(value) => {
+								setSearch(value);
+								setCurrentPage(1);
+							}}
 							className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
 						/>
 
@@ -2723,7 +2717,10 @@ export default function KelolEventPage() {
 									<>
 										<div className="mb-4 flex w-fit flex-wrap gap-2 rounded-xl bg-gray-100 p-1">
 											<button
-												onClick={() => setActiveTab("upcoming")}
+												onClick={() => {
+													setActiveTab("upcoming");
+													setCurrentPage(1);
+												}}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
 													activeTab === "upcoming"
 														? "border border-blue-300 bg-blue-100/70 text-blue-700 shadow-sm"
@@ -2733,7 +2730,10 @@ export default function KelolEventPage() {
 												Mendatang ({upcoming.length})
 											</button>
 											<button
-												onClick={() => setActiveTab("done")}
+												onClick={() => {
+													setActiveTab("done");
+													setCurrentPage(1);
+												}}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
 													activeTab === "done"
 														? "border border-green-300 bg-green-100/70 text-green-700 shadow-sm"
@@ -2743,7 +2743,10 @@ export default function KelolEventPage() {
 												Selesai ({done.length})
 											</button>
 											<button
-												onClick={() => setActiveTab("unpublished")}
+												onClick={() => {
+													setActiveTab("unpublished");
+													setCurrentPage(1);
+												}}
 												className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
 													activeTab === "unpublished"
 														? "border border-yellow-300 bg-yellow-100/70 text-yellow-700 shadow-sm"
@@ -2876,8 +2879,8 @@ export default function KelolEventPage() {
 										<div className="flex flex-wrap items-center gap-2">
 											<button
 												type="button"
-												onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-												disabled={currentPage === 1}
+												onClick={() => setCurrentPage(Math.max(1, effectiveCurrentPage - 1))}
+												disabled={effectiveCurrentPage === 1}
 												className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
 											>
 												Sebelumnya
@@ -2890,7 +2893,7 @@ export default function KelolEventPage() {
 														key={page}
 														onClick={() => setCurrentPage(page)}
 														className={`h-8 min-w-8 rounded-lg border px-2 text-xs font-semibold transition ${
-															currentPage === page
+															effectiveCurrentPage === page
 																? "border-[#2D7EA0] bg-[#2D7EA0] text-white"
 																: "border-gray-200 text-gray-500 hover:bg-gray-50"
 														}`}
@@ -2903,9 +2906,11 @@ export default function KelolEventPage() {
 											<button
 												type="button"
 												onClick={() =>
-													setCurrentPage((page) => Math.min(totalPages, page + 1))
+													setCurrentPage(
+														Math.min(totalPages, effectiveCurrentPage + 1),
+													)
 												}
-												disabled={currentPage === totalPages}
+												disabled={effectiveCurrentPage === totalPages}
 												className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
 											>
 												Berikutnya

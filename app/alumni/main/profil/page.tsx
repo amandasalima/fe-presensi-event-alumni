@@ -17,6 +17,7 @@ import {
   LogOut,
   ChevronRight,
   Trash2,
+  MapPin,
 } from "lucide-react";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import FeedbackToast from "@/app/components/FeedbackToast";
@@ -32,6 +33,7 @@ import {
 import type { UpdateProfilePayload } from "@/types/profile";
 import { clearAuthStorage, getApiErrorMessage, getImageUrl } from "@/lib/api";
 import { stopHeartbeat } from "@/lib/heartbeat";
+import DomicileFormFields from "@/app/components/DomicileFormFields";
 
 /* ─── Skeleton loader ─────────────────────────────────────── */
 function ProfileSkeleton() {
@@ -262,6 +264,28 @@ function EditInput({
   );
 }
 
+function validateDomicile(values: UpdateProfilePayload) {
+  const errors: Record<string, string> = {};
+
+  if (values.domicile_city_code && !values.domicile_province_code) {
+    errors.domicile_province_code = "Provinsi wajib dipilih.";
+  }
+  if (values.domicile_district_code && !values.domicile_city_code) {
+    errors.domicile_city_code = "Kabupaten/kota wajib dipilih.";
+  }
+  if (values.domicile_village_code && !values.domicile_district_code) {
+    errors.domicile_district_code = "Kecamatan wajib dipilih.";
+  }
+  if (values.domicile_postal_code && values.domicile_postal_code.length > 10) {
+    errors.domicile_postal_code = "Kode pos maksimal 10 karakter.";
+  }
+  if (values.domicile_address && values.domicile_address.length > 1000) {
+    errors.domicile_address = "Alamat maksimal 1000 karakter.";
+  }
+
+  return errors;
+}
+
 /* ─── Main Profile Page ───────────────────────────────────── */
 export default function AlumniProfilePage() {
   const router = useRouter();
@@ -298,6 +322,12 @@ export default function AlumniProfilePage() {
         ? String(profile.graduation_year)
         : "",
       birth_date: profile.birth_date || "",
+      domicile_province_code: profile.domicile?.province?.code || "",
+      domicile_city_code: profile.domicile?.city?.code || "",
+      domicile_district_code: profile.domicile?.district?.code || "",
+      domicile_village_code: profile.domicile?.village?.code || "",
+      domicile_postal_code: profile.domicile?.postal_code || "",
+      domicile_address: profile.domicile?.address || "",
     });
 
     setIsEditing(true);
@@ -309,6 +339,12 @@ export default function AlumniProfilePage() {
   }
 
   function handleSave() {
+    const errors = validateDomicile(draft);
+    if (Object.keys(errors).length > 0) {
+      showToast("error", Object.values(errors)[0]);
+      return;
+    }
+
     updateProfile(draft, {
       onSuccess: () => {
         setIsEditing(false);
@@ -564,6 +600,59 @@ export default function AlumniProfilePage() {
             type="date"
           />
         </InfoRow>
+
+        {/* Domicile View Mode */}
+        {!isEditing && (
+          <div className="border-t border-slate-100 mt-4 pt-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Domisili</h3>
+            {profile.domicile ? (
+              <>
+                <InfoRow
+                  icon={MapPin}
+                  label="Alamat Lengkap"
+                  value={profile.domicile.address || "—"}
+                />
+                <InfoRow
+                  icon={MapPin}
+                  label="Wilayah"
+                  value={`${profile.domicile.village?.name || ""}, ${profile.domicile.district?.name || ""}, ${profile.domicile.city?.name || ""}, ${profile.domicile.province?.name || ""}`}
+                />
+                <InfoRow
+                  icon={MapPin}
+                  label="Kode Pos"
+                  value={profile.domicile.postal_code || "—"}
+                />
+              </>
+            ) : (
+              <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span className="text-xs font-medium">Domisili belum diisi</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="text-xs font-semibold text-[#41A07E] hover:underline"
+                >
+                  Lengkapi Domisili
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Domicile Edit Mode */}
+        {isEditing && (
+          <div className="border-t border-slate-100 mt-4 pt-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Domisili</h3>
+            <DomicileFormFields
+              values={draft}
+              onChange={(field, value) => setDraft(prev => ({ ...prev, [field]: value }))}
+              errors={validateDomicile(draft)}
+              theme="alumni-profile"
+            />
+          </div>
+        )}
       </div>
 
       {/* Bottom actions */}

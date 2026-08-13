@@ -1,3 +1,5 @@
+import type { Domicile } from "./profile";
+
 export interface LoginPayload {
   email: string;
   password: string;
@@ -14,6 +16,12 @@ export interface RegisterPayload {
   birth_date: string;
   password: string;
   password_confirmation: string;
+  domicile_province_code?: string;
+  domicile_city_code?: string;
+  domicile_district_code?: string;
+  domicile_village_code?: string;
+  domicile_postal_code?: string;
+  domicile_address?: string;
 }
 
 export interface LoginAuthResponse {
@@ -57,6 +65,7 @@ export interface AlumniUser {
   email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
+  domicile?: Domicile | null;
 }
 
 export interface AdminUser {

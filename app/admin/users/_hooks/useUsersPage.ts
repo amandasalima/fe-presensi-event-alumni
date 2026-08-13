@@ -145,6 +145,33 @@ export function useUsersPage() {
 	const [perPage, setPerPageState] = useState(10);
 	const [sortBy, setSortBy] = useState<UserSortKey | null>(null);
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+	const [provinceFilter, setProvinceFilter] = useState("");
+	const [cityFilter, setCityFilter] = useState("");
+	const [districtFilter, setDistrictFilter] = useState("");
+	const [villageFilter, setVillageFilter] = useState("");
+
+	const handleProvinceFilterChange = (val: string) => {
+		setProvinceFilter(val);
+		setCityFilter("");
+		setDistrictFilter("");
+		setVillageFilter("");
+		setCurrentPage(1);
+	};
+	const handleCityFilterChange = (val: string) => {
+		setCityFilter(val);
+		setDistrictFilter("");
+		setVillageFilter("");
+		setCurrentPage(1);
+	};
+	const handleDistrictFilterChange = (val: string) => {
+		setDistrictFilter(val);
+		setVillageFilter("");
+		setCurrentPage(1);
+	};
+	const handleVillageFilterChange = (val: string) => {
+		setVillageFilter(val);
+		setCurrentPage(1);
+	};
 	const [feedback, setFeedback] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -167,11 +194,29 @@ export function useUsersPage() {
 				: users.filter((user) => user.status === statusFilter),
 		[statusFilter, users],
 	);
+	const domicileFilteredUsers = useMemo(() => {
+		return statusFilteredUsers.filter((user) => {
+			if (provinceFilter && user.domicile?.province?.code !== provinceFilter) {
+				return false;
+			}
+			if (cityFilter && user.domicile?.city?.code !== cityFilter) {
+				return false;
+			}
+			if (districtFilter && user.domicile?.district?.code !== districtFilter) {
+				return false;
+			}
+			if (villageFilter && user.domicile?.village?.code !== villageFilter) {
+				return false;
+			}
+			return true;
+		});
+	}, [statusFilteredUsers, provinceFilter, cityFilter, districtFilter, villageFilter]);
+
 	const {
 		filteredItems: filtered,
 		searchQuery: search,
 		setSearchQuery,
-	} = useSearchFilter(statusFilteredUsers, (user) => [
+	} = useSearchFilter(domicileFilteredUsers, (user) => [
 		user.name,
 		user.email,
 		getUserPhone(user),
@@ -539,5 +584,13 @@ export function useUsersPage() {
 		updateUserStatus,
 		users,
 		closeModal,
+		provinceFilter,
+		cityFilter,
+		districtFilter,
+		villageFilter,
+		setProvinceFilter: handleProvinceFilterChange,
+		setCityFilter: handleCityFilterChange,
+		setDistrictFilter: handleDistrictFilterChange,
+		setVillageFilter: handleVillageFilterChange,
 	};
 }

@@ -1,3 +1,5 @@
+import type { Domicile } from "@/types/profile";
+
 export type UserStatus = "pending" | "active" | "inactive" | "rejected";
 
 export interface User {
@@ -14,6 +16,7 @@ export interface User {
 	role: string;
 	status?: UserStatus | null;
 	created_at: string;
+	domicile?: Domicile | null;
 }
 
 export type RawUser = Omit<User, "name" | "status"> & {
@@ -43,6 +46,12 @@ export type UpdateUserPayload = {
 	graduation_year?: string | null;
 	birth_date?: string | null;
 	status: UserStatus;
+	domicile_province_code?: string | null;
+	domicile_city_code?: string | null;
+	domicile_district_code?: string | null;
+	domicile_village_code?: string | null;
+	domicile_postal_code?: string | null;
+	domicile_address?: string | null;
 };
 
 export type UpdateUserStatusResponse = {

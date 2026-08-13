@@ -24,6 +24,13 @@ import ConfirmDialog from "@/app/components/ConfirmDialog";
 import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import SearchInput from "@/app/components/SearchInput";
+import DomicileFormFields from "@/app/components/DomicileFormFields";
+import {
+	useProvinces,
+	useCities,
+	useDistricts,
+	useVillages,
+} from "@/hooks/useRegions";
 import type {
 	UpdateUserPayload,
 	User,
@@ -98,6 +105,12 @@ type EditUserForm = {
 	graduation_year: string;
 	birth_date: string;
 	status: UserStatus;
+	domicile_province_code: string;
+	domicile_city_code: string;
+	domicile_district_code: string;
+	domicile_village_code: string;
+	domicile_postal_code: string;
+	domicile_address: string;
 };
 
 function getKnownUserStatus(status?: UserStatus | null): UserStatus {
@@ -188,6 +201,28 @@ interface EditUserModalProps {
 	loading: boolean;
 }
 
+function validateDomicile(values: Partial<EditUserForm>) {
+	const errors: Record<string, string> = {};
+
+	if (values.domicile_city_code && !values.domicile_province_code) {
+		errors.domicile_province_code = "Provinsi wajib dipilih.";
+	}
+	if (values.domicile_district_code && !values.domicile_city_code) {
+		errors.domicile_city_code = "Kabupaten/kota wajib dipilih.";
+	}
+	if (values.domicile_village_code && !values.domicile_district_code) {
+		errors.domicile_district_code = "Kecamatan wajib dipilih.";
+	}
+	if (values.domicile_postal_code && values.domicile_postal_code.length > 10) {
+		errors.domicile_postal_code = "Kode pos maksimal 10 karakter.";
+	}
+	if (values.domicile_address && values.domicile_address.length > 1000) {
+		errors.domicile_address = "Alamat maksimal 1000 karakter.";
+	}
+
+	return errors;
+}
+
 function EditUserModal({
 	initial,
 	onClose,
@@ -203,6 +238,12 @@ function EditUserModal({
 		graduation_year: getInputValue(initial.graduation_year),
 		birth_date: getDateInputValue(initial.birth_date),
 		status: getKnownUserStatus(initial.status),
+		domicile_province_code: getInputValue(initial.domicile?.province?.code),
+		domicile_city_code: getInputValue(initial.domicile?.city?.code),
+		domicile_district_code: getInputValue(initial.domicile?.district?.code),
+		domicile_village_code: getInputValue(initial.domicile?.village?.code),
+		domicile_postal_code: getInputValue(initial.domicile?.postal_code),
+		domicile_address: getInputValue(initial.domicile?.address),
 	});
 	const genderOptions = Array.from(
 		new Set([...GENDER_OPTIONS, getInputValue(initial.gender)]),
@@ -326,6 +367,17 @@ function EditUserModal({
 							))}
 						</FormSelect>
 					</div>
+					<div className="border-t border-gray-100 pt-4 mt-2">
+						<h4 className="text-sm font-semibold text-gray-700 mb-3">
+							Domisili Saat Ini (Opsional)
+						</h4>
+						<DomicileFormFields
+							values={form}
+							onChange={(field, value) => set(field, value)}
+							errors={validateDomicile(form)}
+							theme="admin"
+						/>
+					</div>
 				</div>
 				<div className="p-6 border-t border-gray-100 flex gap-3">
 					<button
@@ -336,8 +388,13 @@ function EditUserModal({
 					</button>
 
 					<button
-						onClick={() => onSubmit(form)}
-						disabled={loading}
+						onClick={() => {
+							const errors = validateDomicile(form);
+							if (Object.keys(errors).length === 0) {
+								onSubmit(form);
+							}
+						}}
+						disabled={loading || Object.keys(validateDomicile(form)).length > 0}
 						className="flex-1 bg-[#2D7EA0] hover:bg-[#236175] disabled:bg-[#A8D5D5] text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
 					>
 						{loading && (
@@ -459,6 +516,13 @@ function UserPresenceHistoryModal({
 					</button>
 				</div>
 
+				{user.domicile && (
+					<div className="border-b border-gray-100 bg-[#7AB2B2]/5 px-5 py-3 text-xs text-gray-700">
+						<span className="font-semibold text-gray-800">Domisili: </span>
+						{user.domicile.address || "—"}, {user.domicile.village?.name || ""}, {user.domicile.district?.name || ""}, {user.domicile.city?.name || ""}, {user.domicile.province?.name || ""} (Kode Pos: {user.domicile.postal_code || "—"})
+					</div>
+				)}
+
 				<div className="border-b border-gray-100 bg-[#7AB2B2]/10 px-5 py-3">
 					<p className="text-xs font-semibold text-[#236175]">
 						Total kehadiran sementara: {DUMMY_PRESENCES.length} event
@@ -566,8 +630,21 @@ export default function UsersPage() {
 		updateUser,
 		users,
 		closeModal,
+		provinceFilter,
+		cityFilter,
+		districtFilter,
+		villageFilter,
+		setProvinceFilter,
+		setCityFilter,
+		setDistrictFilter,
+		setVillageFilter,
 	} = useUsersPage();
 	const [historyUser, setHistoryUser] = useState<User | null>(null);
+
+	const { data: provinces = [] } = useProvinces();
+	const { data: cities = [] } = useCities(provinceFilter);
+	const { data: districts = [] } = useDistricts(cityFilter);
+	const { data: villages = [] } = useVillages(districtFilter);
 
 	const statusTabs = [
 		{ value: "all" as const, label: "Semua", count: users.length },
@@ -695,6 +772,80 @@ export default function UsersPage() {
 								onValueChange={setSearch}
 								className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
 							/>
+
+							<div className="mb-4 grid grid-cols-1 sm:grid-cols-4 gap-3 border border-gray-200 rounded-2xl p-4 bg-gray-50/50">
+								<div>
+									<label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+										Filter Provinsi
+									</label>
+									<FormSelect
+										value={provinceFilter}
+										onChange={(e) => setProvinceFilter(e.target.value)}
+										className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none bg-white"
+									>
+										<option value="">Semua Provinsi</option>
+										{provinces.map((p) => (
+											<option key={p.code} value={p.code}>
+												{p.name}
+											</option>
+										))}
+									</FormSelect>
+								</div>
+								<div>
+									<label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+										Filter Kota/Kabupaten
+									</label>
+									<FormSelect
+										value={cityFilter}
+										onChange={(e) => setCityFilter(e.target.value)}
+										disabled={!provinceFilter}
+										className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none bg-white disabled:opacity-50"
+									>
+										<option value="">Semua Kota/Kabupaten</option>
+										{cities.map((c) => (
+											<option key={c.code} value={c.code}>
+												{c.name}
+											</option>
+										))}
+									</FormSelect>
+								</div>
+								<div>
+									<label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+										Filter Kecamatan
+									</label>
+									<FormSelect
+										value={districtFilter}
+										onChange={(e) => setDistrictFilter(e.target.value)}
+										disabled={!cityFilter}
+										className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none bg-white disabled:opacity-50"
+									>
+										<option value="">Semua Kecamatan</option>
+										{districts.map((d) => (
+											<option key={d.code} value={d.code}>
+												{d.name}
+											</option>
+										))}
+									</FormSelect>
+								</div>
+								<div>
+									<label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+										Filter Desa/Kelurahan
+									</label>
+									<FormSelect
+										value={villageFilter}
+										onChange={(e) => setVillageFilter(e.target.value)}
+										disabled={!districtFilter}
+										className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none bg-white disabled:opacity-50"
+									>
+										<option value="">Semua Desa/Kelurahan</option>
+										{villages.map((v) => (
+											<option key={v.code} value={v.code}>
+												{v.name}
+											</option>
+										))}
+									</FormSelect>
+								</div>
+							</div>
 
 							<div className="mb-4 flex flex-wrap gap-2 rounded-xl bg-gray-100 p-1">
 								{statusTabs.map((tab) => (
@@ -901,9 +1052,17 @@ export default function UsersPage() {
 																>
 																	{!avatarUrl && (user.name?.[0]?.toUpperCase() ?? "U")}
 																</div>
-																<span className="text-xs font-semibold text-gray-800">
-																	{user.name}
-																</span>
+																<div className="flex flex-col">
+																	<span className="text-xs font-semibold text-gray-800">
+																		{user.name}
+																	</span>
+																	{user.domicile?.city?.name && (
+																		<span className="text-[10px] text-gray-400 font-normal mt-0.5 flex items-center gap-0.5">
+																			<MapPin size={8} className="text-gray-400 shrink-0" />
+																			{user.domicile.city.name}, {user.domicile.province?.name}
+																		</span>
+																	)}
+																</div>
 															</div>
 														</td>
 														<td className="p-3 text-gray-500 text-xs">

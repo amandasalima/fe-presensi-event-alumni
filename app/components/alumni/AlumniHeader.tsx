@@ -10,6 +10,7 @@ import {
   useMyProfile,
   useMyNotifications,
   useUnreadCount,
+  useAlumniEngagementSummary,
 } from "@/hooks/alumni/useAlumniHooks";
 import type { AlumniNotification } from "@/hooks/alumni/useAlumniHooks";
 import { clearAuthStorage, getImageUrl } from "@/lib/api";
@@ -24,6 +25,7 @@ export default function AlumniHeader() {
   const { data: profile, isLoading: loadingProfile } = useMyProfile();
   const { data: notifications = [] } = useMyNotifications();
   const { data: unreadCountData } = useUnreadCount();
+  const { data: engagement } = useAlumniEngagementSummary();
   const markAllAsRead = useMarkAllAsRead();
   const markAsRead = useMarkAsRead();
 
@@ -303,10 +305,15 @@ export default function AlumniHeader() {
               name={fullName}
               email={email}
               avatarUrl={avatarUrl}
+              segment={engagement?.segment}
               onClose={() => setShowProfile(false)}
               onProfile={() => {
                 setShowProfile(false);
                 router.push("/alumni/main/profil");
+              }}
+              onHistory={() => {
+                setShowProfile(false);
+                router.push("/alumni/main/riwayat");
               }}
               onLogout={handleLogout}
             />

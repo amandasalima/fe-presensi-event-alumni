@@ -2,6 +2,7 @@ export * from "./events";
 export * from "./useAlumni";
 export * from "./useAlumniManagement";
 export * from "./useAttendances";
+export * from "./useEngagementMapping";
 export * from "./useAuth";
 export * from "./useAuthUser";
 export * from "./useAdminAccounts";

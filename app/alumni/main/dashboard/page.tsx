@@ -7,9 +7,11 @@ import {
   useMyPresences,
   useMyRecommendations,
   useMyNotifications,
+  useAlumniEngagementSummary,
 } from "@/hooks/alumni/useAlumniHooks";
 import type { AlumniNotification } from "@/hooks/alumni/useAlumniHooks";
 import { Icon } from "@/app/components/alumni/Icon";
+import EngagementProgressCard from "@/app/components/alumni/dashboard/EngagementProgressCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Event {
@@ -28,7 +30,7 @@ interface Presence {
   scanned_at: string;
   event?: {
     event_title: string;
-    event_datetime: string;
+    event_datetime?: string;
   };
 }
 
@@ -107,6 +109,11 @@ export default function AlumniDashboard() {
   const { data: recommendations = [], isLoading: loadingRec } =
     useMyRecommendations();
   const { data: notifications = [] } = useMyNotifications();
+  const {
+    data: engagement,
+    isError: engagementError,
+    isLoading: loadingEngagement,
+  } = useAlumniEngagementSummary();
 
   const firstName = profile?.first_name ?? "Alumni";
 
@@ -184,6 +191,12 @@ export default function AlumniDashboard() {
           </div>
         </div>
       )}
+
+      <EngagementProgressCard
+        engagement={engagement}
+        isError={engagementError}
+        isLoading={loadingEngagement}
+      />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3">
@@ -407,6 +420,14 @@ export default function AlumniDashboard() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-gray-900">Riwayat Kehadiran</h2>
+          {presences.length > 0 && (
+            <button
+              onClick={() => router.push("/alumni/main/riwayat")}
+              className="text-xs text-[#41A07E] font-semibold hover:underline"
+            >
+              Lihat Semua
+            </button>
+          )}
         </div>
 
         {loadingPresences ? (

@@ -409,67 +409,78 @@ function EditUserModal({
 }
 
 
-type DummyPresence = {
+import { usePresencesByUser } from "@/hooks/admin/usePresences";
+
+interface PresenceRecord {
 	id: number;
-	event: {
-		event_title: string;
-		event_date: string;
-		location: string;
-	};
+	event_id?: number;
+	status?: string;
 	scanned_at: string;
-};
-
-const DUMMY_PRESENCES: DummyPresence[] = [
-	{
-		id: 1,
-		event: {
-			event_title: "Silaturahmi Alumni",
-			event_date: "2026-08-10",
-			location: "Aula Pondok Pesantren",
-		},
-		scanned_at: "2026-08-10T08:15:00",
-	},
-	{
-		id: 2,
-		event: {
-			event_title: "Reuni Akbar",
-			event_date: "2026-07-20",
-			location: "Lapangan Utama",
-		},
-		scanned_at: "2026-07-20T07:45:00",
-	},
-	{
-		id: 3,
-		event: {
-			event_title: "Kajian dan Temu Alumni",
-			event_date: "2026-06-15",
-			location: "Masjid Pondok Pesantren",
-		},
-		scanned_at: "2026-06-15T09:10:00",
-	},
-];
-
-function formatHistoryDate(date: string) {
-	return new Date(date).toLocaleDateString("id-ID", {
-		day: "numeric",
-		month: "long",
-		year: "numeric",
-	});
+	event?: {
+		id?: number;
+		event_title?: string;
+		event_date?: string;
+		start_time?: string;
+		end_time?: string;
+		location?: string;
+		status_event?: string;
+	};
 }
 
-function formatHistoryScannedAt(date: string) {
-	const value = new Date(date);
-	const formattedDate = value.toLocaleDateString("id-ID", {
-		day: "numeric",
-		month: "long",
-		year: "numeric",
-	});
-	const formattedTime = value.toLocaleTimeString("id-ID", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+function formatHistoryDate(date?: string) {
+	if (!date) return "-";
+	try {
+		return new Date(date).toLocaleDateString("id-ID", {
+			day: "numeric",
+			month: "long",
+			year: "numeric",
+		});
+	} catch {
+		return date;
+	}
+}
 
-	return `${formattedDate} • ${formattedTime} WIB`;
+function formatHistoryTime(time?: string) {
+	if (!time) return "";
+	return time.slice(0, 5);
+}
+
+function formatHistoryScannedAt(date?: string) {
+	if (!date) return "-";
+	try {
+		const value = new Date(date);
+		const formattedDate = value.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+		const formattedTime = value.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+		return `${formattedDate} • ${formattedTime} WIB`;
+	} catch {
+		return date;
+	}
+}
+
+function exportPresencesToCsv(userName: string, presences: PresenceRecord[]) {
+	const BOM = "\uFEFF";
+	const headers = ["No", "Nama Event", "Tanggal Event", "Jam Mulai", "Jam Selesai", "Lokasi", "Status Kehadiran", "Waktu Presensi"];
+	const rows = presences.map((p, i) => [
+		String(i + 1),
+		`"${(p.event?.event_title || "-").replace(/"/g, '""')}"`,
+		p.event?.event_date ? new Date(p.event.event_date).toLocaleDateString("id-ID") : "-",
+		formatHistoryTime(p.event?.start_time) || "-",
+		formatHistoryTime(p.event?.end_time) || "-",
+		`"${(p.event?.location || "-").replace(/"/g, '""')}"`,
+		p.status || "Hadir",
+		p.scanned_at ? new Date(p.scanned_at).toLocaleString("id-ID") : "-",
+	]);
+	const csv = BOM + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	const safeName = userName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+	link.href = url;
+	link.download = `riwayat_kehadiran_${safeName}_${new Date().toISOString().slice(0, 10)}.csv`;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
 }
 
 function UserPresenceHistoryModal({
@@ -479,6 +490,10 @@ function UserPresenceHistoryModal({
 	user: User;
 	onClose: () => void;
 }) {
+	const { data: presenceData, isLoading: loadingPresences, isError: presenceError } = usePresencesByUser(user.id);
+	const presences: PresenceRecord[] = presenceData?.data?.presences || presenceData?.data?.history || presenceData?.data || [];
+	const presenceList = Array.isArray(presences) ? presences : [];
+
 	return (
 		<div
 			className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
@@ -494,18 +509,12 @@ function UserPresenceHistoryModal({
 			>
 				<div className="flex items-center justify-between border-b border-gray-100 p-5">
 					<div className="min-w-0">
-						<h2
-							id="presence-history-title"
-							className="text-lg font-bold text-gray-900"
-						>
+						<h2 id="presence-history-title" className="text-lg font-bold text-gray-900">
 							Riwayat Kehadiran
 						</h2>
-						<p className="mt-0.5 truncate text-sm font-medium text-gray-600">
-							{user.name}
-						</p>
+						<p className="mt-0.5 truncate text-sm font-medium text-gray-600">{user.name}</p>
 						<p className="truncate text-xs text-gray-400">{user.email}</p>
 					</div>
-
 					<button
 						type="button"
 						onClick={onClose}
@@ -523,62 +532,90 @@ function UserPresenceHistoryModal({
 					</div>
 				)}
 
-				<div className="border-b border-gray-100 bg-[#7AB2B2]/10 px-5 py-3">
-					<p className="text-xs font-semibold text-[#236175]">
-						Total kehadiran sementara: {DUMMY_PRESENCES.length} event
-					</p>
-					<p className="mt-0.5 text-[11px] text-gray-500">
-						Data ini masih dummy dan nanti akan diganti dengan data dari API.
-					</p>
+				<div className="border-b border-gray-100 bg-[#7AB2B2]/10 px-5 py-3 flex items-center justify-between gap-3">
+					<div>
+						<p className="text-xs font-semibold text-[#236175]">
+							Total kehadiran: {loadingPresences ? "..." : presenceList.length} event
+						</p>
+					</div>
+					{presenceList.length > 0 && (
+						<button
+							type="button"
+							onClick={() => exportPresencesToCsv(user.name, presenceList)}
+							className="flex items-center gap-1.5 rounded-lg bg-[#2D7EA0] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#236175]"
+						>
+							<Download size={13} strokeWidth={2.5} />
+							Ekspor CSV
+						</button>
+					)}
 				</div>
 
 				<div className="max-h-[65vh] overflow-y-auto p-5">
-					<div className="space-y-3">
-						{DUMMY_PRESENCES.map((presence) => (
-							<div
-								key={presence.id}
-								className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-							>
-								<div className="flex items-start justify-between gap-4">
-									<div className="min-w-0 space-y-2">
-										<h3 className="text-sm font-bold text-gray-800">
-											{presence.event.event_title}
-										</h3>
-
-										<div className="flex items-center gap-2 text-xs text-gray-500">
-											<Calendar size={14} className="shrink-0" />
-											<span>
-												{formatHistoryDate(presence.event.event_date)}
-											</span>
-										</div>
-
-										<div className="flex items-center gap-2 text-xs text-gray-500">
-											<MapPin size={14} className="shrink-0" />
-											<span>{presence.event.location}</span>
-										</div>
-									</div>
-
-									<span className="flex shrink-0 items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600">
-										<CheckCircle size={12} />
-										Hadir
-									</span>
+					{loadingPresences ? (
+						<div className="space-y-3">
+							{[1, 2, 3].map((n) => (
+								<div key={n} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm animate-pulse space-y-3">
+									<div className="h-4 bg-gray-200 rounded w-2/3" />
+									<div className="h-3 bg-gray-200 rounded w-1/2" />
+									<div className="h-3 bg-gray-200 rounded w-1/3" />
 								</div>
-
-								<div className="mt-4 flex items-start gap-2 border-t border-gray-100 pt-3 text-xs text-gray-500">
-									<Clock
-										size={14}
-										className="mt-0.5 shrink-0 text-teal-600"
-									/>
-									<span>
-										Diverifikasi:{" "}
-										<span className="font-medium text-gray-700">
-											{formatHistoryScannedAt(presence.scanned_at)}
+							))}
+						</div>
+					) : presenceError ? (
+						<div className="text-center py-8 space-y-2">
+							<AlertCircle size={32} className="mx-auto text-red-400" />
+							<p className="text-sm font-semibold text-gray-700">Gagal memuat data</p>
+							<p className="text-xs text-gray-400">Silakan tutup dan coba lagi.</p>
+						</div>
+					) : presenceList.length === 0 ? (
+						<div className="text-center py-8 space-y-2">
+							<Clock size={32} className="mx-auto text-gray-300" />
+							<p className="text-sm font-semibold text-gray-700">Belum ada riwayat kehadiran</p>
+							<p className="text-xs text-gray-400">Pengguna ini belum pernah melakukan presensi.</p>
+						</div>
+					) : (
+						<div className="space-y-3">
+							{presenceList.map((presence) => (
+								<div key={presence.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+									<div className="flex items-start justify-between gap-4">
+										<div className="min-w-0 space-y-2">
+											<h3 className="text-sm font-bold text-gray-800">
+												{presence.event?.event_title || "Event tidak tersedia"}
+											</h3>
+											<div className="flex items-center gap-2 text-xs text-gray-500">
+												<Calendar size={14} className="shrink-0" />
+												<span>
+													{formatHistoryDate(presence.event?.event_date)}
+													{presence.event?.start_time && (
+														<> • {formatHistoryTime(presence.event.start_time)}{presence.event.end_time ? ` - ${formatHistoryTime(presence.event.end_time)}` : ""} WIB</>
+													)}
+												</span>
+											</div>
+											{presence.event?.location && (
+												<div className="flex items-center gap-2 text-xs text-gray-500">
+													<MapPin size={14} className="shrink-0" />
+													<span>{presence.event.location}</span>
+												</div>
+											)}
+										</div>
+										<span className="flex shrink-0 items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600">
+											<CheckCircle size={12} />
+											Hadir
 										</span>
-									</span>
+									</div>
+									<div className="mt-4 flex items-start gap-2 border-t border-gray-100 pt-3 text-xs text-gray-500">
+										<Clock size={14} className="mt-0.5 shrink-0 text-teal-600" />
+										<span>
+											Diverifikasi:{" "}
+											<span className="font-medium text-gray-700">
+												{formatHistoryScannedAt(presence.scanned_at)}
+											</span>
+										</span>
+									</div>
 								</div>
-							</div>
-						))}
-					</div>
+							))}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
@@ -1088,6 +1125,17 @@ export default function UsersPage() {
 														</td>
 														<td className="p-3">
 															<div className="flex flex-wrap justify-end gap-1.5">
+																<button
+																	onClick={(event) => {
+																		event.stopPropagation();
+																		setHistoryUser(user);
+																	}}
+																	className="rounded-lg p-1 text-teal-600 transition-colors hover:bg-teal-50"
+																	title="Riwayat Kehadiran"
+																	aria-label={`Riwayat kehadiran ${user.name}`}
+																>
+																	<Clock3 size={14} strokeWidth={2.5} />
+																</button>
 																<button
 																	onClick={(event) => {
 																						event.stopPropagation();

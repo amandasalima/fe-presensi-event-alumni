@@ -35,13 +35,13 @@ export type UsersResponse =
 	  };
 
 export type UpdateUserPayload = {
-	name: string;
+	first_name: string;
+	last_name?: string | null;
 	email: string;
 	phone?: string | null;
 	gender?: string | null;
 	graduation_year?: string | null;
 	birth_date?: string | null;
-	role: string;
 	status: UserStatus;
 };
 

@@ -14,10 +14,14 @@ type LoginResponse = {
 		user: {
 			id: number;
 			name: string;
+			first_name?: string | null;
+			last_name?: string | null;
 			email: string;
 			phone: string | null;
 			angkatan: string | null;
 			role: string;
+			admin_level?: "super_admin" | "admin" | null;
+			status?: "active" | "inactive" | null;
 			email_verified_at: string | null;
 			created_at: string;
 			updated_at: string;
@@ -36,6 +40,15 @@ const AdminLogin = () => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [isPending, setIsPending] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
+
+	React.useEffect(() => {
+		if (typeof window !== "undefined") {
+			const params = new URLSearchParams(window.location.search);
+			if (params.get("error") === "inactive") {
+				setErrorMessage("Akun admin sedang dinonaktifkan. Hubungi super admin.");
+			}
+		}
+	}, []);
 
 	const handleLogin = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -66,6 +79,10 @@ const AdminLogin = () => {
 
 			if (user.role !== "admin") {
 				throw new Error("Akun ini bukan admin.");
+			}
+
+			if (user.status === "inactive") {
+				throw new Error("Akun admin sedang dinonaktifkan. Hubungi super admin.");
 			}
 
 			// Simpan di sessionStorage (hilang saat browser ditutup)

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import {
 	Chart as ChartJS,
 	CategoryScale,
@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import AdminHeader from "@/app/components/AdminHeader";
+import FeedbackToast from "@/app/components/FeedbackToast";
 import { useAlumni } from "@/hooks/admin/useAlumni";
 import { useEvents } from "@/hooks/admin/useEvents";
 import { useAttendanceChart } from "@/hooks/admin/useAttendanceChart";
@@ -398,6 +399,26 @@ function AttendanceChart({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
+	const [feedback, setFeedback] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
+
+	// Check if redirected due to error=forbidden
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			const params = new URLSearchParams(window.location.search);
+			if (params.get("error") === "forbidden") {
+				setFeedback({
+					type: "error",
+					message: "Kamu tidak memiliki akses ke pengelolaan admin.",
+				});
+				// clear query param
+				window.history.replaceState({}, document.title, window.location.pathname);
+			}
+		}
+	}, []);
+
 	// ── TanStack Query ──
 	const { data: alumni = [], isLoading: loadingAlumni } = useAlumni();
 	const { data: events = [], isLoading: loadingEvents } = useEvents("", 100);
@@ -828,6 +849,9 @@ export default function DashboardPage() {
 						</div>
 					</div>
 				</div>
+			)}
+			{feedback && (
+				<FeedbackToast type={feedback.type} message={feedback.message} />
 			)}
 		</div>
 	);

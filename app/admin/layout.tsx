@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { startHeartbeat, stopHeartbeat } from "@/lib/heartbeat";
+import { API_BASE_URL } from "@/lib/api";
 
 const ADMIN_LOGIN_PATH = "/admin/login";
 const ADMIN_DASHBOARD_PATH = "/admin/dashboard";
@@ -37,7 +38,7 @@ export default function AdminLayout({
   const [authorized, setAuthorized] = useState(() => pathname === ADMIN_LOGIN_PATH);
 
   useEffect(() => {
-    const verifyAccess = () => {
+    const verifyAccess = async () => {
       const { token, role } = getAdminCredentials();
 
       if (pathname === ADMIN_LOGIN_PATH) {
@@ -58,16 +59,58 @@ export default function AdminLayout({
         return;
       }
 
-      // Token valid — mulai heartbeat untuk menjaga sesi
+      // Mulai heartbeat & tandai authorized agar layout tidak berkedip
       startHeartbeat();
       setAuthorized(true);
+
+      // Ambil profil admin terbaru dari backend
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (response.status === 401) {
+          clearAdminCredentials();
+          stopHeartbeat();
+          setAuthorized(false);
+          router.replace(ADMIN_LOGIN_PATH);
+          return;
+        }
+
+        const result = await response.json();
+        if (result.success && result.data?.user) {
+          const user = result.data.user;
+
+          if (user.role !== "admin") {
+            clearAdminCredentials();
+            stopHeartbeat();
+            setAuthorized(false);
+            router.replace(ADMIN_LOGIN_PATH);
+            return;
+          }
+
+          if (user.status === "inactive") {
+            clearAdminCredentials();
+            stopHeartbeat();
+            setAuthorized(false);
+            router.replace(`${ADMIN_LOGIN_PATH}?error=inactive`);
+            return;
+          }
+
+          // Simpan data terbaru ke storage
+          sessionStorage.setItem("user", JSON.stringify(user));
+          sessionStorage.setItem("role", user.role);
+          localStorage.setItem("role", user.role);
+        }
+      } catch (error) {
+        console.error("Gagal melakukan verifikasi profil admin terbaru:", error);
+      }
     };
 
-    const frameId = window.requestAnimationFrame(verifyAccess);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
+    verifyAccess();
   }, [pathname, router]);
 
   if (!authorized) {
@@ -87,4 +130,5 @@ export default function AdminLayout({
 
   return <div className="admin-layout">{children}</div>;
 }
+
 

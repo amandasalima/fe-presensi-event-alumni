@@ -62,8 +62,12 @@ export interface AlumniUser {
 export interface AdminUser {
   id: number;
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   email: string;
   role: "admin";
+  admin_level?: "super_admin" | "admin" | null;
+  status?: "active" | "inactive" | null;
   created_at: string;
   updated_at: string;
 }

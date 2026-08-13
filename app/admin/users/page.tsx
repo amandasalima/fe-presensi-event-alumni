@@ -90,13 +90,13 @@ const USER_TABLE_HEADERS: Array<{ label: string; sortKey: UserSortKey }> = [
 ];
 
 type EditUserForm = {
-	name: string;
+	first_name: string;
+	last_name: string;
 	email: string;
 	phone: string;
 	gender: string;
 	graduation_year: string;
 	birth_date: string;
-	role: string;
 	status: UserStatus;
 };
 
@@ -195,20 +195,17 @@ function EditUserModal({
 	loading,
 }: EditUserModalProps) {
 	const [form, setForm] = useState<EditUserForm>({
-		name: getInputValue(initial.name),
+		first_name: getInputValue(initial.first_name),
+		last_name: getInputValue(initial.last_name),
 		email: getInputValue(initial.email),
 		phone: getInputValue(initial.phone),
 		gender: getInputValue(initial.gender),
 		graduation_year: getInputValue(initial.graduation_year),
 		birth_date: getDateInputValue(initial.birth_date),
-		role: getInputValue(initial.role) || "user",
 		status: getKnownUserStatus(initial.status),
 	});
 	const genderOptions = Array.from(
 		new Set([...GENDER_OPTIONS, getInputValue(initial.gender)]),
-	).filter(Boolean);
-	const roleOptions = Array.from(
-		new Set([...ROLE_OPTIONS, initial.role]),
 	).filter(Boolean);
 	const set = <K extends keyof EditUserForm>(key: K, value: EditUserForm[K]) =>
 		setForm((current) => ({ ...current, [key]: value }));
@@ -227,15 +224,27 @@ function EditUserModal({
 					</button>
 				</div>
 				<div className="p-6 space-y-4">
-					<div>
-						<label className="text-xs font-medium text-gray-600 mb-1 block">
-							Nama
-						</label>
-						<FormInput
-							value={form.name}
-							onChange={(e) => set("name", e.target.value)}
-							className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
-						/>
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Nama Depan
+							</label>
+							<FormInput
+								value={form.first_name}
+								onChange={(e) => set("first_name", e.target.value)}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-medium text-gray-600 mb-1 block">
+								Nama Belakang
+							</label>
+							<FormInput
+								value={form.last_name}
+								onChange={(e) => set("last_name", e.target.value)}
+								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+							/>
+						</div>
 					</div>
 					<div>
 						<label className="text-xs font-medium text-gray-600 mb-1 block">
@@ -299,41 +308,23 @@ function EditUserModal({
 							className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
 						/>
 					</div>
-					<div className="grid grid-cols-2 gap-3">
-						<div>
-							<label className="text-xs font-medium text-gray-600 mb-1 block">
-								Peran
-							</label>
-							<FormSelect
-								value={form.role}
-								onChange={(e) => set("role", e.target.value)}
-								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white"
-							>
-								{roleOptions.map((role) => (
-									<option key={role} value={role}>
-										{formatLabel(role)}
-									</option>
-								))}
-							</FormSelect>
-						</div>
-						<div>
-							<label className="text-xs font-medium text-gray-600 mb-1 block">
-								Status
-							</label>
-							<FormSelect
-								value={form.status}
-								onChange={(e) =>
-									set("status", e.target.value as UserStatus)
-								}
-								className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white"
-							>
-								{STATUS_OPTIONS.map((status) => (
-									<option key={status.value} value={status.value}>
-										{status.label}
-									</option>
-								))}
-							</FormSelect>
-						</div>
+					<div>
+						<label className="text-xs font-medium text-gray-600 mb-1 block">
+							Status
+						</label>
+						<FormSelect
+							value={form.status}
+							onChange={(e) =>
+								set("status", e.target.value as UserStatus)
+							}
+							className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white"
+						>
+							{STATUS_OPTIONS.map((status) => (
+								<option key={status.value} value={status.value}>
+									{status.label}
+								</option>
+							))}
+						</FormSelect>
 					</div>
 				</div>
 				<div className="p-6 border-t border-gray-100 flex gap-3">

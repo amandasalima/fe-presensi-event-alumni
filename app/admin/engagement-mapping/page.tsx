@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
 	AlertCircle,
 	BarChart3,
@@ -94,10 +94,6 @@ export default function EngagementMappingPage() {
 	const [segment, setSegment] = useState("");
 	const debouncedSearch = useDebounce(search, 400);
 	const debouncedGraduationYear = useDebounce(graduationYear, 400);
-
-	useEffect(() => {
-		setPage(1);
-	}, [debouncedSearch, debouncedGraduationYear, segment, perPage]);
 
 	const { data, error, isError, isFetching, isLoading } = useEngagementMapping({
 		page,
@@ -197,7 +193,10 @@ export default function EngagementMappingPage() {
 									wrapperClassName="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 focus-within:border-[#3EBDAF]"
 									placeholder="Cari nama, email, atau angkatan..."
 									value={search}
-									onValueChange={setSearch}
+									onValueChange={(value) => {
+										setSearch(value);
+										setPage(1);
+									}}
 									className="w-full bg-transparent text-sm outline-none"
 								/>
 
@@ -205,7 +204,10 @@ export default function EngagementMappingPage() {
 									<GraduationCap size={16} className="shrink-0 text-gray-400" />
 									<input
 										value={graduationYear}
-										onChange={(event) => setGraduationYear(event.target.value)}
+										onChange={(event) => {
+											setGraduationYear(event.target.value);
+											setPage(1);
+										}}
 										placeholder="Angkatan"
 										inputMode="numeric"
 										className="min-w-0 flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
@@ -214,7 +216,10 @@ export default function EngagementMappingPage() {
 
 								<FormSelect
 									value={segment}
-									onChange={(event) => setSegment(event.target.value)}
+									onChange={(event) => {
+										setSegment(event.target.value);
+										setPage(1);
+									}}
 									className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#3EBDAF]"
 								>
 									<option value="">Semua Segment</option>
@@ -227,7 +232,10 @@ export default function EngagementMappingPage() {
 
 								<FormSelect
 									value={perPage}
-									onChange={(event) => setPerPage(Number(event.target.value))}
+									onChange={(event) => {
+										setPerPage(Number(event.target.value));
+										setPage(1);
+									}}
 									className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#3EBDAF]"
 								>
 									{PER_PAGE_OPTIONS.map((option) => (

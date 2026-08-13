@@ -8,7 +8,6 @@ import {
 	Target,
 	Trophy,
 } from "lucide-react";
-import EngagementSegmentBadge from "@/app/components/EngagementSegmentBadge";
 import {
 	clampEngagementPercentage,
 	getEngagementSegmentConfig,

@@ -50,7 +50,7 @@ import {
 	isAdminUser,
 } from "./_utils/userFormatters";
 
-const ROLE_OPTIONS = ["alumni", "user"];
+
 const STATUS_OPTIONS: Array<{ value: UserStatus; label: string }> = [
 	{ value: "pending", label: "Menunggu Persetujuan" },
 	{ value: "active", label: "Aktif" },

@@ -27,6 +27,8 @@ import {
   useUpdateAdminStatus,
   useDeleteAdmin,
   type AdminAccount,
+  type CreateAdminPayload,
+  type UpdateAdminPayload,
 } from "@/hooks/admin/useAdminAccounts";
 import { getApiErrorMessage } from "@/lib/api";
 
@@ -113,7 +115,7 @@ export default function AdminManagementPage() {
   const [page, setPage] = useState(1);
 
   // API query
-  const { data: responseData, isLoading, isError, refetch } = useAdmins({
+  const { data: responseData, isLoading, isError } = useAdmins({
     search,
     status,
     adminLevel,
@@ -264,7 +266,7 @@ export default function AdminManagementPage() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const payload: any = {
+    const payload: CreateAdminPayload & UpdateAdminPayload = {
       first_name: formValues.first_name,
       last_name: formValues.last_name,
       email: formValues.email,

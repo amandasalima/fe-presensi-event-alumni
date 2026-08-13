@@ -186,21 +186,7 @@ function formatEventDate(event: Event) {
   });
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "-";
 
-  const d = new Date(value.replace(" ", "T"));
-
-  if (Number.isNaN(d.getTime())) return "-";
-
-  return d.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 
 function getQrPayload(qrCode?: EventQrCode | null) {

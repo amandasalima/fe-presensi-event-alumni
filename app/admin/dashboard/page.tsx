@@ -187,16 +187,7 @@ function isUpcomingEvent(event: Event) {
 	return false;
 }
 
-function isToday(datetime?: string | null) {
-	const date = getValidDate(datetime);
-	if (!date) return false;
-	const now = new Date();
-	return (
-		date.getDate() === now.getDate() &&
-		date.getMonth() === now.getMonth() &&
-		date.getFullYear() === now.getFullYear()
-	);
-}
+
 
 function getCollectionCount(value: unknown) {
 	if (Array.isArray(value)) return value.length;
@@ -409,10 +400,12 @@ export default function DashboardPage() {
 		if (typeof window !== "undefined") {
 			const params = new URLSearchParams(window.location.search);
 			if (params.get("error") === "forbidden") {
-				setFeedback({
-					type: "error",
-					message: "Kamu tidak memiliki akses ke pengelolaan admin.",
-				});
+				setTimeout(() => {
+					setFeedback({
+						type: "error",
+						message: "Kamu tidak memiliki akses ke pengelolaan admin.",
+					});
+				}, 0);
 				// clear query param
 				window.history.replaceState({}, document.title, window.location.pathname);
 			}

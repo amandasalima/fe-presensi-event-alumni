@@ -45,7 +45,9 @@ const AdminLogin = () => {
 		if (typeof window !== "undefined") {
 			const params = new URLSearchParams(window.location.search);
 			if (params.get("error") === "inactive") {
-				setErrorMessage("Akun admin sedang dinonaktifkan. Hubungi super admin.");
+				setTimeout(() => {
+					setErrorMessage("Akun admin sedang dinonaktifkan. Hubungi super admin.");
+				}, 0);
 			}
 		}
 	}, []);

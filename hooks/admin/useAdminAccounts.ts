@@ -32,6 +32,34 @@ export interface AdminsResponse {
   };
 }
 
+export interface CreateAdminPayload {
+  first_name: string;
+  last_name?: string | null;
+  email: string;
+  phone?: string | null;
+  gender: string;
+  admin_level: "super_admin" | "admin";
+  password?: string;
+  password_confirmation?: string;
+}
+
+export interface UpdateAdminPayload {
+  first_name?: string;
+  last_name?: string | null;
+  email?: string;
+  phone?: string | null;
+  gender?: string;
+  admin_level?: "super_admin" | "admin";
+  password?: string;
+  password_confirmation?: string;
+}
+
+export interface AdminActionResponse {
+  success: boolean;
+  message?: string;
+  data?: AdminAccount;
+}
+
 // GET list of admins
 export function useAdmins(params: FetchAdminsParams) {
   const queryParams = new URLSearchParams();
@@ -50,7 +78,7 @@ export function useAdmins(params: FetchAdminsParams) {
 // POST create admin
 export function useCreateAdmin() {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, any>({
+  return useMutation<AdminActionResponse, Error, CreateAdminPayload>({
     mutationFn: (data) =>
       fetchAPI("/admin/admins", {
         method: "POST",
@@ -65,7 +93,7 @@ export function useCreateAdmin() {
 // PUT update admin
 export function useUpdateAdmin() {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { id: number; data: any }>({
+  return useMutation<AdminActionResponse, Error, { id: number; data: UpdateAdminPayload }>({
     mutationFn: ({ id, data }) =>
       fetchAPI(`/admin/admins/${id}`, {
         method: "PUT",
@@ -82,7 +110,7 @@ export function useUpdateAdmin() {
 // PATCH update status admin
 export function useUpdateAdminStatus() {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { id: number; status: "active" | "inactive" }>({
+  return useMutation<AdminActionResponse, Error, { id: number; status: "active" | "inactive" }>({
     mutationFn: ({ id, status }) =>
       fetchAPI(`/admin/admins/${id}/status`, {
         method: "PATCH",
@@ -97,7 +125,7 @@ export function useUpdateAdminStatus() {
 // DELETE admin
 export function useDeleteAdmin() {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, number>({
+  return useMutation<AdminActionResponse, Error, number>({
     mutationFn: (id) =>
       fetchAPI(`/admin/admins/${id}`, {
         method: "DELETE",

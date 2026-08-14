@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUsers } from "./api";
 import { userQueryKeys } from "./queryKeys";
+import type { GetUsersParams } from "./types";
 
-export function useUsers() {
+export function useUsers(params?: GetUsersParams) {
 	return useQuery({
-		queryKey: userQueryKeys.all,
-		queryFn: getUsers,
+		queryKey: userQueryKeys.list(params),
+		queryFn: () => getUsers(params),
 	});
 }

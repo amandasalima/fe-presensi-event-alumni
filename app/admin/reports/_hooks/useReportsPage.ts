@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { useEventAttendances } from "@/hooks/admin/useAttendances";
+import {
+	type GetEventAttendancesParams,
+	useEventAttendances,
+} from "@/hooks/admin/useAttendances";
 import { useEvents } from "@/hooks/admin/useEvents";
 import { fetchAPI } from "@/lib/api";
 import {
@@ -31,6 +34,9 @@ function getAttendanceTotal(data?: AttendanceSummaryData) {
 export function useReportsPage() {
 	const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
+	const [attendanceParams, setAttendanceParams] = useState<GetEventAttendancesParams>({
+		per_page: 100,
+	});
 	const [feedback, setFeedback] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -42,7 +48,7 @@ export function useReportsPage() {
 		isLoading: loadingAttendances,
 		isError: isAttendanceError,
 		error: attendanceError,
-	} = useEventAttendances(selectedEventId, 100);
+	} = useEventAttendances(selectedEventId, attendanceParams);
 	const { data: events = [], isLoading: loadingEvents } = useEvents();
 	const typedEvents = events as ReportEvent[];
 	const attendanceSummaryQueries = useQueries({
@@ -153,6 +159,8 @@ export function useReportsPage() {
 	return {
 		attendanceError,
 		attendances,
+		attendanceParams,
+		setAttendanceParams,
 		avgRate,
 		events: typedEvents,
 		feedback,

@@ -68,13 +68,39 @@ type AttendanceResponse = {
 	data: AttendanceResponseData;
 };
 
-export function useEventAttendances(eventId: number | null, perPage = 10) {
+export interface GetEventAttendancesParams {
+	search?: string;
+	status?: string;
+	attendance_status?: string;
+	graduation_year?: string;
+	angkatan?: string;
+	year?: string | number;
+	domicile_province_code?: string;
+	domicile_city_code?: string;
+	domicile_district_code?: string;
+	domicile_village_code?: string;
+	sort_by?: string;
+	sort_dir?: "asc" | "desc";
+	page?: number;
+	per_page?: number;
+}
+
+export function useEventAttendances(eventId: number | null, params?: GetEventAttendancesParams) {
 	return useQuery({
-		queryKey: ["admin-event-attendances", eventId, perPage],
+		queryKey: ["admin-event-attendances", eventId, params],
 		queryFn: async () => {
-			const response = (await fetchAPI(
-				`/admin/events/${eventId}/attendances?per_page=${perPage}`,
-			)) as AttendanceResponse;
+			const query = new URLSearchParams();
+			if (params) {
+				Object.entries(params).forEach(([key, val]) => {
+					if (val !== undefined && val !== null && val !== "") {
+						query.append(key, String(val));
+					}
+				});
+			}
+
+			const queryString = query.toString();
+			const endpoint = `/admin/events/${eventId}/attendances${queryString ? `?${queryString}` : ""}`;
+			const response = (await fetchAPI(endpoint)) as AttendanceResponse;
 
 			return response.data;
 		},

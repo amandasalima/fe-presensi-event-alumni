@@ -2,6 +2,8 @@ import { fetchAPI } from "@/lib/api";
 import type {
 	BulkUpdateUserStatusResponse,
 	BulkUserTargetStatus,
+	GetUsersParams,
+	PaginatedUsersResult,
 	RawUser,
 	UpdateUserPayload,
 	UpdateUserStatusResponse,
@@ -49,36 +51,38 @@ export function normalizeUsers(response: UsersResponse): User[] {
 	return users.map(normalizeUser);
 }
 
-function getLastPage(response: UsersResponse) {
-	if (
-		!Array.isArray(response) &&
-		response.data &&
-		!Array.isArray(response.data)
-	) {
-		return response.data.last_page ?? 1;
+export async function getUsers(params?: GetUsersParams): Promise<PaginatedUsersResult> {
+	const query = new URLSearchParams();
+	if (params) {
+		Object.entries(params).forEach(([key, val]) => {
+			if (val !== undefined && val !== null && val !== "") {
+				query.append(key, String(val));
+			}
+		});
 	}
 
-	return 1;
-}
+	const queryString = query.toString();
+	const endpoint = queryString ? `/admin/users?${queryString}` : "/admin/users";
+	const response = (await fetchAPI(endpoint)) as UsersResponse;
 
-export async function getUsers() {
-	const firstPage = (await fetchAPI(
-		"/admin/users?per_page=100&page=1",
-	)) as UsersResponse;
-	const lastPage = getLastPage(firstPage);
+	const users = normalizeUsers(response);
 
-	if (lastPage <= 1) return normalizeUsers(firstPage);
+	let total = users.length;
+	let current_page = 1;
+	let last_page = 1;
 
-	const remainingPages = await Promise.all(
-		Array.from({ length: lastPage - 1 }, (_, index) => index + 2).map(
-			async (page) =>
-				(await fetchAPI(
-					`/admin/users?per_page=100&page=${page}`,
-				)) as UsersResponse,
-		),
-	);
+	if (!Array.isArray(response) && response.data && !Array.isArray(response.data)) {
+		total = response.data.total ?? users.length;
+		current_page = response.data.current_page ?? 1;
+		last_page = response.data.last_page ?? 1;
+	}
 
-	return [firstPage, ...remainingPages].flatMap(normalizeUsers);
+	return {
+		users,
+		total,
+		current_page,
+		last_page,
+	};
 }
 
 export function updateUser(id: number, data: UpdateUserPayload) {

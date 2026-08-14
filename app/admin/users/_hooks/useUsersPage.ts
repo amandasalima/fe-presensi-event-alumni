@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+	type GetUsersParams,
 	type UpdateUserPayload,
 	type User,
 	type UserStatus,
@@ -11,12 +12,11 @@ import {
 	useUpdateUserStatus,
 	useUsers,
 } from "@/hooks/admin/users";
-import { useSearchFilter } from "@/hooks/useSearchFilter";
+import { useDebounce } from "@/hooks/useDebounce";
 import { getApiErrorMessage } from "@/lib/api";
 import {
 	exportUsersToExcel,
 	exportUsersToPdf,
-	getUserStats,
 	getUserPhone,
 	isAdminUser,
 } from "../_utils/userFormatters";
@@ -39,49 +39,6 @@ export type UserStatusTarget = {
 	status: Exclude<UserStatus, "pending">;
 	action: UserStatusAction;
 };
-
-function getSortableValue(user: User, sortBy: UserSortKey) {
-	if (sortBy === "phone") return getUserPhone(user);
-	if (sortBy === "created_at") {
-		const timestamp = new Date(user.created_at).getTime();
-		return Number.isNaN(timestamp) ? 0 : timestamp;
-	}
-
-	return user[sortBy] ?? "";
-}
-
-function sortUsers(
-	users: User[],
-	sortBy: UserSortKey | null,
-	direction: SortDirection,
-) {
-	if (!sortBy) return users;
-
-	const multiplier = direction === "asc" ? 1 : -1;
-	return users
-		.map((user, index) => ({ user, index }))
-		.sort((left, right) => {
-			const leftValue = getSortableValue(left.user, sortBy);
-			const rightValue = getSortableValue(right.user, sortBy);
-			const comparison =
-				typeof leftValue === "number" && typeof rightValue === "number"
-					? leftValue - rightValue
-					: String(leftValue).localeCompare(String(rightValue), "id-ID", {
-							numeric: true,
-							sensitivity: "base",
-						});
-
-			return comparison === 0
-				? left.index - right.index
-				: comparison * multiplier;
-		})
-		.map(({ user }) => user);
-}
-
-function paginateUsers(users: User[], currentPage: number, perPage: number) {
-	const start = (currentPage - 1) * perPage;
-	return users.slice(start, start + perPage);
-}
 
 function getPaginationRange(
 	currentPage: number,
@@ -136,11 +93,8 @@ export function useUsersPage() {
 	const [selected, setSelected] = useState<User | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 	const [statusFilter, setStatusFilterState] = useState<UserStatusFilter>("all");
-	const [statusTarget, setStatusTarget] =
-		useState<UserStatusTarget | null>(null);
-	const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(
-		() => new Set(),
-	);
+	const [statusTarget, setStatusTarget] = useState<UserStatusTarget | null>(null);
+	const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(() => new Set());
 	const [currentPage, setCurrentPage] = useState(1);
 	const [perPage, setPerPageState] = useState(10);
 	const [sortBy, setSortBy] = useState<UserSortKey | null>(null);
@@ -149,6 +103,49 @@ export function useUsersPage() {
 	const [cityFilter, setCityFilter] = useState("");
 	const [districtFilter, setDistrictFilter] = useState("");
 	const [villageFilter, setVillageFilter] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
+
+	const debouncedSearch = useDebounce(searchQuery, 300);
+
+	const queryParams = useMemo<GetUsersParams>(() => {
+		const p: GetUsersParams = {
+			page: currentPage,
+			per_page: perPage,
+		};
+		if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
+		if (statusFilter !== "all") p.status = statusFilter;
+		if (provinceFilter) p.domicile_province_code = provinceFilter;
+		if (cityFilter) p.domicile_city_code = cityFilter;
+		if (districtFilter) p.domicile_district_code = districtFilter;
+		if (villageFilter) p.domicile_village_code = villageFilter;
+		if (sortBy) {
+			p.sort_by = sortBy;
+			p.sort_dir = sortDirection;
+		}
+		return p;
+	}, [currentPage, perPage, debouncedSearch, statusFilter, provinceFilter, cityFilter, districtFilter, villageFilter, sortBy, sortDirection]);
+
+	const { data: usersData, isLoading, isError } = useUsers(queryParams);
+	const paginatedUsers = usersData?.users ?? [];
+	const totalFilteredUsers = usersData?.total ?? 0;
+	const totalPages = Math.max(1, usersData?.last_page ?? 1);
+	const visiblePage = Math.min(currentPage, totalPages);
+
+	// Status stats
+	const { data: allUsersData } = useUsers({ per_page: 1 });
+	const { data: activeUsersData } = useUsers({ per_page: 1, status: "active" });
+	const { data: pendingUsersData } = useUsers({ per_page: 1, status: "pending" });
+	const { data: inactiveUsersData } = useUsers({ per_page: 1, status: "inactive" });
+	const { data: rejectedUsersData } = useUsers({ per_page: 1, status: "rejected" });
+
+	const stats = useMemo(() => ({
+		totalUsers: allUsersData?.total ?? 0,
+		activeUsers: activeUsersData?.total ?? 0,
+		pendingUsers: pendingUsersData?.total ?? 0,
+		inactiveUsers: inactiveUsersData?.total ?? 0,
+		rejectedUsers: rejectedUsersData?.total ?? 0,
+		monthUsers: allUsersData?.total ?? 0,
+	}), [allUsersData, activeUsersData, pendingUsersData, inactiveUsersData, rejectedUsersData]);
 
 	const handleProvinceFilterChange = (val: string) => {
 		setProvinceFilter(val);
@@ -177,68 +174,23 @@ export function useUsersPage() {
 		message: string;
 	} | null>(null);
 	const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const { data: allUsers = [], isLoading, isError } = useUsers();
+
 	const updateUser = useUpdateUser();
 	const updateUserStatus = useUpdateUserStatus();
 	const bulkUpdateUserStatus = useBulkUpdateUserStatus();
 	const deleteUser = useDeleteUser();
 	const currentAdminId = getCurrentAdminId();
-	const users = useMemo(
-		() => allUsers.filter((user) => !isAdminUser(user)),
-		[allUsers],
-	);
-	const statusFilteredUsers = useMemo(
-		() =>
-			statusFilter === "all"
-				? users
-				: users.filter((user) => user.status === statusFilter),
-		[statusFilter, users],
-	);
-	const domicileFilteredUsers = useMemo(() => {
-		return statusFilteredUsers.filter((user) => {
-			if (provinceFilter && user.domicile?.province?.code !== provinceFilter) {
-				return false;
-			}
-			if (cityFilter && user.domicile?.city?.code !== cityFilter) {
-				return false;
-			}
-			if (districtFilter && user.domicile?.district?.code !== districtFilter) {
-				return false;
-			}
-			if (villageFilter && user.domicile?.village?.code !== villageFilter) {
-				return false;
-			}
-			return true;
-		});
-	}, [statusFilteredUsers, provinceFilter, cityFilter, districtFilter, villageFilter]);
 
-	const {
-		filteredItems: filtered,
-		searchQuery: search,
-		setSearchQuery,
-	} = useSearchFilter(domicileFilteredUsers, (user) => [
-		user.name,
-		user.email,
-		getUserPhone(user),
-	]);
-	const sortedUsers = useMemo(
-		() => sortUsers(filtered, sortBy, sortDirection),
-		[filtered, sortBy, sortDirection],
-	);
-	const totalPages = Math.max(1, Math.ceil(sortedUsers.length / perPage));
-	const visiblePage = Math.min(currentPage, totalPages);
-	const paginatedUsers = useMemo(
-		() => paginateUsers(sortedUsers, visiblePage, perPage),
-		[sortedUsers, visiblePage, perPage],
-	);
+	const pageStart = totalFilteredUsers === 0 ? 0 : (visiblePage - 1) * perPage + 1;
+	const pageEnd = Math.min(visiblePage * perPage, totalFilteredUsers);
 	const paginationRange = getPaginationRange(visiblePage, totalPages);
-	const pageStart = sortedUsers.length === 0 ? 0 : (visiblePage - 1) * perPage + 1;
-	const pageEnd = Math.min(visiblePage * perPage, sortedUsers.length);
+
 	const isBulkSelectable = (user: User) =>
 		statusFilter !== "all" &&
 		user.status === statusFilter &&
 		!isAdminUser(user) &&
 		user.id !== currentAdminId;
+
 	const selectableVisibleUsers = useMemo(
 		() =>
 			statusFilter === "all"
@@ -251,10 +203,12 @@ export function useUsersPage() {
 					),
 		[paginatedUsers, currentAdminId, statusFilter],
 	);
+
 	const selectedUsers = useMemo(
-		() => users.filter((user) => selectedUserIds.has(user.id)),
-		[users, selectedUserIds],
+		() => paginatedUsers.filter((user) => selectedUserIds.has(user.id)),
+		[paginatedUsers, selectedUserIds],
 	);
+
 	const allVisibleSelected =
 		selectableVisibleUsers.length > 0 &&
 		selectableVisibleUsers.every((user) => selectedUserIds.has(user.id));
@@ -262,7 +216,6 @@ export function useUsersPage() {
 		selectedUserIds.has(user.id),
 	);
 
-	const stats = useMemo(() => getUserStats(users), [users]);
 	const closeModal = () => setSelected(null);
 	const clearFeedbackTimeout = () => {
 		if (feedbackTimeoutRef.current) {
@@ -515,13 +468,13 @@ export function useUsersPage() {
 	};
 
 	const handleExport = (format: "excel" | "pdf") => {
-		if (sortedUsers.length === 0) {
+		if (paginatedUsers.length === 0) {
 			showFeedback({ type: "error", message: "Tidak ada data pengguna untuk diekspor" });
 			return;
 		}
 
 		if (format === "pdf") {
-			const opened = exportUsersToPdf(sortedUsers);
+			const opened = exportUsersToPdf(paginatedUsers);
 			showFeedback({
 				type: opened ? "success" : "error",
 				message: opened
@@ -531,7 +484,7 @@ export function useUsersPage() {
 			return;
 		}
 
-		exportUsersToExcel(sortedUsers);
+		exportUsersToExcel(paginatedUsers);
 		showFeedback({ type: "success", message: "Data pengguna berhasil diekspor ke Excel" });
 	};
 
@@ -559,7 +512,7 @@ export function useUsersPage() {
 		paginatedUsers,
 		paginationRange,
 		perPage,
-		search,
+		search: searchQuery,
 		requestStatusUpdate,
 		runBulkAction,
 		selected,
@@ -577,12 +530,12 @@ export function useUsersPage() {
 		someVisibleSelected,
 		toggleSelectAll,
 		toggleUserSelection,
-		totalFilteredUsers: sortedUsers.length,
+		totalFilteredUsers,
 		totalPages,
 		currentPage: visiblePage,
 		updateUser,
 		updateUserStatus,
-		users,
+		users: paginatedUsers,
 		closeModal,
 		provinceFilter,
 		cityFilter,

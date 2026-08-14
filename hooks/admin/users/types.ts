@@ -25,6 +25,30 @@ export type RawUser = Omit<User, "name" | "status"> & {
 	angkatan?: string | null;
 };
 
+export interface GetUsersParams {
+	search?: string;
+	status?: string;
+	year?: string | number;
+	event_id?: string | number;
+	graduation_year?: string;
+	angkatan?: string;
+	domicile_province_code?: string;
+	domicile_city_code?: string;
+	domicile_district_code?: string;
+	domicile_village_code?: string;
+	sort_by?: string;
+	sort_dir?: "asc" | "desc";
+	per_page?: number;
+	page?: number;
+}
+
+export interface PaginatedUsersResult {
+	users: User[];
+	total: number;
+	current_page: number;
+	last_page: number;
+}
+
 export type UsersResponse =
 	| RawUser[]
 	| {

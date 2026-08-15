@@ -116,13 +116,26 @@ const AdminLogin = () => {
 	return (
 		<div className="min-h-screen flex">
 			{/* ── Left Panel ── */}
-			<div className="w-1/2 bg-[#2D7EA0] text-white p-8 flex flex-col justify-center">
-				<div className="mb-6">
+			<div className="w-1/2 bg-[#0D5C3A] text-white p-8 flex flex-col justify-center relative overflow-hidden">
+				{/* Subtle geometric pattern overlay */}
+				<div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+					<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+						<defs>
+							<pattern id="motif" width="40" height="40" patternUnits="userSpaceOnUse">
+								<rect width="40" height="40" fill="none" />
+								<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#D4AF37" strokeWidth="1" />
+							</pattern>
+						</defs>
+						<rect width="100%" height="100%" fill="url(#motif)" />
+					</svg>
+				</div>
+
+				<div className="mb-6 relative z-10">
 					<h1 className="text-xl font-bold flex items-center gap-2">
 						<span className="inline-flex w-9 h-9 bg-white/20 rounded-lg items-center justify-center flex-shrink-0">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								className="h-5 w-5"
+								className="h-5 w-5 text-[#D4AF37]"
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
@@ -131,23 +144,23 @@ const AdminLogin = () => {
 									strokeLinecap="round"
 									strokeLinejoin="round"
 									strokeWidth={2}
-									d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+									d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
 								/>
 							</svg>
 						</span>
-						Dasboard Admin
+						Pesantren Al-Falah
 					</h1>
-					<p className="mt-1 text-[#A8D5D5] text-xs">Aplikasi Kehadiran Kegiatan</p>
+					<p className="mt-1 text-[#E8F5E9]/90 text-xs font-medium uppercase tracking-wider">Dasboard Admin</p>
 				</div>
 
-				<div>
-					<h2 className="text-base font-bold mb-3">Fitur Lengkap untuk Admin</h2>
+				<div className="relative z-10">
+					<h2 className="text-base font-bold mb-3 text-[#D4AF37]">Fitur Lengkap untuk Admin</h2>
 					<ul className="space-y-2">
 						{[
 							{
 								icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
 								title: "Kelola Data Pengguna",
-								desc: "Manajemen lengkap untuk alumni",
+								desc: "Manajemen lengkap verifikasi akun alumni",
 							},
 							{
 								icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z",
@@ -174,7 +187,7 @@ const AdminLogin = () => {
 								key={i}
 								className="flex items-start gap-3 bg-white/10 p-3 rounded-lg"
 							>
-								<span className="w-7 h-7 inline-flex items-center justify-center bg-white/20 rounded-full flex-shrink-0">
+								<span className="w-7 h-7 inline-flex items-center justify-center bg-white/20 rounded-full flex-shrink-0 text-[#D4AF37]">
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										className="h-4 w-4"
@@ -192,12 +205,12 @@ const AdminLogin = () => {
 								</span>
 								<div>
 									<p className="font-semibold text-sm">{item.title}</p>
-									<p className="text-xs text-[#A8D5D5]">{item.desc}</p>
+									<p className="text-xs text-[#E8F5E9]/80">{item.desc}</p>
 								</div>
 							</li>
 						))}
 					</ul>
-					<blockquote className="mt-4 text-[#A8D5D5] italic text-xs">
+					<blockquote className="mt-4 text-[#E8F5E9]/80 italic text-xs">
 						&ldquo;Barangsiapa yang memudahkan urusan orang lain, maka Allah akan
 						memudahkan urusannya di dunia dan akhirat&rdquo; - HR. Muslim
 					</blockquote>
@@ -208,10 +221,10 @@ const AdminLogin = () => {
 			<div className="w-1/2 flex items-center justify-center bg-white p-8">
 				<div className="w-full max-w-md">
 					<div className="text-center mb-5">
-						<div className="mx-auto w-11 h-11 bg-[#2D7EA0] rounded-xl flex items-center justify-center text-white shadow-md">
+						<div className="mx-auto w-11 h-11 bg-[#0D5C3A] rounded-xl flex items-center justify-center text-white shadow-md">
 							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								className="h-5 w-5"
+								xmlns="http://www.w3.org/2050/svg"
+								className="h-5 w-5 text-[#D4AF37]"
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
@@ -220,7 +233,7 @@ const AdminLogin = () => {
 									strokeLinecap="round"
 									strokeLinejoin="round"
 									strokeWidth={2}
-									d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+									d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
 								/>
 							</svg>
 						</div>
@@ -260,7 +273,7 @@ const AdminLogin = () => {
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
 									placeholder="admin@pesantren.com"
-									className="text-gray-500 w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]/30 focus:border-[#2D7EA0] bg-gray-50"
+									className="text-gray-500 w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#E8F5E9]/50 focus:border-[#0D5C3A] bg-gray-50"
 									required
 								/>
 							</div>
@@ -293,7 +306,7 @@ const AdminLogin = () => {
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									placeholder="Masukkan kata sandi admin"
-									className="text-gray-500 w-full pl-9 pr-10 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]/30 focus:border-[#2D7EA0] bg-gray-50"
+									className="text-gray-500 w-full pl-9 pr-10 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#E8F5E9]/50 focus:border-[#0D5C3A] bg-gray-50"
 									required
 								/>
 								<button
@@ -302,7 +315,7 @@ const AdminLogin = () => {
 									className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
 								>
 									<svg
-										xmlns="http://www.w3.org/2000/svg"
+										xmlns="http://www.w3.org/2050/svg"
 										className="h-4 w-4"
 										fill="none"
 										viewBox="0 0 24 24"
@@ -332,7 +345,7 @@ const AdminLogin = () => {
 					<div className="flex justify-end">
 						<Link
 							href="/forgot-password"
-							className="text-xs font-medium text-[#2D7EA0] hover:text-[#236175] hover:underline transition-colors"
+							className="text-xs font-medium text-[#0D5C3A] hover:text-[#084028] hover:underline transition-colors"
 						>
 							Lupa kata sandi?
 						</Link>
@@ -360,9 +373,9 @@ const AdminLogin = () => {
 						)}
 
 						{/* Security notice */}
-						<div className="p-2.5 bg-green-50 rounded-xl border border-green-200 text-green-700 text-xs flex items-start gap-2">
+						<div className="p-2.5 bg-[#E8F5E9]/30 rounded-xl border border-[#0D5C3A]/20 text-[#0D5C3A] text-xs flex items-start gap-2">
 							<svg
-								xmlns="http://www.w3.org/2000/svg"
+								xmlns="http://www.w3.org/2050/svg"
 								className="h-4 w-4 flex-shrink-0 mt-0.5"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -386,7 +399,7 @@ const AdminLogin = () => {
 						<button
 							type="submit"
 							disabled={isPending}
-							className="w-full py-2.5 px-4 bg-[#2D7EA0] text-white font-semibold rounded-xl shadow hover:bg-[#236175] transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
+							className="w-full py-2.5 px-4 bg-[#0D5C3A] text-white font-semibold rounded-xl shadow hover:bg-[#084028] transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
 						>
 							{isPending ? (
 								<>
@@ -402,7 +415,7 @@ const AdminLogin = () => {
 							<p>atau</p>
 							<Link
 								href="/"
-								className="inline-block mt-1 text-[#2D7EA0] hover:text-[#236175] hover:underline text-xs transition-colors"
+								className="inline-block mt-1 text-[#0D5C3A] hover:text-[#084028] hover:underline text-xs transition-colors"
 							>
 								← Kembali ke Halaman Utama
 							</Link>
@@ -412,7 +425,7 @@ const AdminLogin = () => {
 					<p className="mt-4 text-center text-gray-400 text-xs">
 					Jika Anda bukan administrator, silakan masuk sebagai alumni
 					</p>
-					<p className="mt-1 text-center text-gray-300 text-xs">
+					<p className="mt-1 text-center text-slate-300 text-xs">
 						Dilindungi dengan enkripsi end-to-end | Dasboard Admin v1.0.0
 					</p>
 				</div>

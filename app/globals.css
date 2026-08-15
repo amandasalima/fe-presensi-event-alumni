@@ -164,3 +164,24 @@ button:disabled,
     transform: translateY(-50%);
   }
 }
+
+/* Sidebar Collapse System styles */
+.admin-layout {
+  width: 100%;
+}
+
+/* Smooth margins for all main content containers */
+.admin-layout .ml-56 {
+  margin-left: 14rem !important;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar-collapsed .ml-56 {
+  margin-left: 5rem !important; /* 80px (w-20) */
+}
+
+/* Sidebar submenu transitions */
+.submenu-enter-active {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
+

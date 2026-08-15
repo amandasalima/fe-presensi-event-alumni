@@ -159,10 +159,7 @@ export default function AlumniDashboard() {
       {/* Notification Banner */}
       {unreadNotification && (
         <div
-          className="rounded-2xl p-4 flex items-start gap-3 cursor-pointer active:opacity-90"
-          style={{
-            background: "#41A07E",
-          }}
+          className="rounded-2xl p-4 flex items-start gap-3 cursor-pointer active:opacity-90 bg-[#0D5C3A]"
           onClick={() => router.push("/alumni/main/notifikasi")}
         >
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-white">
@@ -185,7 +182,7 @@ export default function AlumniDashboard() {
             <p className="text-white font-semibold text-sm leading-tight">
               {unreadNotification.title}
             </p>
-            <p className="text-[#B2DE96] text-xs mt-1 leading-relaxed line-clamp-2">
+            <p className="text-[#E8F5E9] text-xs mt-1 leading-relaxed line-clamp-2">
               {unreadNotification.message ?? unreadNotification.body}
             </p>
           </div>
@@ -237,7 +234,7 @@ export default function AlumniDashboard() {
             <h2 className="font-bold text-gray-900">
               Rekomendasi Untuk Anda
             </h2>
-            <span className="text-[11px] bg-[#B2DE96] text-[#41A07E] px-2.5 py-1 rounded-full font-semibold">
+            <span className="text-[11px] bg-[#E8F5E9] text-[#0D5C3A] px-2.5 py-1 rounded-full font-semibold border border-emerald-100/50">
               Berdasarkan minat
             </span>
           </div>
@@ -251,7 +248,7 @@ export default function AlumniDashboard() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px] bg-green-50 text-[#41A07E] border border-green-100 px-2 py-0.5 rounded font-semibold">
+                      <span className="text-[10px] bg-[#E8F5E9] text-[#0D5C3A] border border-[#0D5C3A]/10 px-2 py-0.5 rounded font-semibold">
                         Rekomendasi
                       </span>
                       {getCategoryName(event) && (
@@ -269,7 +266,7 @@ export default function AlumniDashboard() {
                       <p className="text-xs text-gray-400 flex items-center gap-1.5">
                         <Icon
                           name="calendar"
-                          className="w-3.5 h-3.5 flex-shrink-0 text-[#41A07E]"
+                          className="w-3.5 h-3.5 flex-shrink-0 text-[#0D5C3A]"
                         />
                         <span className="truncate">
                           {formatDate(event.event_datetime)}
@@ -281,7 +278,7 @@ export default function AlumniDashboard() {
                       <p className="text-xs text-gray-400 flex items-center gap-1.5">
                         <Icon
                           name="pin"
-                          className="w-3.5 h-3.5 flex-shrink-0 text-[#41A07E]"
+                          className="w-3.5 h-3.5 flex-shrink-0 text-[#0D5C3A]"
                         />
                         <span className="truncate">{event.location}</span>
                       </p>
@@ -290,10 +287,7 @@ export default function AlumniDashboard() {
 
                   <button
                     onClick={() => router.push(`/alumni/main/events/${event.id}`)}
-                    className="text-xs text-white px-3 py-1.5 rounded-lg font-medium flex-shrink-0"
-                    style={{
-                      background: "#41A07E",
-                    }}
+                    className="text-xs text-white px-3 py-1.5 rounded-lg font-medium flex-shrink-0 bg-[#0D5C3A] hover:bg-[#084028] transition"
                   >
                     Detail
                   </button>
@@ -324,10 +318,7 @@ export default function AlumniDashboard() {
                 className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm border border-gray-50"
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: "#41A07E",
-                  }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#0D5C3A]"
                 >
                   <span className="text-white font-bold text-lg">
                     {getDayNum(event.event_datetime)}
@@ -403,10 +394,7 @@ export default function AlumniDashboard() {
 
                 <button
                   onClick={() => router.push(`/alumni/main/events/${event.id}`)}
-                  className="text-xs text-white px-4 py-2 rounded-xl font-medium flex-shrink-0"
-                  style={{
-                    background: "#41A07E",
-                  }}
+                  className="text-xs text-white px-4 py-2 rounded-xl font-medium flex-shrink-0 bg-[#0D5C3A] hover:bg-[#084028] transition"
                 >
                   Lihat
                 </button>
@@ -423,7 +411,7 @@ export default function AlumniDashboard() {
           {presences.length > 0 && (
             <button
               onClick={() => router.push("/alumni/main/riwayat")}
-              className="text-xs text-[#41A07E] font-semibold hover:underline"
+              className="text-xs text-[#0D5C3A] font-semibold hover:underline"
             >
               Lihat Semua
             </button>
@@ -458,7 +446,7 @@ export default function AlumniDashboard() {
                   </p>
                 </div>
 
-                <span className="text-xs bg-[#B2DE96] text-[#41A07E] border border-[#B2DE96] px-3 py-1.5 rounded-xl font-medium flex-shrink-0">
+                <span className="text-xs bg-[#E8F5E9] text-[#0D5C3A] border border-[#E8F5E9] px-3 py-1.5 rounded-xl font-medium flex-shrink-0">
                   Hadir
                 </span>
               </div>

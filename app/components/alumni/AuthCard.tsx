@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Phone } from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, Eye, EyeOff, Phone } from "lucide-react";
 import { useLogin } from "@/hooks/alumni/useLogin";
 import { useRegister } from "@/hooks/alumni/useRegister";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
@@ -60,7 +60,7 @@ function Input({
       className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
         hasError
           ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-          : "border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30"
+          : "border-slate-200 focus:border-[#0D5C3A] focus:ring-[#E8F5E9]/50"
       } ${className}`}
       {...props}
     />
@@ -149,15 +149,15 @@ function getPasswordStrength(password: string) {
     return {
       score,
       label: "Kuat",
-      color: "bg-[#41A07E]",
-      textColor: "text-[#357f65]",
+      color: "bg-[#0D5C3A]",
+      textColor: "text-[#0D5C3A]",
     };
   }
   return {
     score,
     label: "Sangat kuat",
-    color: "bg-emerald-600",
-    textColor: "text-emerald-600",
+    color: "bg-[#0D5C3A]",
+    textColor: "text-[#0D5C3A]",
   };
 }
 
@@ -280,7 +280,7 @@ function LoginForm() {
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
-            className="w-4 h-4 rounded border-slate-300 accent-[#41A07E]"
+            className="w-4 h-4 rounded border-slate-300 accent-[#0D5C3A]"
             checked={form.remember}
             onChange={(e) => setForm({ ...form, remember: e.target.checked })}
           />
@@ -288,7 +288,7 @@ function LoginForm() {
         </label>
         <Link
           href="/forgot-password"
-          className="text-sm font-medium text-[#41A07E] hover:text-[#357f65] transition"
+          className="text-sm font-medium text-[#0D5C3A] hover:text-[#084028] transition"
         >
           Lupa kata sandi ?
         </Link>
@@ -297,7 +297,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-1 w-full rounded-xl bg-[#0D5C3A] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#E8F5E9]/45 transition-colors hover:bg-[#084028] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isPending ? "Memproses..." : "Masuk"}
       </button>
@@ -426,7 +426,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 ${
               getError("gender")
                 ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                : "border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30"
+                : "border-slate-200 focus:border-[#0D5C3A] focus:ring-[#E8F5E9]/50"
             }`}
           >
             <option value="Laki-laki">Laki-laki</option>
@@ -472,7 +472,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 ${
               getError("graduation_year")
                 ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                : "border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30"
+                : "border-slate-200 focus:border-[#0D5C3A] focus:ring-[#E8F5E9]/50"
             }`}
           >
             <option value="">Pilih Tahun Lulus</option>
@@ -572,7 +572,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         <button
           type="submit"
           disabled={isPending}
-          className="mt-1 w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-1 w-full rounded-xl bg-[#0D5C3A] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#E8F5E9]/45 transition-colors hover:bg-[#084028] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isPending ? "Memproses..." : "Daftar"}
         </button>
@@ -682,17 +682,23 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
 
   return (
     <div
-      className="min-h-dvh w-full flex items-start justify-center px-3 sm:px-4 md:px-8 pt-8 sm:pt-10 md:pt-12 pb-8"
-      style={{
-        background:
-          "linear-gradient(160deg, #f0fdf4 0%, #dcfce7 40%, #B2DE96 100%)",
-      }}
+      className="min-h-dvh w-full flex items-start justify-center px-3 sm:px-4 md:px-8 pt-8 sm:pt-10 md:pt-12 pb-8 bg-gradient-to-br from-[#E8F5E9]/70 via-[#F4F9F6] to-white"
     >
       <div className="w-full max-w-sm md:max-w-md min-w-0">
-        {/* App label */}
-        <p className="text-xs font-medium text-[#357f65] mb-5 tracking-wide">
-          Sistem Presensi Event Alumni Berbasis QR
-        </p>
+        {/* App logo and label */}
+        <div className="flex items-center gap-2 mb-5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0D5C3A] text-white shadow">
+            <BookOpen size={16} className="text-[#D4AF37]" />
+          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-xs tracking-wider text-[#0D5C3A] uppercase">
+              Al-Falah
+            </span>
+            <span className="text-[9px] text-slate-500 font-medium tracking-wider uppercase -mt-0.5">
+              Alumni Portal
+            </span>
+          </div>
+        </div>
 
         {/* Heading */}
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 leading-tight mb-1">
@@ -703,7 +709,7 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
         </p>
 
         {/* Card */}
-        <div className="rounded-2xl bg-white/80 backdrop-blur-md shadow-xl shadow-[#B2DE96]/30 p-4 sm:p-6">
+        <div className="rounded-2xl bg-white/90 backdrop-blur-md shadow-xl shadow-[#0D5C3A]/5 p-4 sm:p-6 border border-emerald-50">
           {/* Tabs */}
           <div className="flex mb-6 rounded-xl bg-slate-100 p-1">
             {(["masuk", "daftar"] as Tab[]).map((tab) => (
@@ -711,8 +717,8 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 rounded-lg py-2.5 text-sm font-semibold capitalize transition-all duration-200 ${activeTab === tab
-                  ? "bg-white text-slate-800 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-[#0D5C3A] text-white shadow-sm"
+                  : "text-slate-500 hover:text-[#0D5C3A]"
                   }`}
               >
                 {tab === "masuk" ? "Masuk" : "Daftar"}
@@ -730,11 +736,21 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
           <Link href="/terms" className="font-semibold text-slate-700 underline underline-offset-2">
             Ketentuan Layanan
           </Link>{" "}
-          and{" "}
+          dan{" "}
           <Link href="/privacy" className="font-semibold text-slate-700 underline underline-offset-2">
             Persetujuan Pemrosesan Data
           </Link>
         </p>
+
+        {/* Back to Home Link */}
+        <div className="text-center mt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D5C3A] hover:text-[#D4AF37] transition-colors"
+          >
+            ← Kembali ke Halaman Utama
+          </Link>
+        </div>
       </div>
     </div>
   );

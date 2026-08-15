@@ -69,7 +69,7 @@ export default function AlumniEventsPage() {
           placeholder="Cari event atau lokasi..."
           value={searchQuery}
           onValueChange={setSearchQuery}
-          className="w-full bg-white pl-10 pr-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#41A07E] focus:ring-1 focus:ring-[#41A07E] transition-colors"
+          className="w-full bg-white pl-10 pr-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0D5C3A] focus:ring-1 focus:ring-[#0D5C3A] transition-colors"
         />
 
         {/* Kategori Pills */}
@@ -79,8 +79,8 @@ export default function AlumniEventsPage() {
               key={category}
               onClick={() => setSelectedCategory(category)}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${selectedCategory === category
-                  ? "bg-[#41A07E] text-white shadow-md shadow-[#B2DE96]/30"
-                  : "bg-white text-gray-500 border border-gray-100 hover:bg-green-50 hover:text-[#41A07E]"
+                  ? "bg-[#0D5C3A] text-white shadow-md shadow-[#E8F5E9]/40"
+                  : "bg-white text-gray-500 border border-gray-100 hover:bg-[#E8F5E9]/50 hover:text-[#0D5C3A]"
                 }`}
             >
               {category}
@@ -140,7 +140,7 @@ export default function AlumniEventsPage() {
                   </span>
 
                   {event.is_registered ? (
-                    <span className="text-[10px] bg-green-50 text-[#41A07E] border border-green-100 px-2 py-0.5 rounded font-semibold">
+                    <span className="text-[10px] bg-[#E8F5E9] text-[#0D5C3A] border border-[#0D5C3A]/10 px-2 py-0.5 rounded font-semibold">
                       Terdaftar
                     </span>
                   ) : (
@@ -165,19 +165,19 @@ export default function AlumniEventsPage() {
                 {/* Informasi Meta */}
                 <div className="mt-3.5 space-y-1.5 border-t border-gray-50 pt-3">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Calendar className="w-3.5 h-3.5 text-[#41A07E] flex-shrink-0" />
+                    <Calendar className="w-3.5 h-3.5 text-[#0D5C3A] flex-shrink-0" />
                     <span className="min-w-0">
                       {formatDate(event.event_date)} • {formatTime(event.start_time)} - {formatTime(event.end_time)} WIB
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <MapPin className="w-3.5 h-3.5 text-[#41A07E] flex-shrink-0" />
+                    <MapPin className="w-3.5 h-3.5 text-[#0D5C3A] flex-shrink-0" />
                     <span className="truncate">{event.location}</span>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Users className="w-3.5 h-3.5 text-[#41A07E] flex-shrink-0" />
+                    <Users className="w-3.5 h-3.5 text-[#0D5C3A] flex-shrink-0" />
                     <span>{getQuotaText(event)}</span>
                   </div>
                   {event.is_quota_full && (
@@ -191,7 +191,7 @@ export default function AlumniEventsPage() {
               {/* Tombol Detail */}
               <button
                 onClick={() => router.push(`/alumni/main/events/${event.id}`)}
-                className="w-full mt-4 rounded-xl bg-[#41A07E] py-2.5 text-xs font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] flex items-center justify-center gap-1"
+                className="w-full mt-4 rounded-xl bg-[#0D5C3A] py-2.5 text-xs font-semibold text-white shadow-md shadow-[#E8F5E9]/40 transition-colors hover:bg-[#084028] active:scale-[0.98] flex items-center justify-center gap-1"
               >
                 <span>Lihat Detail & Pendaftaran</span>
                 <ChevronRight className="w-3.5 h-3.5" />

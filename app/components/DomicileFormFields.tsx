@@ -47,16 +47,16 @@ export default function DomicileFormFields({
   // Theme Class Names mapping
   const styles = {
     alumni: {
-      select: "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30",
-      input: "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30",
-      textarea: "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 border-slate-200 focus:border-[#41A07E] focus:ring-[#B2DE96]/30 min-h-[80px] resize-y",
+      select: "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 border-slate-200 focus:border-[#0D5C3A] focus:ring-[#E8F5E9]/50",
+      input: "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 border-slate-200 focus:border-[#0D5C3A] focus:ring-[#E8F5E9]/50",
+      textarea: "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 border-slate-200 focus:border-[#0D5C3A] focus:ring-[#E8F5E9]/50 min-h-[80px] resize-y",
       errorSelect: "border-red-300 focus:border-red-400 focus:ring-red-100",
       label: "text-xs font-medium text-slate-600 mb-1 block",
     },
     "alumni-profile": {
-      select: "w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition",
-      input: "w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition",
-      textarea: "w-full rounded-xl border border-[#41A07E]/30 bg-[#B2DE96]/10 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#41A07E] focus:ring-2 focus:ring-[#B2DE96]/30 transition min-h-[80px] resize-y",
+      select: "w-full rounded-xl border border-[#0D5C3A]/30 bg-[#E8F5E9]/20 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#0D5C3A] focus:ring-2 focus:ring-[#E8F5E9]/50 transition",
+      input: "w-full rounded-xl border border-[#0D5C3A]/30 bg-[#E8F5E9]/20 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#0D5C3A] focus:ring-2 focus:ring-[#E8F5E9]/50 transition",
+      textarea: "w-full rounded-xl border border-[#0D5C3A]/30 bg-[#E8F5E9]/20 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#0D5C3A] focus:ring-2 focus:ring-[#E8F5E9]/50 transition min-h-[80px] resize-y",
       errorSelect: "border-red-400 focus:ring-red-100",
       label: "text-xs font-medium text-slate-400 mb-1 block",
     },

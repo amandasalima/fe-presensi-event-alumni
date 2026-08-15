@@ -167,7 +167,7 @@ export default function EventDetailPage({
           </p>
           <button
             onClick={() => router.back()}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#41A07E] hover:bg-[#357f65]"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0D5C3A] hover:bg-[#084028]"
           >
             Kembali
           </button>
@@ -239,7 +239,7 @@ export default function EventDetailPage({
             </span>
 
             {isAttended ? (
-              <span className="text-[10px] bg-[#B2DE96] text-[#41A07E] border border-[#B2DE96] px-3 py-1 rounded-full font-bold flex items-center gap-1">
+              <span className="text-[10px] bg-[#E8F5E9] text-[#0D5C3A] border border-[#E8F5E9] px-3 py-1 rounded-full font-bold flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" />
                 Hadir
               </span>
@@ -281,8 +281,8 @@ export default function EventDetailPage({
 
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 text-[#41A07E]" />
+                <div className="w-8 h-8 rounded-xl bg-[#E8F5E9]/50 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-[#0D5C3A]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-gray-400 mb-0.5">Tanggal</p>
@@ -293,8 +293,8 @@ export default function EventDetailPage({
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-4 h-4 text-[#41A07E]" />
+                <div className="w-8 h-8 rounded-xl bg-[#E8F5E9]/50 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-4 h-4 text-[#0D5C3A]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-gray-400 mb-0.5">Waktu</p>
@@ -306,8 +306,8 @@ export default function EventDetailPage({
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-[#41A07E]" />
+                <div className="w-8 h-8 rounded-xl bg-[#E8F5E9]/50 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-[#0D5C3A]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-gray-400 mb-0.5">Lokasi</p>
@@ -318,8 +318,8 @@ export default function EventDetailPage({
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#B2DE96]/20 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-4 h-4 text-[#41A07E]" />
+                <div className="w-8 h-8 rounded-xl bg-[#E8F5E9]/50 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-4 h-4 text-[#0D5C3A]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-gray-400 mb-0.5">Kuota</p>
@@ -342,7 +342,7 @@ export default function EventDetailPage({
               <div
                 className={`rounded-xl p-4 ${
                   isAttended
-                    ? "bg-[#B2DE96]/20 border border-[#B2DE96]/30"
+                    ? "bg-[#E8F5E9]/40 border border-[#E8F5E9]/60"
                     : isEventDone
                     ? "bg-gray-50 border border-gray-100"
                     : "bg-blue-50 border border-blue-100"
@@ -350,7 +350,7 @@ export default function EventDetailPage({
               >
                 <div className="flex items-start gap-3">
                   {isAttended ? (
-                    <CheckCircle className="w-5 h-5 text-[#41A07E] flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-[#0D5C3A] flex-shrink-0 mt-0.5" />
                   ) : (
                     <AlertCircle
                       className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
@@ -362,7 +362,7 @@ export default function EventDetailPage({
                     <p
                       className={`text-sm font-semibold ${
                         isAttended
-                          ? "text-[#41A07E]"
+                          ? "text-[#0D5C3A]"
                           : isEventDone
                           ? "text-gray-700"
                           : "text-blue-700"
@@ -377,7 +377,7 @@ export default function EventDetailPage({
                     <p
                       className={`text-xs mt-1 leading-relaxed ${
                         isAttended
-                          ? "text-[#357f65]"
+                          ? "text-[#0D5C3A]/80"
                           : isEventDone
                           ? "text-gray-500"
                           : "text-blue-600"
@@ -400,7 +400,7 @@ export default function EventDetailPage({
             <button
               onClick={isRegistered ? undefined : handleRegister}
               disabled={registerDisabled}
-              className="w-full rounded-xl bg-[#41A07E] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#B2DE96]/30 transition-colors hover:bg-[#357f65] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-[#0D5C3A] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#E8F5E9]/40 transition-colors hover:bg-[#084028] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {registerEvent.isPending ? (
                 <>

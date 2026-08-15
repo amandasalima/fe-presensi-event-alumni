@@ -301,18 +301,9 @@ function AttendanceChart({
 			{
 				label: "Kehadiran",
 				data: data.map((item) => item.count),
-				backgroundColor: data.map((_, i) => {
-					const hue = 180 + i * 8;
-					return `hsla(${hue}, 55%, 45%, 0.85)`;
-				}),
-				hoverBackgroundColor: data.map((_, i) => {
-					const hue = 180 + i * 8;
-					return `hsla(${hue}, 60%, 40%, 1)`;
-				}),
-				borderColor: data.map((_, i) => {
-					const hue = 180 + i * 8;
-					return `hsla(${hue}, 55%, 40%, 1)`;
-				}),
+				backgroundColor: "rgba(45, 126, 160, 0.85)", // Solid brand blue/teal
+				hoverBackgroundColor: "rgba(62, 189, 175, 1)", // Hover active teal accent
+				borderColor: "rgba(45, 126, 160, 1)",
 				borderWidth: 1,
 				borderRadius: 6,
 				borderSkipped: false as const,
@@ -533,10 +524,9 @@ export default function DashboardPage() {
 								))}
 					</div>
 
-					{/* ── Chart + Informasi Sistem ── */}
-					<div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
-						{/* Chart - lebih lebar */}
-						<section className="xl:col-span-2 bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
+					{/* ── Chart Section (Full Width) ── */}
+					<div className="mb-5">
+						<section className="w-full bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
 							<div className="flex items-center gap-3 mb-4">
 								<Icon3D variant="teal" size="md">
 									<ChartColumn size={20} strokeWidth={2.5} />
@@ -637,59 +627,6 @@ export default function DashboardPage() {
 								</>
 							)}
 						</section>
-
-						{/* Informasi Sistem */}
-						<div className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
-							<div className="flex items-center gap-3 mb-4">
-								<Icon3D variant="green" size="md">
-									<Server size={20} strokeWidth={2.5} />
-								</Icon3D>
-								<div>
-									<h2 className="text-base font-bold text-gray-800 mb-1">
-										Informasi Sistem
-									</h2>
-									<p className="text-gray-500 text-xs">
-										Status dan aktivitas sistem
-									</p>
-								</div>
-							</div>
-							<div className="bg-[#7AB2B2]/10 rounded-xl p-4 space-y-2">
-								<div className="flex justify-between items-center">
-									<span className="text-gray-600 text-sm">Status Sistem</span>
-									<span className="text-green-600 font-semibold text-sm flex items-center gap-1.5">
-										<span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" />
-										Beroperasi
-									</span>
-								</div>
-								{[
-									{
-										label: "QR Generator",
-										status: "Active",
-										icon: <QrCode size={14} />,
-									},
-									{
-										label: "Database",
-										status: "Running",
-										icon: <Database size={14} />,
-									},
-								].map((item, i) => (
-									<div
-										key={i}
-										className="flex justify-between items-center gap-3"
-									>
-										<span className="text-gray-500 text-xs flex items-center gap-2">
-											<span className="w-6 h-6 rounded-lg bg-white text-[#2D7EA0] shadow-sm shadow-gray-300/60 flex items-center justify-center">
-												{item.icon}
-											</span>
-											{item.label}
-										</span>
-										<span className="text-xs font-medium text-[#2D7EA0]">
-											{item.status}
-										</span>
-									</div>
-								))}
-							</div>
-						</div>
 					</div>
 
 					{/* ── Bottom Section ── */}

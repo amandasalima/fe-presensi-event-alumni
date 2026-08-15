@@ -28,6 +28,13 @@ function clearAdminCredentials() {
   localStorage.removeItem("role");
 }
 
+import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
+
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isCollapsed } = useSidebar();
+  return <div className={`admin-layout ${isCollapsed ? "sidebar-collapsed" : ""}`}>{children}</div>;
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -128,7 +135,11 @@ export default function AdminLayout({
     );
   }
 
-  return <div className="admin-layout">{children}</div>;
+  return (
+    <SidebarProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </SidebarProvider>
+  );
 }
 
 

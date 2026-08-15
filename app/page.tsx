@@ -10,7 +10,6 @@ import {
   MapPin,
   ArrowRight,
   Users,
-  CheckCircle,
   Phone,
   Mail,
   ChevronRight,
@@ -28,17 +27,20 @@ export default function Home() {
     {
       icon: Calendar,
       title: "Informasi Agenda Terpusat",
-      description: "Menampilkan seluruh daftar acara, kegiatan sosial, pengajian, dan reuni alumni Al-Falah secara real-time.",
+      description:
+        "Menampilkan seluruh daftar acara, kegiatan sosial, pengajian, dan reuni alumni Al-Falah secara real-time.",
     },
     {
       icon: UserPlus,
       title: "Pendaftaran Event Cepat",
-      description: "Daftar keikutsertaan kegiatan hanya dengan satu klik setelah masuk ke akun alumni.",
+      description:
+        "Daftar keikutsertaan kegiatan hanya dengan satu klik setelah masuk ke akun alumni.",
     },
     {
       icon: QrCode,
       title: "Presensi QR Code di Hari-H",
-      description: "Tanpa antre manual. Cukup tunjukkan QR Code dari smartphone saat hadir di lokasi event.",
+      description:
+        "Tanpa antre manual. Cukup tunjukkan QR Code dari smartphone saat hadir di lokasi event.",
     },
   ];
 
@@ -48,21 +50,24 @@ export default function Home() {
       date: "12 Syawal 1447 H / 2026",
       location: "Aula Utama Pesantren",
       title: "Reuni Akbar & Halalbihalal 2026",
-      description: "Temu kangen seluruh angkatan alumni Al-Falah. Mempererat ukhuwah, mengenang masa khidmah, dan koordinasi kontribusi untuk umat.",
+      description:
+        "Temu kangen seluruh angkatan alumni Al-Falah. Mempererat ukhuwah, mengenang masa khidmah, dan koordinasi kontribusi untuk umat.",
     },
     {
       badge: "Bulanan",
       date: "Ahad Pertama Setiap Bulan",
       location: "Masjid Ponpes Al-Falah",
       title: "Pengajian Rutin Alumni & Doa Bersama",
-      description: "Majelis ilmu rutin bersama Masyayikh Al-Falah guna menjaga ruhul khidmah, memperkuat spiritual, dan silaturahmi berkala.",
+      description:
+        "Majelis ilmu rutin bersama Masyayikh Al-Falah guna menjaga ruhul khidmah, memperkuat spiritual, dan silaturahmi berkala.",
     },
     {
       badge: "Edukasi",
       date: "Sabtu, 15 November 2026",
       location: "Gedung Aula Putera",
       title: "Workshop Karir & Mentoring Santri",
-      description: "Sharing pengalaman dan bimbingan karir praktis dari alumni inspiratif Al-Falah untuk santri kelas akhir menghadapi dunia kerja.",
+      description:
+        "Sharing pengalaman dan bimbingan karir praktis dari alumni inspiratif Al-Falah untuk santri kelas akhir menghadapi dunia kerja.",
     },
   ];
 
@@ -70,17 +75,20 @@ export default function Home() {
     {
       number: "1",
       title: "Masuk ke Akun Alumni",
-      description: "Login menggunakan akun terdaftar. Registrasi jika Anda adalah alumni baru dan tunggu verifikasi admin.",
+      description:
+        "Login menggunakan akun terdaftar. Registrasi jika Anda adalah alumni baru dan tunggu verifikasi admin.",
     },
     {
       number: "2",
       title: "Pilih & Daftar Event",
-      description: "Jelajahi agenda kegiatan yang tersedia, lalu daftarkan diri Anda pada event yang ingin diikuti.",
+      description:
+        "Jelajahi agenda kegiatan yang tersedia, lalu daftarkan diri Anda pada event yang ingin diikuti.",
     },
     {
       number: "3",
       title: "Pindai QR Code di Lokasi",
-      description: "Tunjukkan QR Code di smartphone Anda ke panitia untuk dipindai saat tiba di lokasi kegiatan.",
+      description:
+        "Tunjukkan QR Code di smartphone Anda ke panitia untuk dipindai saat tiba di lokasi kegiatan.",
     },
   ];
 
@@ -128,8 +136,22 @@ export default function Home() {
             stroke="#0D5C3A"
             strokeWidth="0.6"
           />
-          <circle cx="30" cy="30" r="8" fill="none" stroke="#0D5C3A" strokeWidth="0.6" />
-          <circle cx="30" cy="30" r="16" fill="none" stroke="#0D5C3A" strokeWidth="0.6" />
+          <circle
+            cx="30"
+            cy="30"
+            r="8"
+            fill="none"
+            stroke="#0D5C3A"
+            strokeWidth="0.6"
+          />
+          <circle
+            cx="30"
+            cy="30"
+            r="16"
+            fill="none"
+            stroke="#0D5C3A"
+            strokeWidth="0.6"
+          />
         </svg>
       </div>
 
@@ -154,16 +176,28 @@ export default function Home() {
 
             {/* Desktop Menu */}
             <nav className="hidden md:flex space-x-8 text-sm font-medium">
-              <a href="#beranda" className="text-[#0D5C3A] hover:text-[#D4AF37] transition">
+              <a
+                href="#beranda"
+                className="text-[#0D5C3A] hover:text-[#D4AF37] transition"
+              >
                 Beranda
               </a>
-              <a href="#fitur" className="text-slate-600 hover:text-[#0D5C3A] transition">
+              <a
+                href="#fitur"
+                className="text-slate-600 hover:text-[#0D5C3A] transition"
+              >
                 Fitur Utama
               </a>
-              <a href="#agenda" className="text-slate-600 hover:text-[#0D5C3A] transition">
+              <a
+                href="#agenda"
+                className="text-slate-600 hover:text-[#0D5C3A] transition"
+              >
                 Agenda Event
               </a>
-              <a href="#alur" className="text-slate-600 hover:text-[#0D5C3A] transition">
+              <a
+                href="#alur"
+                className="text-slate-600 hover:text-[#0D5C3A] transition"
+              >
                 Alur Presensi
               </a>
             </nav>
@@ -270,8 +304,9 @@ export default function Home() {
                 <span className="text-[#0D5C3A]">Menjaga Keberkahan.</span>
               </h1>
               <p className="max-w-2xl text-slate-600 text-sm sm:text-base leading-relaxed">
-                Portal resmi informasi kegiatan dan manajemen event alumni Pondok Pesantren Al-Falah.
-                Tetap terhubung, koordinasi kontribusi, dan hadir bersama dalam barakah pesantren.
+                Portal resmi informasi kegiatan dan manajemen event alumni
+                Pondok Pesantren Al-Falah. Tetap terhubung, koordinasi
+                kontribusi, dan hadir bersama dalam barakah pesantren.
               </p>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
                 <Link
@@ -291,7 +326,10 @@ export default function Home() {
               </div>
               <p className="text-xs text-slate-400">
                 Belum terdaftar?{" "}
-                <Link href="/alumni/register" className="font-semibold text-[#0D5C3A] hover:underline">
+                <Link
+                  href="/alumni/register"
+                  className="font-semibold text-[#0D5C3A] hover:underline"
+                >
                   Registrasi disini
                 </Link>{" "}
                 untuk diverifikasi oleh Administrator.
@@ -318,7 +356,9 @@ export default function Home() {
                       <p className="text-[9px] uppercase tracking-wider text-[#E8F5E9]/80 font-bold">
                         Ponpes Al-Falah
                       </p>
-                      <h4 className="text-xs font-bold mt-0.5 text-[#D4AF37]">Presensi Alumni</h4>
+                      <h4 className="text-xs font-bold mt-0.5 text-[#D4AF37]">
+                        Presensi Alumni
+                      </h4>
                     </div>
 
                     {/* Screen Body */}
@@ -332,11 +372,16 @@ export default function Home() {
                         </p>
                         <div className="w-32 h-32 bg-[#E8F5E9]/50 rounded-xl my-3 p-3.5 flex items-center justify-center border border-emerald-100/50 relative overflow-hidden">
                           {/* Mock QR Code */}
-                          <QrCode className="w-full h-full text-[#0D5C3A]" strokeWidth={1.5} />
+                          <QrCode
+                            className="w-full h-full text-[#0D5C3A]"
+                            strokeWidth={1.5}
+                          />
                           {/* Animated Scan Line */}
                           <div className="absolute left-0 right-0 h-0.5 bg-[#D4AF37] shadow-md animate-pulse-ring" />
                         </div>
-                        <p className="text-[9px] text-slate-400 font-mono">ID: ALUMNI-4109</p>
+                        <p className="text-[9px] text-slate-400 font-mono">
+                          ID: ALUMNI-4109
+                        </p>
                       </div>
 
                       <div className="w-full bg-white rounded-xl p-3 shadow-xs border border-emerald-50/30 text-left flex items-center gap-3">
@@ -344,13 +389,18 @@ export default function Home() {
                           <Users className="w-4 h-4" />
                         </div>
                         <div>
-                          <p className="text-[9px] text-slate-400 font-medium">Status Kehadiran</p>
-                          <p className="text-xs font-bold text-emerald-700">Telah Dipindai</p>
+                          <p className="text-[9px] text-slate-400 font-medium">
+                            Status Kehadiran
+                          </p>
+                          <p className="text-xs font-bold text-emerald-700">
+                            Telah Dipindai
+                          </p>
                         </div>
                       </div>
 
                       <p className="text-[8px] text-slate-400 leading-normal">
-                        Tunjukkan QR Code ini ke petugas pemindai di gerbang utama acara.
+                        Tunjukkan QR Code ini ke petugas pemindai di gerbang
+                        utama acara.
                       </p>
                     </div>
                   </div>
@@ -362,7 +412,10 @@ export default function Home() {
       </section>
 
       {/* FITUR SISTEM ALUMNI */}
-      <section id="fitur" className="py-20 bg-white border-t border-slate-100 relative">
+      <section
+        id="fitur"
+        className="py-20 bg-white border-t border-slate-100 relative"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-16">
             <span className="text-xs font-semibold text-[#D4AF37] uppercase tracking-widest bg-[#E8F5E9] px-3 py-1 rounded-full">
@@ -372,7 +425,8 @@ export default function Home() {
               Kemudahan Fitur untuk Alumni
             </h2>
             <p className="text-slate-500 text-sm">
-              Sistem presensi event kami didesain khusus guna mempermudah akses silaturahmi seluruh alumni Al-Falah.
+              Sistem presensi event kami didesain khusus guna mempermudah akses
+              silaturahmi seluruh alumni Al-Falah.
             </p>
           </div>
 
@@ -385,7 +439,10 @@ export default function Home() {
                   className="group bg-white rounded-3xl border border-slate-100 p-8 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-[#0D5C3A]/20 hover:shadow-xl hover:shadow-[#0D5C3A]/5 text-left"
                 >
                   <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center text-[#0D5C3A] mb-6 transition-transform duration-300 group-hover:scale-110">
-                    <Icon className="w-6 h-6 text-[#0D5C3A]" strokeWidth={1.75} />
+                    <Icon
+                      className="w-6 h-6 text-[#0D5C3A]"
+                      strokeWidth={1.75}
+                    />
                   </div>
                   <h3 className="text-lg font-bold text-[#1A1A1A] mb-3 group-hover:text-[#0D5C3A] transition">
                     {feature.title}
@@ -417,7 +474,8 @@ export default function Home() {
                 Agenda Event Mendatang
               </h2>
               <p className="text-slate-500 text-sm max-w-2xl">
-                Pantau terus agenda kegiatan pondok pesantren, reuni, pengajian akbar, serta seminar karir mendatang.
+                Pantau terus agenda kegiatan pondok pesantren, reuni, pengajian
+                akbar, serta seminar karir mendatang.
               </p>
             </div>
             <Link
@@ -487,7 +545,8 @@ export default function Home() {
               3 Langkah Mudah Mengikuti Kegiatan
             </h2>
             <p className="text-slate-500 text-sm">
-              Ikuti alur pendaftaran dan konfirmasi kehadiran digital yang cepat tanpa antrean manual.
+              Ikuti alur pendaftaran dan konfirmasi kehadiran digital yang cepat
+              tanpa antrean manual.
             </p>
           </div>
 
@@ -497,7 +556,10 @@ export default function Home() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8 relative z-10">
               {steps.map((step, idx) => (
-                <div key={idx} className="flex flex-col items-center text-center px-4">
+                <div
+                  key={idx}
+                  className="flex flex-col items-center text-center px-4"
+                >
                   {/* Number bubble */}
                   <div className="w-16 h-16 rounded-full bg-[#0D5C3A] border-4 border-[#E8F5E9] text-[#D4AF37] font-bold text-xl flex items-center justify-center shadow-md mb-6 ring-2 ring-[#0D5C3A]/10">
                     {step.number}
@@ -521,9 +583,19 @@ export default function Home() {
         <div className="absolute inset-0 opacity-[0.02] pointer-events-none overflow-hidden">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <pattern
+                id="grid"
+                width="40"
+                height="40"
+                patternUnits="userSpaceOnUse"
+              >
                 <rect width="40" height="40" fill="none" />
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#D4AF37" strokeWidth="1" />
+                <path
+                  d="M 40 0 L 0 0 0 40"
+                  fill="none"
+                  stroke="#D4AF37"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -543,8 +615,9 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-                Lembaga pendidikan Islam tafaqquh fid-din yang berkomitmen melahirkan generasi santri
-                yang shalih, bertafakur, mandiri, dan berbakti kepada nusa, bangsa, serta agama.
+                Lembaga pendidikan Islam tafaqquh fid-din yang berkomitmen
+                melahirkan generasi santri yang shalih, bertafakur, mandiri, dan
+                berbakti kepada nusa, bangsa, serta agama.
               </p>
               <div className="space-y-2 text-xs text-slate-400">
                 <p className="flex items-center gap-2">
@@ -565,7 +638,10 @@ export default function Home() {
               </h4>
               <ul className="space-y-2.5 text-xs text-slate-400">
                 <li>
-                  <a href="#beranda" className="hover:text-[#D4AF37] transition">
+                  <a
+                    href="#beranda"
+                    className="hover:text-[#D4AF37] transition"
+                  >
                     Halaman Utama
                   </a>
                 </li>
@@ -593,7 +669,8 @@ export default function Home() {
                 Akses Portal
               </h4>
               <p className="text-xs text-slate-400 mb-4 leading-normal">
-                Gunakan tautan di bawah untuk langsung menuju gerbang masuk masing-masing tingkat pengguna.
+                Gunakan tautan di bawah untuk langsung menuju gerbang masuk
+                masing-masing tingkat pengguna.
               </p>
               <div className="flex flex-wrap gap-2.5">
                 <Link
@@ -614,7 +691,9 @@ export default function Home() {
 
           {/* Copyright Divider */}
           <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>Copyright © 2026 Pondok Pesantren Al-Falah. All rights reserved.</p>
+            <p>
+              Copyright © 2026 Pondok Pesantren Al-Falah. All rights reserved.
+            </p>
             <div className="flex items-center gap-4">
               <a
                 href="https://instagram.com"

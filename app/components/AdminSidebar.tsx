@@ -29,7 +29,14 @@ import {
 export default function AdminSidebar() {
   const pathname = usePathname();
   const user = useAuthUser();
-  const { isCollapsed, toggleSidebar, setIsCollapsed, expandedMenus, toggleMenu, setMenuExpanded } = useSidebar();
+  const {
+    isCollapsed,
+    toggleSidebar,
+    setIsCollapsed,
+    expandedMenus,
+    toggleMenu,
+    setMenuExpanded,
+  } = useSidebar();
 
   const handleLogout = () => {
     stopHeartbeat();
@@ -43,13 +50,13 @@ export default function AdminSidebar() {
     id: string;
     name: string;
     path: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<{ className?: string }>;
   }
 
   interface MenuItemSub {
     name: string;
     path: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<{ className?: string }>;
     superAdminOnly?: boolean;
   }
 
@@ -57,7 +64,7 @@ export default function AdminSidebar() {
     type: "group";
     id: string;
     name: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<{ className?: string }>;
     subItems: MenuItemSub[];
   }
 
@@ -165,11 +172,17 @@ export default function AdminSidebar() {
           </span>
           <div
             className={`flex flex-col transition-all duration-300 ${
-              isCollapsed ? "opacity-0 max-w-0 overflow-hidden" : "opacity-100 max-w-xs"
+              isCollapsed
+                ? "opacity-0 max-w-0 overflow-hidden"
+                : "opacity-100 max-w-xs"
             }`}
           >
-            <h1 className="font-bold, text-[16px] tracking-wide uppercase whitespace-nowrap">Al-Falah</h1>
-            <p className="text-[12px] text-[#7AB2B2] whitespace-nowrap font-medium">Dashboard Admin</p>
+            <h1 className="font-bold, text-[16px] tracking-wide uppercase whitespace-nowrap">
+              Al-Falah
+            </h1>
+            <p className="text-[12px] text-[#7AB2B2] whitespace-nowrap font-medium">
+              Dashboard Admin
+            </p>
           </div>
         </div>
       </div>
@@ -186,20 +199,26 @@ export default function AdminSidebar() {
                 key={index}
                 href={group.path!}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                  active ? "bg-[#3EBDAF] shadow-md text-white font-medium" : "hover:bg-[#236175] text-white/90"
+                  active
+                    ? "bg-[#3EBDAF] shadow-md text-white font-medium"
+                    : "hover:bg-[#236175] text-white/90"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className="h-4.5 w-4.5 flex-shrink-0" />
                   <span
                     className={`text-sm transition-all duration-300 ${
-                      isCollapsed ? "opacity-0 max-w-0 overflow-hidden" : "opacity-100 max-w-xs"
+                      isCollapsed
+                        ? "opacity-0 max-w-0 overflow-hidden"
+                        : "opacity-100 max-w-xs"
                     }`}
                   >
                     {group.name}
                   </span>
                 </div>
-                {!isCollapsed && active && <span className="text-[10px]">●</span>}
+                {!isCollapsed && active && (
+                  <span className="text-[10px]">●</span>
+                )}
               </Link>
             );
           } else {
@@ -207,14 +226,16 @@ export default function AdminSidebar() {
             const GroupIcon = group.icon;
             // Filter subItems based on super admin privileges
             const visibleSubItems = (group.subItems ?? []).filter(
-              (sub) => !sub.superAdminOnly || isSuperAdmin(user)
+              (sub) => !sub.superAdminOnly || isSuperAdmin(user),
             );
 
             // If no subItems are visible, do not render this group
             if (visibleSubItems.length === 0) return null;
 
             const isExpanded = !!expandedMenus[group.id];
-            const hasActiveSub = visibleSubItems.some((sub) => pathname === sub.path);
+            const hasActiveSub = visibleSubItems.some(
+              (sub) => pathname === sub.path,
+            );
 
             return (
               <div key={index} className="space-y-1">
@@ -230,7 +251,9 @@ export default function AdminSidebar() {
                     <GroupIcon className="h-4.5 w-4.5 flex-shrink-0" />
                     <span
                       className={`text-sm text-left transition-all duration-300 ${
-                        isCollapsed ? "opacity-0 max-w-0 overflow-hidden" : "opacity-100 max-w-xs"
+                        isCollapsed
+                          ? "opacity-0 max-w-0 overflow-hidden"
+                          : "opacity-100 max-w-xs"
                       }`}
                     >
                       {group.name}
@@ -238,7 +261,11 @@ export default function AdminSidebar() {
                   </div>
                   {!isCollapsed && (
                     <span className="text-white/60">
-                      {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                      {isExpanded ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )}
                     </span>
                   )}
                 </button>
@@ -261,7 +288,9 @@ export default function AdminSidebar() {
                           }`}
                         >
                           <SubIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                          <span className="text-xs whitespace-nowrap">{sub.name}</span>
+                          <span className="text-xs whitespace-nowrap">
+                            {sub.name}
+                          </span>
                         </Link>
                       );
                     })}

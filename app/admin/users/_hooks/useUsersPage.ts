@@ -2,548 +2,603 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-	type GetUsersParams,
-	type UpdateUserPayload,
-	type User,
-	type UserStatus,
-	useBulkUpdateUserStatus,
-	useDeleteUser,
-	useUpdateUser,
-	useUpdateUserStatus,
-	useUsers,
+  type GetUsersParams,
+  type UpdateUserPayload,
+  type User,
+  type UserStatus,
+  useBulkUpdateUserStatus,
+  useDeleteUser,
+  useUpdateUser,
+  useUpdateUserStatus,
+  useUsers,
 } from "@/hooks/admin/users";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getApiErrorMessage } from "@/lib/api";
 import {
-	exportUsersToExcel,
-	exportUsersToPdf,
-	getUserPhone,
-	isAdminUser,
+  exportUsersToExcel,
+  exportUsersToPdf,
+  isAdminUser,
 } from "../_utils/userFormatters";
 
 export type UserStatusFilter = "all" | UserStatus;
 export type UserStatusAction = "approve" | "reject" | "deactivate" | "activate";
-export type BulkUserStatusAction = "approve" | "deactivate" | "activate" | "reject";
+export type BulkUserStatusAction =
+  | "approve"
+  | "deactivate"
+  | "activate"
+  | "reject";
 export type UserSortKey =
-	| "name"
-	| "email"
-	| "phone"
-	| "role"
-	| "status"
-	| "created_at";
+  | "name"
+  | "email"
+  | "phone"
+  | "role"
+  | "status"
+  | "created_at";
 export type SortDirection = "asc" | "desc";
 export type PaginationItem = number | "start-ellipsis" | "end-ellipsis";
 
 export type UserStatusTarget = {
-	user: User;
-	status: Exclude<UserStatus, "pending">;
-	action: UserStatusAction;
+  user: User;
+  status: Exclude<UserStatus, "pending">;
+  action: UserStatusAction;
 };
 
 function getPaginationRange(
-	currentPage: number,
-	totalPages: number,
+  currentPage: number,
+  totalPages: number,
 ): PaginationItem[] {
-	if (totalPages <= 7) {
-		return Array.from({ length: totalPages }, (_, index) => index + 1);
-	}
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
 
-	if (currentPage <= 4) {
-		return [1, 2, 3, 4, 5, "end-ellipsis", totalPages];
-	}
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, "end-ellipsis", totalPages];
+  }
 
-	if (currentPage >= totalPages - 3) {
-		return [
-			1,
-			"start-ellipsis",
-			totalPages - 4,
-			totalPages - 3,
-			totalPages - 2,
-			totalPages - 1,
-			totalPages,
-		];
-	}
+  if (currentPage >= totalPages - 3) {
+    return [
+      1,
+      "start-ellipsis",
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
 
-	return [
-		1,
-		"start-ellipsis",
-		currentPage - 1,
-		currentPage,
-		currentPage + 1,
-		"end-ellipsis",
-		totalPages,
-	];
+  return [
+    1,
+    "start-ellipsis",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "end-ellipsis",
+    totalPages,
+  ];
 }
 
 function getCurrentAdminId() {
-	if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") return null;
 
-	try {
-		const storedUser = localStorage.getItem("user");
-		if (!storedUser) return null;
+  try {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) return null;
 
-		const id = Number((JSON.parse(storedUser) as { id?: unknown }).id);
-		return Number.isFinite(id) ? id : null;
-	} catch {
-		return null;
-	}
+    const id = Number((JSON.parse(storedUser) as { id?: unknown }).id);
+    return Number.isFinite(id) ? id : null;
+  } catch {
+    return null;
+  }
 }
 
 export function useUsersPage() {
-	const [selected, setSelected] = useState<User | null>(null);
-	const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
-	const [statusFilter, setStatusFilterState] = useState<UserStatusFilter>("all");
-	const [statusTarget, setStatusTarget] = useState<UserStatusTarget | null>(null);
-	const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(() => new Set());
-	const [currentPage, setCurrentPage] = useState(1);
-	const [perPage, setPerPageState] = useState(10);
-	const [sortBy, setSortBy] = useState<UserSortKey | null>(null);
-	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-	const [provinceFilter, setProvinceFilter] = useState("");
-	const [cityFilter, setCityFilter] = useState("");
-	const [districtFilter, setDistrictFilter] = useState("");
-	const [villageFilter, setVillageFilter] = useState("");
-	const [searchQuery, setSearchQuery] = useState("");
+  const [selected, setSelected] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [statusFilter, setStatusFilterState] =
+    useState<UserStatusFilter>("all");
+  const [statusTarget, setStatusTarget] = useState<UserStatusTarget | null>(
+    null,
+  );
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPageState] = useState(10);
+  const [sortBy, setSortBy] = useState<UserSortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [provinceFilter, setProvinceFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
+  const [villageFilter, setVillageFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-	const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
-	const queryParams = useMemo<GetUsersParams>(() => {
-		const p: GetUsersParams = {
-			page: currentPage,
-			per_page: perPage,
-		};
-		if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
-		if (statusFilter !== "all") p.status = statusFilter;
-		if (provinceFilter) p.domicile_province_code = provinceFilter;
-		if (cityFilter) p.domicile_city_code = cityFilter;
-		if (districtFilter) p.domicile_district_code = districtFilter;
-		if (villageFilter) p.domicile_village_code = villageFilter;
-		if (sortBy) {
-			p.sort_by = sortBy;
-			p.sort_dir = sortDirection;
-		}
-		return p;
-	}, [currentPage, perPage, debouncedSearch, statusFilter, provinceFilter, cityFilter, districtFilter, villageFilter, sortBy, sortDirection]);
+  const queryParams = useMemo<GetUsersParams>(() => {
+    const p: GetUsersParams = {
+      page: currentPage,
+      per_page: perPage,
+    };
+    if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
+    if (statusFilter !== "all") p.status = statusFilter;
+    if (provinceFilter) p.domicile_province_code = provinceFilter;
+    if (cityFilter) p.domicile_city_code = cityFilter;
+    if (districtFilter) p.domicile_district_code = districtFilter;
+    if (villageFilter) p.domicile_village_code = villageFilter;
+    if (sortBy) {
+      p.sort_by = sortBy;
+      p.sort_dir = sortDirection;
+    }
+    return p;
+  }, [
+    currentPage,
+    perPage,
+    debouncedSearch,
+    statusFilter,
+    provinceFilter,
+    cityFilter,
+    districtFilter,
+    villageFilter,
+    sortBy,
+    sortDirection,
+  ]);
 
-	const { data: usersData, isLoading, isError } = useUsers(queryParams);
-	const paginatedUsers = usersData?.users ?? [];
-	const totalFilteredUsers = usersData?.total ?? 0;
-	const totalPages = Math.max(1, usersData?.last_page ?? 1);
-	const visiblePage = Math.min(currentPage, totalPages);
+  const { data: usersData, isLoading, isError } = useUsers(queryParams);
 
-	// Status stats
-	const { data: allUsersData } = useUsers({ per_page: 1 });
-	const { data: activeUsersData } = useUsers({ per_page: 1, status: "active" });
-	const { data: pendingUsersData } = useUsers({ per_page: 1, status: "pending" });
-	const { data: inactiveUsersData } = useUsers({ per_page: 1, status: "inactive" });
-	const { data: rejectedUsersData } = useUsers({ per_page: 1, status: "rejected" });
+  // Wrap paginatedUsers in useMemo to prevent unnecessary re-renders
+  const paginatedUsers = useMemo(
+    () => usersData?.users ?? [],
+    [usersData?.users],
+  );
+  const totalFilteredUsers = usersData?.total ?? 0;
+  const totalPages = Math.max(1, usersData?.last_page ?? 1);
+  const visiblePage = Math.min(currentPage, totalPages);
 
-	const stats = useMemo(() => ({
-		totalUsers: allUsersData?.total ?? 0,
-		activeUsers: activeUsersData?.total ?? 0,
-		pendingUsers: pendingUsersData?.total ?? 0,
-		inactiveUsers: inactiveUsersData?.total ?? 0,
-		rejectedUsers: rejectedUsersData?.total ?? 0,
-		monthUsers: allUsersData?.total ?? 0,
-	}), [allUsersData, activeUsersData, pendingUsersData, inactiveUsersData, rejectedUsersData]);
+  // Status stats
+  const { data: allUsersData } = useUsers({ per_page: 1 });
+  const { data: activeUsersData } = useUsers({ per_page: 1, status: "active" });
+  const { data: pendingUsersData } = useUsers({
+    per_page: 1,
+    status: "pending",
+  });
+  const { data: inactiveUsersData } = useUsers({
+    per_page: 1,
+    status: "inactive",
+  });
+  const { data: rejectedUsersData } = useUsers({
+    per_page: 1,
+    status: "rejected",
+  });
 
-	const handleProvinceFilterChange = (val: string) => {
-		setProvinceFilter(val);
-		setCityFilter("");
-		setDistrictFilter("");
-		setVillageFilter("");
-		setCurrentPage(1);
-	};
-	const handleCityFilterChange = (val: string) => {
-		setCityFilter(val);
-		setDistrictFilter("");
-		setVillageFilter("");
-		setCurrentPage(1);
-	};
-	const handleDistrictFilterChange = (val: string) => {
-		setDistrictFilter(val);
-		setVillageFilter("");
-		setCurrentPage(1);
-	};
-	const handleVillageFilterChange = (val: string) => {
-		setVillageFilter(val);
-		setCurrentPage(1);
-	};
-	const [feedback, setFeedback] = useState<{
-		type: "success" | "error";
-		message: string;
-	} | null>(null);
-	const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stats = useMemo(
+    () => ({
+      totalUsers: allUsersData?.total ?? 0,
+      activeUsers: activeUsersData?.total ?? 0,
+      pendingUsers: pendingUsersData?.total ?? 0,
+      inactiveUsers: inactiveUsersData?.total ?? 0,
+      rejectedUsers: rejectedUsersData?.total ?? 0,
+      monthUsers: allUsersData?.total ?? 0,
+    }),
+    [
+      allUsersData,
+      activeUsersData,
+      pendingUsersData,
+      inactiveUsersData,
+      rejectedUsersData,
+    ],
+  );
 
-	const updateUser = useUpdateUser();
-	const updateUserStatus = useUpdateUserStatus();
-	const bulkUpdateUserStatus = useBulkUpdateUserStatus();
-	const deleteUser = useDeleteUser();
-	const currentAdminId = getCurrentAdminId();
+  const handleProvinceFilterChange = (val: string) => {
+    setProvinceFilter(val);
+    setCityFilter("");
+    setDistrictFilter("");
+    setVillageFilter("");
+    setCurrentPage(1);
+  };
+  const handleCityFilterChange = (val: string) => {
+    setCityFilter(val);
+    setDistrictFilter("");
+    setVillageFilter("");
+    setCurrentPage(1);
+  };
+  const handleDistrictFilterChange = (val: string) => {
+    setDistrictFilter(val);
+    setVillageFilter("");
+    setCurrentPage(1);
+  };
+  const handleVillageFilterChange = (val: string) => {
+    setVillageFilter(val);
+    setCurrentPage(1);
+  };
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const pageStart = totalFilteredUsers === 0 ? 0 : (visiblePage - 1) * perPage + 1;
-	const pageEnd = Math.min(visiblePage * perPage, totalFilteredUsers);
-	const paginationRange = getPaginationRange(visiblePage, totalPages);
+  const updateUser = useUpdateUser();
+  const updateUserStatus = useUpdateUserStatus();
+  const bulkUpdateUserStatus = useBulkUpdateUserStatus();
+  const deleteUser = useDeleteUser();
+  const currentAdminId = getCurrentAdminId();
 
-	const isBulkSelectable = (user: User) =>
-		statusFilter !== "all" &&
-		user.status === statusFilter &&
-		!isAdminUser(user) &&
-		user.id !== currentAdminId;
+  const pageStart =
+    totalFilteredUsers === 0 ? 0 : (visiblePage - 1) * perPage + 1;
+  const pageEnd = Math.min(visiblePage * perPage, totalFilteredUsers);
+  const paginationRange = getPaginationRange(visiblePage, totalPages);
 
-	const selectableVisibleUsers = useMemo(
-		() =>
-			statusFilter === "all"
-				? []
-				: paginatedUsers.filter(
-						(user) =>
-							user.status === statusFilter &&
-							!isAdminUser(user) &&
-							user.id !== currentAdminId,
-					),
-		[paginatedUsers, currentAdminId, statusFilter],
-	);
+  const isBulkSelectable = (user: User) =>
+    statusFilter !== "all" &&
+    user.status === statusFilter &&
+    !isAdminUser(user) &&
+    user.id !== currentAdminId;
 
-	const selectedUsers = useMemo(
-		() => paginatedUsers.filter((user) => selectedUserIds.has(user.id)),
-		[paginatedUsers, selectedUserIds],
-	);
+  const selectableVisibleUsers = useMemo(
+    () =>
+      statusFilter === "all"
+        ? []
+        : paginatedUsers.filter(
+            (user) =>
+              user.status === statusFilter &&
+              !isAdminUser(user) &&
+              user.id !== currentAdminId,
+          ),
+    [paginatedUsers, currentAdminId, statusFilter],
+  );
 
-	const allVisibleSelected =
-		selectableVisibleUsers.length > 0 &&
-		selectableVisibleUsers.every((user) => selectedUserIds.has(user.id));
-	const someVisibleSelected = selectableVisibleUsers.some((user) =>
-		selectedUserIds.has(user.id),
-	);
+  const selectedUsers = useMemo(
+    () => paginatedUsers.filter((user) => selectedUserIds.has(user.id)),
+    [paginatedUsers, selectedUserIds],
+  );
 
-	const closeModal = () => setSelected(null);
-	const clearFeedbackTimeout = () => {
-		if (feedbackTimeoutRef.current) {
-			clearTimeout(feedbackTimeoutRef.current);
-			feedbackTimeoutRef.current = null;
-		}
-	};
-	const showFeedback = (nextFeedback: {
-		type: "success" | "error";
-		message: string;
-	}) => {
-		clearFeedbackTimeout();
-		setFeedback(nextFeedback);
-		feedbackTimeoutRef.current = setTimeout(() => setFeedback(null), 3000);
-	};
+  const allVisibleSelected =
+    selectableVisibleUsers.length > 0 &&
+    selectableVisibleUsers.every((user) => selectedUserIds.has(user.id));
+  const someVisibleSelected = selectableVisibleUsers.some((user) =>
+    selectedUserIds.has(user.id),
+  );
 
-	useEffect(() => clearFeedbackTimeout, []);
+  const closeModal = () => setSelected(null);
+  const clearFeedbackTimeout = () => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
+  };
+  const showFeedback = (nextFeedback: {
+    type: "success" | "error";
+    message: string;
+  }) => {
+    clearFeedbackTimeout();
+    setFeedback(nextFeedback);
+    feedbackTimeoutRef.current = setTimeout(() => setFeedback(null), 3000);
+  };
 
-	const setSearch = (value: string) => {
-		setSearchQuery(value);
-		setCurrentPage(1);
-	};
+  useEffect(() => clearFeedbackTimeout, []);
 
-	const setStatusFilter = (value: UserStatusFilter) => {
-		setStatusFilterState(value);
-		setSelectedUserIds(new Set());
-		setCurrentPage(1);
-	};
+  const setSearch = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
 
-	const setPerPage = (value: number) => {
-		setPerPageState(value);
-		setCurrentPage(1);
-	};
+  const setStatusFilter = (value: UserStatusFilter) => {
+    setStatusFilterState(value);
+    setSelectedUserIds(new Set());
+    setCurrentPage(1);
+  };
 
-	const handleSort = (column: UserSortKey) => {
-		if (sortBy === column) {
-			setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-		} else {
-			setSortBy(column);
-			setSortDirection("asc");
-		}
-		setCurrentPage(1);
-	};
+  const setPerPage = (value: number) => {
+    setPerPageState(value);
+    setCurrentPage(1);
+  };
 
-	const goToPage = (page: number) => {
-		setCurrentPage(Math.min(Math.max(page, 1), totalPages));
-	};
+  const handleSort = (column: UserSortKey) => {
+    if (sortBy === column) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortDirection("asc");
+    }
+    setCurrentPage(1);
+  };
 
-	const toggleUserSelection = (user: User) => {
-		if (bulkUpdateUserStatus.isPending || !isBulkSelectable(user)) return;
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+  };
 
-		setSelectedUserIds((current) => {
-			const next = new Set(current);
-			if (next.has(user.id)) next.delete(user.id);
-			else next.add(user.id);
-			return next;
-		});
-	};
+  const toggleUserSelection = (user: User) => {
+    if (bulkUpdateUserStatus.isPending || !isBulkSelectable(user)) return;
 
-	const toggleSelectAll = () => {
-		if (bulkUpdateUserStatus.isPending || selectableVisibleUsers.length === 0) {
-			return;
-		}
+    setSelectedUserIds((current) => {
+      const next = new Set(current);
+      if (next.has(user.id)) next.delete(user.id);
+      else next.add(user.id);
+      return next;
+    });
+  };
 
-		setSelectedUserIds((current) => {
-			const next = new Set(current);
-			if (allVisibleSelected) {
-				selectableVisibleUsers.forEach((user) => next.delete(user.id));
-			} else {
-				selectableVisibleUsers.forEach((user) => next.add(user.id));
-			}
-			return next;
-		});
-	};
+  const toggleSelectAll = () => {
+    if (bulkUpdateUserStatus.isPending || selectableVisibleUsers.length === 0) {
+      return;
+    }
 
-	const clearSelectedUsers = () => setSelectedUserIds(new Set());
+    setSelectedUserIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) {
+        selectableVisibleUsers.forEach((user) => next.delete(user.id));
+      } else {
+        selectableVisibleUsers.forEach((user) => next.add(user.id));
+      }
+      return next;
+    });
+  };
 
-	const runBulkAction = (action: BulkUserStatusAction) => {
-		const eligibleUsers = selectedUsers.filter((user) => {
-			if (!isBulkSelectable(user)) return false;
+  const clearSelectedUsers = () => setSelectedUserIds(new Set());
 
-			if (action === "approve") {
-				return user.status === "pending" || user.status === "rejected";
-			}
+  const runBulkAction = (action: BulkUserStatusAction) => {
+    const eligibleUsers = selectedUsers.filter((user) => {
+      if (!isBulkSelectable(user)) return false;
 
-			if (action === "activate") {
-				return user.status === "inactive";
-			}
+      if (action === "approve") {
+        return user.status === "pending" || user.status === "rejected";
+      }
 
-			if (action === "deactivate") {
-				return user.status === "active";
-			}
+      if (action === "activate") {
+        return user.status === "inactive";
+      }
 
-			return user.status === "pending";
-		});
+      if (action === "deactivate") {
+        return user.status === "active";
+      }
 
-		if (eligibleUsers.length === 0) {
-			showFeedback({
-				type: "error",
-				message: "Tidak ada pengguna yang sesuai untuk aksi ini.",
-			});
-			return;
-		}
+      return user.status === "pending";
+    });
 
-		const targetStatus: Exclude<UserStatus, "pending"> =
-			action === "approve" || action === "activate"
-				? "active"
-				: action === "deactivate"
-					? "inactive"
-					: "rejected";
+    if (eligibleUsers.length === 0) {
+      showFeedback({
+        type: "error",
+        message: "Tidak ada pengguna yang sesuai untuk aksi ini.",
+      });
+      return;
+    }
 
-		const successMessages: Record<BulkUserStatusAction, string> = {
-			approve:
-				statusFilter === "rejected"
-					? "Persetujuan ulang massal selesai."
-					: "Persetujuan massal selesai.",
-			activate: "Pengaktifan massal selesai.",
-			deactivate: "Penonaktifan massal selesai.",
-			reject: "Penolakan massal selesai.",
-		};
+    const targetStatus: Exclude<UserStatus, "pending"> =
+      action === "approve" || action === "activate"
+        ? "active"
+        : action === "deactivate"
+          ? "inactive"
+          : "rejected";
 
-		setFeedback(null);
-		bulkUpdateUserStatus.mutate(
-			{
-				userIds: eligibleUsers.map((user) => user.id),
-				status: targetStatus,
-			},
-			{
-				onSuccess: (result) => {
-					clearSelectedUsers();
-					const { updated_count: updatedCount, skipped_count: skippedCount } =
-						result.data;
-					const skippedSummary =
-						skippedCount > 0 ? `, ${skippedCount} pengguna dilewati` : "";
+    const successMessages: Record<BulkUserStatusAction, string> = {
+      approve:
+        statusFilter === "rejected"
+          ? "Persetujuan ulang massal selesai."
+          : "Persetujuan massal selesai.",
+      activate: "Pengaktifan massal selesai.",
+      deactivate: "Penonaktifan massal selesai.",
+      reject: "Penolakan massal selesai.",
+    };
 
-					showFeedback({
-						type: "success",
-						message: `${successMessages[action]} ${updatedCount} pengguna diperbarui${skippedSummary}.`,
-					});
-				},
-				onError: (error) => {
-					clearSelectedUsers();
-					showFeedback({
-						type: "error",
-						message: getApiErrorMessage(error, "Aksi massal gagal diproses."),
-					});
-				},
-			},
-		);
-	};
+    setFeedback(null);
+    bulkUpdateUserStatus.mutate(
+      {
+        userIds: eligibleUsers.map((user) => user.id),
+        status: targetStatus,
+      },
+      {
+        onSuccess: (result) => {
+          clearSelectedUsers();
+          const { updated_count: updatedCount, skipped_count: skippedCount } =
+            result.data;
+          const skippedSummary =
+            skippedCount > 0 ? `, ${skippedCount} pengguna dilewati` : "";
 
-	const handleSubmit = (data: UpdateUserPayload) => {
-		if (!selected) return;
-		if (isAdminUser(selected)) {
-			setSelected(null);
-			showFeedback({
-				type: "error",
-				message: "Pengguna dengan peran admin tidak dapat diubah",
-			});
-			return;
-		}
+          showFeedback({
+            type: "success",
+            message: `${successMessages[action]} ${updatedCount} pengguna diperbarui${skippedSummary}.`,
+          });
+        },
+        onError: (error) => {
+          clearSelectedUsers();
+          showFeedback({
+            type: "error",
+            message: getApiErrorMessage(error, "Aksi massal gagal diproses."),
+          });
+        },
+      },
+    );
+  };
 
-		setFeedback(null);
-		updateUser.mutate(
-			{ id: selected.id, data },
-			{
-				onSuccess: () => {
-					setSelected(null);
-					showFeedback({ type: "success", message: "Pengguna berhasil diperbarui" });
-				},
-				onError: (error) => {
-					showFeedback({
-						type: "error",
-						message: getApiErrorMessage(error, "Gagal memperbarui pengguna"),
-					});
-				},
-			},
-		);
-	};
+  const handleSubmit = (data: UpdateUserPayload) => {
+    if (!selected) return;
+    if (isAdminUser(selected)) {
+      setSelected(null);
+      showFeedback({
+        type: "error",
+        message: "Pengguna dengan peran admin tidak dapat diubah",
+      });
+      return;
+    }
 
-	const handleDelete = (user: User) => {
-		if (isAdminUser(user)) {
-			showFeedback({
-				type: "error",
-				message: "Pengguna dengan peran admin tidak dapat dihapus",
-			});
-			return;
-		}
+    setFeedback(null);
+    updateUser.mutate(
+      { id: selected.id, data },
+      {
+        onSuccess: () => {
+          setSelected(null);
+          showFeedback({
+            type: "success",
+            message: "Pengguna berhasil diperbarui",
+          });
+        },
+        onError: (error) => {
+          showFeedback({
+            type: "error",
+            message: getApiErrorMessage(error, "Gagal memperbarui pengguna"),
+          });
+        },
+      },
+    );
+  };
 
-		setDeleteTarget(user);
-	};
+  const handleDelete = (user: User) => {
+    if (isAdminUser(user)) {
+      showFeedback({
+        type: "error",
+        message: "Pengguna dengan peran admin tidak dapat dihapus",
+      });
+      return;
+    }
 
-	const cancelDelete = () => setDeleteTarget(null);
-	const cancelStatusUpdate = () => setStatusTarget(null);
+    setDeleteTarget(user);
+  };
 
-	const requestStatusUpdate = (target: UserStatusTarget) => {
-		if (isAdminUser(target.user) || !target.user.status) return;
-		setStatusTarget(target);
-	};
+  const cancelDelete = () => setDeleteTarget(null);
+  const cancelStatusUpdate = () => setStatusTarget(null);
 
-	const confirmStatusUpdate = () => {
-		if (!statusTarget) return;
+  const requestStatusUpdate = (target: UserStatusTarget) => {
+    if (isAdminUser(target.user) || !target.user.status) return;
+    setStatusTarget(target);
+  };
 
-		setFeedback(null);
-		updateUserStatus.mutate(
-			{ id: statusTarget.user.id, status: statusTarget.status },
-			{
-				onSuccess: () => {
-					const successMessages: Record<UserStatusAction, string> = {
-						approve: "Pengguna berhasil disetujui",
-						reject: "Pengguna berhasil ditolak",
-						deactivate: "Pengguna berhasil dinonaktifkan",
-						activate: "Pengguna berhasil diaktifkan",
-					};
+  const confirmStatusUpdate = () => {
+    if (!statusTarget) return;
 
-					setStatusTarget(null);
-					showFeedback({
-						type: "success",
-						message: successMessages[statusTarget.action],
-					});
-				},
-				onError: (error) => {
-					setStatusTarget(null);
-					showFeedback({
-						type: "error",
-						message: getApiErrorMessage(error, "Gagal mengubah status pengguna"),
-					});
-				},
-			},
-		);
-	};
+    setFeedback(null);
+    updateUserStatus.mutate(
+      { id: statusTarget.user.id, status: statusTarget.status },
+      {
+        onSuccess: () => {
+          const successMessages: Record<UserStatusAction, string> = {
+            approve: "Pengguna berhasil disetujui",
+            reject: "Pengguna berhasil ditolak",
+            deactivate: "Pengguna berhasil dinonaktifkan",
+            activate: "Pengguna berhasil diaktifkan",
+          };
 
-	const confirmDelete = () => {
-		if (!deleteTarget) return;
+          setStatusTarget(null);
+          showFeedback({
+            type: "success",
+            message: successMessages[statusTarget.action],
+          });
+        },
+        onError: (error) => {
+          setStatusTarget(null);
+          showFeedback({
+            type: "error",
+            message: getApiErrorMessage(
+              error,
+              "Gagal mengubah status pengguna",
+            ),
+          });
+        },
+      },
+    );
+  };
 
-		setFeedback(null);
-		deleteUser.mutate(deleteTarget.id, {
-			onSuccess: () => {
-				setDeleteTarget(null);
-				showFeedback({ type: "success", message: "Pengguna berhasil dihapus" });
-			},
-			onError: (error) => {
-				setDeleteTarget(null);
-				showFeedback({
-					type: "error",
-					message: getApiErrorMessage(error, "Gagal menghapus pengguna"),
-				});
-			},
-		});
-	};
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
 
-	const handleExport = (format: "excel" | "pdf") => {
-		if (paginatedUsers.length === 0) {
-			showFeedback({ type: "error", message: "Tidak ada data pengguna untuk diekspor" });
-			return;
-		}
+    setFeedback(null);
+    deleteUser.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        setDeleteTarget(null);
+        showFeedback({ type: "success", message: "Pengguna berhasil dihapus" });
+      },
+      onError: (error) => {
+        setDeleteTarget(null);
+        showFeedback({
+          type: "error",
+          message: getApiErrorMessage(error, "Gagal menghapus pengguna"),
+        });
+      },
+    });
+  };
 
-		if (format === "pdf") {
-			const opened = exportUsersToPdf(paginatedUsers);
-			showFeedback({
-				type: opened ? "success" : "error",
-				message: opened
-					? "Data pengguna siap dicetak atau disimpan sebagai PDF"
-					: "Popup PDF diblokir browser. Izinkan popup lalu coba lagi",
-			});
-			return;
-		}
+  const handleExport = (format: "excel" | "pdf") => {
+    if (paginatedUsers.length === 0) {
+      showFeedback({
+        type: "error",
+        message: "Tidak ada data pengguna untuk diekspor",
+      });
+      return;
+    }
 
-		exportUsersToExcel(paginatedUsers);
-		showFeedback({ type: "success", message: "Data pengguna berhasil diekspor ke Excel" });
-	};
+    if (format === "pdf") {
+      const opened = exportUsersToPdf(paginatedUsers);
+      showFeedback({
+        type: opened ? "success" : "error",
+        message: opened
+          ? "Data pengguna siap dicetak atau disimpan sebagai PDF"
+          : "Popup PDF diblokir browser. Izinkan popup lalu coba lagi",
+      });
+      return;
+    }
 
-	return {
-		allVisibleSelected,
-		bulkActionLoading: bulkUpdateUserStatus.isPending,
-		clearSelectedUsers,
-		cancelDelete,
-		cancelStatusUpdate,
-		confirmDelete,
-		confirmStatusUpdate,
-		deleteUser,
-		deleteTarget,
-		feedback,
-		goToPage,
-		handleSort,
-		isBulkSelectable,
-		handleDelete,
-		handleExport,
-		handleSubmit,
-		isError,
-		isLoading,
-		pageEnd,
-		pageStart,
-		paginatedUsers,
-		paginationRange,
-		perPage,
-		search: searchQuery,
-		requestStatusUpdate,
-		runBulkAction,
-		selected,
-		selectedUserIds,
-		selectedUsers,
-		setSearch,
-		setSelected,
-		setPerPage,
-		setStatusFilter,
-		sortBy,
-		sortDirection,
-		stats,
-		statusFilter,
-		statusTarget,
-		someVisibleSelected,
-		toggleSelectAll,
-		toggleUserSelection,
-		totalFilteredUsers,
-		totalPages,
-		currentPage: visiblePage,
-		updateUser,
-		updateUserStatus,
-		users: paginatedUsers,
-		closeModal,
-		provinceFilter,
-		cityFilter,
-		districtFilter,
-		villageFilter,
-		setProvinceFilter: handleProvinceFilterChange,
-		setCityFilter: handleCityFilterChange,
-		setDistrictFilter: handleDistrictFilterChange,
-		setVillageFilter: handleVillageFilterChange,
-	};
+    exportUsersToExcel(paginatedUsers);
+    showFeedback({
+      type: "success",
+      message: "Data pengguna berhasil diekspor ke Excel",
+    });
+  };
+
+  return {
+    allVisibleSelected,
+    bulkActionLoading: bulkUpdateUserStatus.isPending,
+    clearSelectedUsers,
+    cancelDelete,
+    cancelStatusUpdate,
+    confirmDelete,
+    confirmStatusUpdate,
+    deleteUser,
+    deleteTarget,
+    feedback,
+    goToPage,
+    handleSort,
+    isBulkSelectable,
+    handleDelete,
+    handleExport,
+    handleSubmit,
+    isError,
+    isLoading,
+    pageEnd,
+    pageStart,
+    paginatedUsers,
+    paginationRange,
+    perPage,
+    search: searchQuery,
+    requestStatusUpdate,
+    runBulkAction,
+    selected,
+    selectedUserIds,
+    selectedUsers,
+    setSearch,
+    setSelected,
+    setPerPage,
+    setStatusFilter,
+    sortBy,
+    sortDirection,
+    stats,
+    statusFilter,
+    statusTarget,
+    someVisibleSelected,
+    toggleSelectAll,
+    toggleUserSelection,
+    totalFilteredUsers,
+    totalPages,
+    currentPage: visiblePage,
+    updateUser,
+    updateUserStatus,
+    users: paginatedUsers,
+    closeModal,
+    provinceFilter,
+    cityFilter,
+    districtFilter,
+    villageFilter,
+    setProvinceFilter: handleProvinceFilterChange,
+    setCityFilter: handleCityFilterChange,
+    setDistrictFilter: handleDistrictFilterChange,
+    setVillageFilter: handleVillageFilterChange,
+  };
 }

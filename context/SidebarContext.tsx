@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -14,25 +14,30 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isCollapsed, setIsCollapsedState] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
-
-  // Load initial collapse state from localStorage on client side
-  useEffect(() => {
-    const savedCollapse = localStorage.getItem("sidebar_collapsed");
-    if (savedCollapse === "true") {
-      setIsCollapsedState(true);
+  // Initialize state from localStorage to avoid hydration mismatch
+  const [isCollapsed, setIsCollapsedState] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedCollapse = localStorage.getItem("sidebar_collapsed");
+      return savedCollapse === "true";
     }
+    return false;
+  });
 
-    const savedMenus = localStorage.getItem("sidebar_expanded_menus");
-    if (savedMenus) {
-      try {
-        setExpandedMenus(JSON.parse(savedMenus));
-      } catch (e) {
-        console.error("Failed to parse expanded menus", e);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
+    () => {
+      if (typeof window !== "undefined") {
+        const savedMenus = localStorage.getItem("sidebar_expanded_menus");
+        if (savedMenus) {
+          try {
+            return JSON.parse(savedMenus);
+          } catch (e) {
+            console.error("Failed to parse expanded menus", e);
+          }
+        }
       }
-    }
-  }, []);
+      return {};
+    },
+  );
 
   const setIsCollapsed = (collapsed: boolean) => {
     setIsCollapsedState(collapsed);

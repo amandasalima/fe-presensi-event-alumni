@@ -50,7 +50,7 @@ export default function AlumniFooter() {
           onClick={() => router.push("/alumni/main/scan")}
           className="absolute left-1/2 -top-7 min-[360px]:-top-8 -translate-x-1/2 flex flex-col items-center gap-1 text-[#0D5C3A] active:scale-95 transition-transform"
         >
-          <span className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 rounded-full bg-[#0D5C3A] text-white flex items-center justify-center border-4 border-white shadow-[0_8px_24px_rgba(65,160,126,0.35)]">
+          <span className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 rounded-full bg-[#0D5C3A] text-white flex items-center justify-center border-4 border-white shadow-[0_8px_24px_rgba(13,92,58,0.35)]">
             <Icon name="qr" className="w-6 h-6 min-[360px]:w-7 min-[360px]:h-7" />
           </span>
           <span className="text-[11px] font-semibold leading-none">

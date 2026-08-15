@@ -5,17 +5,16 @@ import Link from "next/link";
 import {
   LogIn,
   UserPlus,
-  QrCode,
   Calendar,
   MapPin,
   ArrowRight,
-  Users,
   Phone,
   Mail,
   ChevronRight,
   Award,
   Menu,
   X,
+  QrCode,
 } from "lucide-react";
 
 export default function Home() {
@@ -349,59 +348,13 @@ export default function Home() {
                   </div>
 
                   {/* Screen Content */}
-                  <div className="w-full h-full bg-[#F4F9F6] rounded-[2.2rem] overflow-hidden flex flex-col relative border border-white/5">
-                    {/* Screen Header */}
-                    <div className="bg-[#0D5C3A] text-white pt-7 pb-4 px-4 text-center shadow-md relative">
-                      <p className="text-[9px] uppercase tracking-wider text-[#E8F5E9]/80 font-bold">
-                        Ponpes Al-Falah
-                      </p>
-                      <h4 className="text-xs font-bold mt-0.5 text-[#D4AF37]">
-                        Presensi Alumni
-                      </h4>
-                    </div>
-
-                    {/* Screen Body */}
-                    <div className="flex-1 p-4 flex flex-col items-center justify-between text-center">
-                      <div className="w-full bg-white rounded-2xl p-4 shadow-sm border border-emerald-50/50 flex flex-col items-center">
-                        <p className="text-[9px] font-semibold text-[#D4AF37] uppercase tracking-widest">
-                          Tiket Presensi
-                        </p>
-                        <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
-                          Reuni Akbar 2026
-                        </p>
-                        <div className="w-32 h-32 bg-[#E8F5E9]/50 rounded-xl my-3 p-3.5 flex items-center justify-center border border-emerald-100/50 relative overflow-hidden">
-                          {/* Mock QR Code */}
-                          <QrCode
-                            className="w-full h-full text-[#0D5C3A]"
-                            strokeWidth={1.5}
-                          />
-                          {/* Animated Scan Line */}
-                          <div className="absolute left-0 right-0 h-0.5 bg-[#D4AF37] shadow-md animate-pulse-ring" />
-                        </div>
-                        <p className="text-[9px] text-slate-400 font-mono">
-                          ID: ALUMNI-4109
-                        </p>
-                      </div>
-
-                      <div className="w-full bg-white rounded-xl p-3 shadow-xs border border-emerald-50/30 text-left flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37]">
-                          <Users className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] text-slate-400 font-medium">
-                            Status Kehadiran
-                          </p>
-                          <p className="text-xs font-bold text-emerald-700">
-                            Telah Dipindai
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className="text-[8px] text-slate-400 leading-normal">
-                        Tunjukkan QR Code ini ke petugas pemindai di gerbang
-                        utama acara.
-                      </p>
-                    </div>
+                  <div className="w-full h-full bg-white rounded-[2.2rem] overflow-hidden relative border border-white/5">
+                    {/* Screenshot Image */}
+                    <img
+                      src="/images/dashboard-alumni-screenshot.png"
+                      alt="Dashboard Alumni - Progress Kompetitif Kehadiran"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>

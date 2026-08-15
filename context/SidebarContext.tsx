@@ -14,25 +14,23 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  // Initialize state from localStorage to avoid hydration mismatch
+  // Use lazy initialization to load from localStorage only once
   const [isCollapsed, setIsCollapsedState] = useState(() => {
-    if (typeof window !== "undefined") {
-      const savedCollapse = localStorage.getItem("sidebar_collapsed");
-      return savedCollapse === "true";
-    }
-    return false;
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("sidebar_collapsed");
+    return saved === "true";
   });
 
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
     () => {
-      if (typeof window !== "undefined") {
-        const savedMenus = localStorage.getItem("sidebar_expanded_menus");
-        if (savedMenus) {
-          try {
-            return JSON.parse(savedMenus);
-          } catch (e) {
-            console.error("Failed to parse expanded menus", e);
-          }
+      if (typeof window === "undefined") return {};
+      const saved = localStorage.getItem("sidebar_expanded_menus");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse expanded menus", e);
+          return {};
         }
       }
       return {};
@@ -41,13 +39,17 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   const setIsCollapsed = (collapsed: boolean) => {
     setIsCollapsedState(collapsed);
-    localStorage.setItem("sidebar_collapsed", String(collapsed));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebar_collapsed", String(collapsed));
+    }
   };
 
   const toggleSidebar = () => {
     setIsCollapsedState((prev) => {
       const next = !prev;
-      localStorage.setItem("sidebar_collapsed", String(next));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sidebar_collapsed", String(next));
+      }
       return next;
     });
   };
@@ -55,7 +57,9 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const toggleMenu = (menuName: string) => {
     setExpandedMenus((prev) => {
       const next = { ...prev, [menuName]: !prev[menuName] };
-      localStorage.setItem("sidebar_expanded_menus", JSON.stringify(next));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sidebar_expanded_menus", JSON.stringify(next));
+      }
       return next;
     });
   };
@@ -63,7 +67,9 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const setMenuExpanded = (menuName: string, expanded: boolean) => {
     setExpandedMenus((prev) => {
       const next = { ...prev, [menuName]: expanded };
-      localStorage.setItem("sidebar_expanded_menus", JSON.stringify(next));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sidebar_expanded_menus", JSON.stringify(next));
+      }
       return next;
     });
   };

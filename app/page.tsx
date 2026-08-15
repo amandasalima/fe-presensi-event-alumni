@@ -13,8 +13,6 @@ import {
   Phone,
   Mail,
   ChevronRight,
-  BookOpen,
-  Sparkles,
   Award,
   Menu,
   X,
@@ -40,7 +38,7 @@ export default function Home() {
       icon: QrCode,
       title: "Presensi QR Code di Hari-H",
       description:
-        "Tanpa antre manual. Cukup tunjukkan QR Code dari smartphone saat hadir di lokasi event.",
+        "Cukup scan QR pada hari-H event, kehadiran anda otomatis tercatat.",
     },
   ];
 
@@ -88,7 +86,7 @@ export default function Home() {
       number: "3",
       title: "Pindai QR Code di Lokasi",
       description:
-        "Tunjukkan QR Code di smartphone Anda ke panitia untuk dipindai saat tiba di lokasi kegiatan.",
+        "Cukup scan QR yang disediakan oleh panitia, kehadiran anda otomatis tercatat.",
     },
   ];
 
@@ -118,7 +116,7 @@ export default function Home() {
       {/* Islamic Background Pattern Overlay */}
       <div className="absolute inset-0 bg-[#E8F5E9]/15 pointer-events-none z-0 overflow-hidden">
         <svg
-          className="absolute top-0 left-0 w-full h-full opacity-[0.03]"
+          className="absolute top-0 left-0 w-full h-full opacity-[0.3]"
           xmlns="http://www.w3.org/2000/svg"
           width="60"
           height="60"
@@ -161,9 +159,11 @@ export default function Home() {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0D5C3A] text-white shadow-md">
-                <BookOpen size={22} className="text-[#D4AF37]" />
-              </span>
+              <img
+                src="/images/logo-pesantren.png"
+                alt="Logo Pondok Pesantren Al-Qur'an Al-Falah"
+                className="h-16 w-16 object-contain"
+              />
               <div className="flex flex-col">
                 <span className="font-bold text-base tracking-wide text-[#0D5C3A] uppercase">
                   Al-Falah
@@ -296,7 +296,6 @@ export default function Home() {
             {/* Left Texts */}
             <div className="lg:col-span-7 space-y-6 text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E8F5E9] border border-[#0D5C3A]/20 text-[#0D5C3A] text-xs font-semibold shadow-sm">
-                <Sparkles size={14} className="text-[#D4AF37]" />
                 Presensi & Silaturahmi Digital Alumni
               </div>
               <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-[#1A1A1A] tracking-tight leading-[1.1]">
@@ -607,9 +606,11 @@ export default function Home() {
             {/* Column 1: Info Ponpes */}
             <div className="md:col-span-5 space-y-4 text-left">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0D5C3A] text-white">
-                  <BookOpen size={18} className="text-[#D4AF37]" />
-                </span>
+                <img
+                  src="/images/logo-pesantren.png"
+                  alt="Logo Pondok Pesantren Al-Qur'an Al-Falah"
+                  className="h-9 w-9 rounded-lg shadow-md object-contain"
+                />
                 <span className="font-extrabold text-sm tracking-widest uppercase">
                   Pondok Pesantren Al-Falah
                 </span>

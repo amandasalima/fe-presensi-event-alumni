@@ -160,16 +160,48 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className={`bg-[#2D7EA0] text-white flex flex-col fixed left-0 top-0 h-screen z-50 transition-all duration-300 shadow-xl ${
-        isCollapsed ? "w-20" : "w-56"
+      className={`bg-gradient-to-b from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white flex flex-col fixed left-0 top-0 h-screen z-50 transition-all duration-300 shadow-2xl ${
+        isCollapsed ? "w-20" : "w-64"
       }`}
     >
-      {/* Logo */}
-      <div className="p-4 border-b border-white/10 h-16 flex items-center justify-between overflow-hidden">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex w-9 h-9 bg-white/20 rounded-lg items-center justify-center flex-shrink-0 shadow-inner">
-            <Calendar className="h-5 w-5 text-white" />
-          </span>
+      {/* Islamic Pattern Background */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern
+              id="sidebar-pattern"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
+              <circle
+                cx="20"
+                cy="20"
+                r="15"
+                fill="none"
+                stroke="#D4AF37"
+                strokeWidth="0.5"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#sidebar-pattern)" />
+        </svg>
+      </div>
+
+      {/* Logo Section */}
+      <div className="relative z-10 p-4 border-b border-[#D4AF37]/20 h-auto">
+        <div className="flex items-center gap-3">
+          {/* Logo Pesantren */}
+          <div className="relative flex-shrink-0">
+            <div className="w-12 h-12 bg-white rounded-full p-1 shadow-lg ring-2 ring-[#D4AF37]/30">
+              <img
+                src="/images/logo-pesantren.png"
+                alt="Logo Pesantren Al-Falah"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+
           <div
             className={`flex flex-col transition-all duration-300 ${
               isCollapsed
@@ -177,18 +209,21 @@ export default function AdminSidebar() {
                 : "opacity-100 max-w-xs"
             }`}
           >
-            <h1 className="font-bold, text-[16px] tracking-wide uppercase whitespace-nowrap">
-              Al-Falah
+            <h1 className="font-bold text-[15px] tracking-wide text-white leading-tight">
+              Pondok Pesantren
             </h1>
-            <p className="text-[12px] text-[#7AB2B2] whitespace-nowrap font-medium">
-              Dashboard Admin
+            <h2 className="font-bold text-[15px] tracking-wide text-[#D4AF37] leading-tight">
+              Al-Qur&apos;an Al-Falah
+            </h2>
+            <p className="text-[10px] text-[#E8F5E9]/70 uppercase tracking-wider mt-0.5">
+              Portal Admin
             </p>
           </div>
         </div>
       </div>
 
       {/* Navigation Menus */}
-      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+      <nav className="relative z-10 flex-1 p-3 space-y-1.5 overflow-y-auto custom-scrollbar">
         {menuGroups.map((group, index) => {
           if (group.type === "direct") {
             const active = pathname === group.path;
@@ -198,14 +233,16 @@ export default function AdminSidebar() {
               <Link
                 key={index}
                 href={group.path!}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                   active
-                    ? "bg-[#3EBDAF] shadow-md text-white font-medium"
-                    : "hover:bg-[#236175] text-white/90"
+                    ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941F] shadow-lg text-white font-semibold"
+                    : "hover:bg-white/10 text-white/90 hover:text-white"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className="h-4.5 w-4.5 flex-shrink-0" />
+                  <Icon
+                    className={`h-5 w-5 flex-shrink-0 ${active ? "drop-shadow-sm" : "group-hover:scale-110 transition-transform"}`}
+                  />
                   <span
                     className={`text-sm transition-all duration-300 ${
                       isCollapsed
@@ -217,7 +254,7 @@ export default function AdminSidebar() {
                   </span>
                 </div>
                 {!isCollapsed && active && (
-                  <span className="text-[10px]">●</span>
+                  <span className="text-[10px] animate-pulse">●</span>
                 )}
               </Link>
             );
@@ -241,14 +278,16 @@ export default function AdminSidebar() {
               <div key={index} className="space-y-1">
                 <button
                   onClick={() => handleGroupClick(group.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                     hasActiveSub && !isExpanded
-                      ? "bg-[#3EBDAF]/20 text-[#3EBDAF] font-medium border border-[#3EBDAF]/30"
-                      : "hover:bg-[#236175] text-white/90"
+                      ? "bg-white/10 text-[#D4AF37] font-semibold border border-[#D4AF37]/30"
+                      : "hover:bg-white/10 text-white/90 hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <GroupIcon className="h-4.5 w-4.5 flex-shrink-0" />
+                    <GroupIcon
+                      className={`h-5 w-5 flex-shrink-0 ${hasActiveSub && !isExpanded ? "text-[#D4AF37]" : "group-hover:scale-110 transition-transform"}`}
+                    />
                     <span
                       className={`text-sm text-left transition-all duration-300 ${
                         isCollapsed
@@ -272,7 +311,7 @@ export default function AdminSidebar() {
 
                 {/* Sub items */}
                 {!isCollapsed && isExpanded && (
-                  <div className="ml-5 pl-4 border-l border-white/10 mt-1 mb-2 space-y-1 transition-all duration-300">
+                  <div className="ml-5 pl-4 border-l border-[#D4AF37]/20 mt-1 mb-2 space-y-1 transition-all duration-300">
                     {visibleSubItems.map((sub, idx) => {
                       const subActive = pathname === sub.path;
                       const SubIcon = sub.icon;
@@ -281,16 +320,16 @@ export default function AdminSidebar() {
                         <Link
                           key={idx}
                           href={sub.path}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 group ${
                             subActive
-                              ? "bg-[#3EBDAF] shadow-sm text-white font-medium"
-                              : "text-white/80 hover:bg-[#236175] hover:text-white"
+                              ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941F] shadow-md text-white font-semibold"
+                              : "text-white/80 hover:bg-white/5 hover:text-white"
                           }`}
                         >
-                          <SubIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                          <span className="text-xs whitespace-nowrap">
-                            {sub.name}
-                          </span>
+                          <SubIcon
+                            className={`h-4 w-4 flex-shrink-0 ${subActive ? "drop-shadow-sm" : "group-hover:scale-110 transition-transform"}`}
+                          />
+                          <span className="text-xs">{sub.name}</span>
                         </Link>
                       );
                     })}
@@ -303,11 +342,11 @@ export default function AdminSidebar() {
       </nav>
 
       {/* Minimize Toggle & Logout Footer */}
-      <div className="p-3 border-t border-white/10 space-y-2">
+      <div className="relative z-10 p-3 border-t border-[#D4AF37]/20 space-y-2">
         {/* Toggle Collapse Button */}
         <button
           onClick={toggleSidebar}
-          className="w-full py-2 rounded-xl text-white/60 hover:text-white hover:bg-[#236175]/50 transition duration-200 text-xs flex items-center justify-center gap-2 border border-white/5"
+          className="w-full py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition duration-200 text-xs flex items-center justify-center gap-2 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40"
           title={isCollapsed ? "Expand Sidebar" : "Minimize Sidebar"}
         >
           {isCollapsed ? (
@@ -315,7 +354,9 @@ export default function AdminSidebar() {
           ) : (
             <>
               <ChevronLeft className="h-4.5 w-4.5 flex-shrink-0" />
-              <span className="whitespace-nowrap">Sembunyikan Menu</span>
+              <span className="whitespace-nowrap font-medium">
+                Sembunyikan Menu
+              </span>
             </>
           )}
         </button>
@@ -323,7 +364,7 @@ export default function AdminSidebar() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full py-2.5 rounded-xl bg-[#236175] hover:bg-[#3EBDAF] transition duration-200 text-sm flex items-center justify-center gap-2 text-white shadow-md hover:shadow-lg"
+          className="w-full py-2.5 rounded-xl  text-white/70 hover:text-white hover:bg-[#DC2626] transition duration-200 text-xs flex items-center justify-center gap-2 border border-[#D4AF37]/20  hover:border-[#DC2626]/40 "
           title="Keluar"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />

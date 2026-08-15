@@ -24,6 +24,14 @@ const toneColors = {
   neutral: "#6B7280",
 };
 
+// Warna ring berdasarkan peringkat (emas, perak, perunggu, putih)
+const rankColors = {
+  "Al-Muqorrobun": "#D4AF37", // Emas
+  "Al-Mutawasithun": "#C0C0C0", // Perak
+  "Al-Mubtadi'un": "#CD7F32", // Perunggu
+  "Ghoir Mukayyad": "rgba(255,255,255,0.5)", // Putih transparan
+};
+
 const levelLabels = {
   "Al-Muqorrobun": "Level Utama",
   "Al-Mutawasithun": "Level Menengah",
@@ -101,6 +109,9 @@ export default function EngagementProgressCard({
   const percentage = clampEngagementPercentage(attendance?.percentage);
   const config = getEngagementSegmentConfig(engagement.segment);
   const color = toneColors[config.tone];
+  const ringColor =
+    rankColors[config.label as keyof typeof rankColors] ??
+    rankColors["Ghoir Mukayyad"];
   const recentAttendances = engagement.recent_attendances ?? [];
   const hasEligibleEvents = totalEvents > 0;
 
@@ -143,13 +154,13 @@ export default function EngagementProgressCard({
             <div
               className="absolute -inset-1.5 rounded-full opacity-30 blur-sm"
               style={{
-                background: `conic-gradient(${color} ${percentage * 3.6}deg, transparent 0deg)`,
+                background: `conic-gradient(${ringColor} ${percentage * 3.6}deg, transparent 0deg)`,
               }}
             />
             <div
               className="relative grid h-20 w-20 place-items-center rounded-full"
               style={{
-                background: `conic-gradient(${color} ${percentage * 3.6}deg, rgba(255,255,255,0.18) 0deg)`,
+                background: `conic-gradient(${ringColor} ${percentage * 3.6}deg, rgba(255,255,255,0.18) 0deg)`,
               }}
             >
               <div className="grid h-14 w-14 place-items-center rounded-full bg-white text-center shadow-inner">

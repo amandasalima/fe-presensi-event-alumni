@@ -1,21 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
 	MoreVertical,
 	CheckCircle2,
 	XCircle,
+	Camera,
 	Edit3,
 	Eye,
 	EyeOff,
+	KeyRound,
 	Loader2,
 	PlugZap,
 	Save,
 	ShieldAlert,
 	Trash2,
+	UserRound,
 } from "lucide-react";
-import AdminSidebar from "@/app/components/AdminSidebar";
-import AdminHeader from "@/app/components/AdminHeader";
+import AdminLayout from "@/app/components/AdminLayout";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { FormInput } from "@/app/components/FormControl";
 import { getApiErrorMessage, getImageUrl } from "@/lib/api";
@@ -23,23 +25,67 @@ import { useSettingsPage } from "./_hooks/useSettingsPage";
 import { DEFAULT_FONNTE_API_URL } from "./_utils/waConfig";
 
 // ─── Section Card ─────────────────────────────────────────────────────────────
+function Icon3D({
+	children,
+	variant = "teal",
+	size = "md",
+}: {
+	children: ReactNode;
+	variant?: "teal" | "blue" | "green" | "red" | "gray" | "yellow";
+	size?: "sm" | "md" | "lg";
+}) {
+	const variants = {
+		teal: "from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white",
+		blue: "from-[#2D7EA0] via-[#236175] to-[#1A4D5C] text-white",
+		green: "from-emerald-500 via-emerald-600 to-emerald-700 text-white",
+		red: "from-red-500 via-red-600 to-red-700 text-white",
+		gray: "from-gray-300 via-gray-400 to-gray-500 text-white",
+		yellow: "from-[#D4AF37] via-[#B8941F] to-[#9A7A1A] text-white",
+	};
+
+	const sizes = {
+		sm: "w-8 h-8 rounded-xl",
+		md: "w-11 h-11 rounded-2xl",
+		lg: "w-14 h-14 rounded-2xl",
+	};
+
+	return (
+		<span
+			className={`${sizes[size]} shrink-0 overflow-visible inline-flex items-center justify-center bg-gradient-to-br ${variants[variant]} shadow-lg shadow-[#0D5C3A]/20 border border-white/40 ring-1 ring-[#D4AF37]/20`}
+		>
+			<span className="inline-flex items-center justify-center leading-none drop-shadow-sm">
+				{children}
+			</span>
+		</span>
+	);
+}
+
 function SectionCard({
 	title,
 	desc,
+	icon,
+	variant = "teal",
 	children,
 }: {
 	title: string;
 	desc: string;
-	children: React.ReactNode;
+	icon: ReactNode;
+	variant?: "teal" | "blue" | "green" | "red" | "gray" | "yellow";
+	children: ReactNode;
 }) {
 	return (
-		<div className="bg-white rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/70 overflow-hidden">
-			<div className="px-5 py-4 bg-[#7AB2B2]/10 border-b border-[#7AB2B2]/20">
-				<h2 className="text-base font-bold text-gray-800">{title}</h2>
-				<p className="text-xs text-gray-400 mt-1">{desc}</p>
+		<section className="overflow-hidden rounded-2xl border border-[#0D5C3A]/10 bg-white shadow-md shadow-[#0D5C3A]/5">
+			<div className="flex items-center gap-3 border-b border-[#0D5C3A]/10 bg-gradient-to-r from-[#E8F5E9] to-white px-5 py-4">
+				<Icon3D variant={variant} size="md">
+					{icon}
+				</Icon3D>
+				<div>
+					<h2 className="text-base font-bold text-[#0D5C3A]">{title}</h2>
+					<p className="mt-1 text-xs text-[#0D5C3A]/60">{desc}</p>
+				</div>
 			</div>
 			<div className="p-5">{children}</div>
-		</div>
+		</section>
 	);
 }
 
@@ -232,13 +278,8 @@ export default function SettingsPage() {
 	};
 
 	return (
-		<div className="h-screen bg-gray-100 flex overflow-hidden">
-			<AdminSidebar />
-
-			<div className="flex-1 ml-56 flex flex-col h-screen">
-				<AdminHeader title="Pengaturan Sistem" />
-
-				<main className="flex-1 overflow-y-auto p-5">
+		<AdminLayout title="Pengaturan Sistem">
+					
 					<div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
 						{/* ── Left Column ── */}
 						<div className="xl:col-span-3 space-y-5">
@@ -246,13 +287,16 @@ export default function SettingsPage() {
 							<SectionCard
 								title="Profil Administrator"
 								desc="Informasi akun dan identitas admin"
+								icon={<UserRound size={20} strokeWidth={2.5} />}
+								variant="teal"
 							>
-								<div className="grid grid-cols-1 gap-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-start">
+								<div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:items-start">
 									{/* Foto Profil */}
-									<div className="flex flex-col items-center rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center lg:items-center">
-										<p className="mb-4 text-sm font-semibold text-gray-700">
-											Foto Profil
-										</p>
+									<div className="flex flex-col items-center rounded-2xl border border-[#0D5C3A]/10 bg-gradient-to-b from-[#E8F5E9] to-white p-4 text-center shadow-sm lg:items-center">
+										<div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#0D5C3A]">
+											<Camera size={16} strokeWidth={2.5} />
+											<span>Foto Profil</span>
+										</div>
 
 										<div className="relative w-full">
 											{/* Menu aksi foto profil */}
@@ -260,7 +304,7 @@ export default function SettingsPage() {
 												<button
 													type="button"
 													onClick={() => setIsAvatarMenuOpen((current) => !current)}
-													className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-white hover:text-gray-700 hover:shadow-sm"
+													className="flex h-9 w-9 items-center justify-center rounded-xl text-[#0D5C3A]/60 transition hover:bg-white hover:text-[#0D5C3A] hover:shadow-sm"
 													aria-label="Menu foto profil"
 													aria-expanded={isAvatarMenuOpen}
 												>
@@ -268,7 +312,7 @@ export default function SettingsPage() {
 												</button>
 
 												{isAvatarMenuOpen && (
-													<div className="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl border border-gray-100 bg-white py-1.5 text-left shadow-xl">
+													<div className="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl border border-[#0D5C3A]/10 bg-white py-1.5 text-left shadow-xl">
 														<button
 															type="button"
 															disabled={!profile?.avatar_url}
@@ -276,7 +320,7 @@ export default function SettingsPage() {
 																setIsAvatarMenuOpen(false);
 																setIsAvatarPreviewOpen(true);
 															}}
-															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-[#0D5C3A]/70 transition hover:bg-[#E8F5E9] hover:text-[#0D5C3A] disabled:cursor-not-allowed disabled:opacity-40"
 														>
 															<Eye size={16} />
 															Lihat
@@ -289,7 +333,7 @@ export default function SettingsPage() {
 																setIsAvatarMenuOpen(false);
 																avatarFileRef.current?.click();
 															}}
-															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+															className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-[#0D5C3A]/70 transition hover:bg-[#E8F5E9] hover:text-[#0D5C3A] disabled:cursor-not-allowed disabled:opacity-40"
 														>
 															{uploadAvatar.isPending ? (
 																<Loader2 size={16} className="animate-spin" />
@@ -324,10 +368,10 @@ export default function SettingsPage() {
 													<img
 														src={getImageUrl(profile.avatar_url)}
 														alt={profile?.name ?? "Admin"}
-														className="h-24 w-24 rounded-full object-cover ring-4 ring-[#7AB2B2]/30"
+														className="h-24 w-24 rounded-full object-cover ring-4 ring-[#D4AF37]/30 shadow-md"
 													/>
 												) : (
-													<div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#2D7EA0] text-3xl font-bold text-white ring-4 ring-[#7AB2B2]/30">
+													<div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#0D5C3A] to-[#073D26] text-3xl font-bold text-white ring-4 ring-[#D4AF37]/30 shadow-md">
 														{loadingProfile
 															? "..."
 															: (profile?.name?.[0]?.toUpperCase() ?? "A")}
@@ -357,10 +401,10 @@ export default function SettingsPage() {
 											/>
 										</div>
 
-										<span className="mt-4 inline-block rounded-full border border-teal-200 bg-[#7AB2B2]/10 px-3 py-1 text-xs font-medium text-[#2D7EA0]">
+										<span className="mt-4 inline-block rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1 text-xs font-semibold text-[#0D5C3A]">
 											Administrator
 										</span>
-										<p className="mt-3 text-xs leading-5 text-gray-400">
+										<p className="mt-3 text-xs leading-5 text-[#0D5C3A]/50">
 											JPG, PNG, atau WebP. Maksimal 2 MB.
 										</p>
 									</div>
@@ -368,7 +412,7 @@ export default function SettingsPage() {
 									{/* Informasi Akun */}
 									<div className="space-y-4">
 										<div>
-											<label className="mb-1.5 block text-sm font-medium text-gray-700">
+											<label className="mb-1.5 block text-sm font-semibold text-[#0D5C3A]">
 												Nama Administrator
 											</label>
 											<FormInput
@@ -379,12 +423,12 @@ export default function SettingsPage() {
 													loadingProfile ? "Memuat..." : "Nama administrator"
 												}
 												disabled={loadingProfile}
-												className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 disabled:bg-gray-50"
+												className="w-full rounded-xl border border-[#0D5C3A]/15 bg-white px-4 py-3 text-sm outline-none focus:border-[#0D5C3A] focus:ring-2 focus:ring-[#0D5C3A]/15 disabled:bg-[#E8F5E9]/60"
 											/>
 										</div>
 
 										<div>
-											<label className="mb-1.5 block text-sm font-medium text-gray-700">
+											<label className="mb-1.5 block text-sm font-semibold text-[#0D5C3A]">
 												Email Administrator
 											</label>
 											<FormInput
@@ -395,7 +439,7 @@ export default function SettingsPage() {
 													loadingProfile ? "Memuat..." : "email@pesantren.ac.id"
 												}
 												disabled={loadingProfile}
-												className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 disabled:bg-gray-50"
+												className="w-full rounded-xl border border-[#0D5C3A]/15 bg-white px-4 py-3 text-sm outline-none focus:border-[#0D5C3A] focus:ring-2 focus:ring-[#0D5C3A]/15 disabled:bg-[#E8F5E9]/60"
 											/>
 										</div>
 
@@ -403,7 +447,7 @@ export default function SettingsPage() {
 										<button
 											onClick={handleSaveProfileWithPopup}
 											disabled={updateProfile.isPending || loadingProfile}
-											className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2D7EA0] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#236175] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+											className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0D5C3A] to-[#0A4D30] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#0D5C3A]/15 transition-all hover:shadow-lg hover:shadow-[#0D5C3A]/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											{updateProfile.isPending && (
 												<span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -418,6 +462,8 @@ export default function SettingsPage() {
 							<SectionCard
 								title="Keamanan Akun"
 								desc="Ubah kata sandi administrator"
+								icon={<KeyRound size={20} strokeWidth={2.5} />}
+								variant="yellow"
 							>
 								<div className="space-y-4">
 									{[
@@ -444,7 +490,7 @@ export default function SettingsPage() {
 										},
 									].map((field) => (
 										<div key={field.key}>
-											<label className="block text-sm font-medium text-gray-700 mb-1.5">
+											<label className="block text-sm font-semibold text-[#0D5C3A] mb-1.5">
 												{field.label}
 											</label>
 											<div className="relative">
@@ -453,7 +499,7 @@ export default function SettingsPage() {
 													value={field.value}
 													onChange={(e) => field.set(e.target.value)}
 													placeholder={field.placeholder}
-													className="text-gray-500 w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl outline-none focus:border-[#3EBDAF] focus:ring-2 focus:ring-[#7AB2B2]/20 text-sm"
+													className="w-full rounded-xl border border-[#0D5C3A]/15 bg-white px-4 py-3 pr-12 text-sm outline-none focus:border-[#0D5C3A] focus:ring-2 focus:ring-[#0D5C3A]/15"
 												/>
 												<button
 													type="button"
@@ -463,7 +509,7 @@ export default function SettingsPage() {
 															[field.key]: !current[field.key],
 														}))
 													}
-													className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600"
+													className="absolute right-4 top-1/2 -translate-y-1/2 text-[#0D5C3A]/45 transition hover:text-[#0D5C3A]"
 													aria-label={
 														passwordVisibility[field.key]
 															? `Sembunyikan ${field.label.toLowerCase()}`
@@ -498,6 +544,8 @@ export default function SettingsPage() {
 							{showWhatsAppSettings && <SectionCard
 								title="Konfigurasi Pesan Massal WhatsApp"
 								desc="Atur koneksi Fonnte untuk pesan massal WhatsApp"
+								icon={<PlugZap size={20} strokeWidth={2.5} />}
+								variant="blue"
 							>
 									<div className="space-y-5">
 										<div className="p-4 bg-[#7AB2B2]/10 border border-[#7AB2B2]/20 rounded-2xl flex items-start gap-3">
@@ -791,8 +839,8 @@ export default function SettingsPage() {
 
 					</div>
 
-					<footer className="mt-6 text-center text-gray-400 text-xs pb-4">
-						© 2026 Sistem Presensi Event Berbasis QR - Pesantren
+					<footer className="mt-6 text-center text-[#0D5C3A]/40 text-xs pb-4">
+						© 2026 Sistem Presensi Event - Pondok Pesantren Al-Qur&apos;an Al-Falah
 					</footer>
 
 					{isAvatarPreviewOpen && profile?.avatar_url && (
@@ -953,8 +1001,6 @@ export default function SettingsPage() {
 							});
 						}}
 					/>
-				</main>
-			</div>
-		</div>
+		</AdminLayout>
 	);
 }

@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import AdminSidebar from "@/app/components/AdminSidebar";
+import AdminLayout from "@/app/components/AdminLayout";
 import Image from "next/image";
 import QRCode from "qrcode";
 import {
   AlertCircle,
   CalendarDays,
   CheckCircle,
-  Clock3,
+  Clock,
   Copy,
   Download,
   ExternalLink,
   MapPin,
   QrCode,
-  TimerReset,
-  Zap,
+  Timer,
+  Sparkles,
 } from "lucide-react";
-import AdminHeader from "@/app/components/AdminHeader";
 import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import {
@@ -37,7 +36,7 @@ function QRPlaceholder({
   size?: number;
   muted?: boolean;
 }) {
-  const color = muted ? "#d1d5db" : "#0d9488";
+  const color = muted ? "#d1d5db" : "#0D5C3A";
 
   return (
     <svg
@@ -98,27 +97,27 @@ function Icon3D({
   size = "md",
 }: {
   children: ReactNode;
-  variant?: "teal" | "blue" | "green" | "red" | "amber" | "gray";
+  variant?: "teal" | "blue" | "green" | "gold" | "amber" | "gray";
   size?: "sm" | "md" | "lg";
 }) {
   const variants = {
-    teal: "from-[#D8F3F0] via-[#7AB2B2] to-[#2D7EA0] text-white",
-    blue: "from-blue-100 via-blue-400 to-blue-600 text-white",
-    green: "from-emerald-100 via-emerald-400 to-emerald-600 text-white",
-    red: "from-red-100 via-red-400 to-red-600 text-white",
-    amber: "from-amber-100 via-amber-400 to-amber-600 text-white",
-    gray: "from-gray-100 via-gray-300 to-gray-500 text-white",
+    teal: "from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white",
+    blue: "from-[#2D7EA0] via-[#236175] to-[#1A4D5C] text-white",
+    green: "from-[#0D5C3A] via-[#0F7047] to-[#0D5C3A] text-white",
+    gold: "from-[#D4AF37] via-[#B8941F] to-[#9A7A1A] text-white",
+    amber: "from-amber-500 via-amber-600 to-amber-700 text-white",
+    gray: "from-gray-400 via-gray-500 to-gray-600 text-white",
   };
 
   const sizes = {
     sm: "w-8 h-8 rounded-xl",
-    md: "w-10 h-10 rounded-2xl",
+    md: "w-11 h-11 rounded-2xl",
     lg: "w-14 h-14 rounded-2xl",
   };
 
   return (
     <span
-      className={`${sizes[size]} shrink-0 overflow-visible inline-flex items-center justify-center bg-gradient-to-br ${variants[variant]} shadow-lg shadow-gray-300/70 border border-white/60 ring-1 ring-black/5`}
+      className={`${sizes[size]} shrink-0 overflow-visible inline-flex items-center justify-center bg-gradient-to-br ${variants[variant]} shadow-lg shadow-[#0D5C3A]/20 border border-white/40 ring-1 ring-[#D4AF37]/20`}
     >
       <span className="inline-flex items-center justify-center leading-none drop-shadow-sm">
         {children}
@@ -148,10 +147,10 @@ function QRDisplay({ src }: { src?: string | null }) {
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function EventCardSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 animate-pulse shadow-sm">
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
-      <div className="h-3 bg-gray-100 rounded w-1/2 mb-2" />
-      <div className="h-3 bg-gray-100 rounded w-2/3" />
+    <div className="bg-white border border-[#0D5C3A]/10 rounded-2xl p-4 animate-pulse shadow-sm">
+      <div className="h-4 bg-[#E8F5E9] rounded w-3/4 mb-3" />
+      <div className="h-3 bg-[#E8F5E9]/70 rounded w-1/2 mb-2" />
+      <div className="h-3 bg-[#E8F5E9]/70 rounded w-2/3" />
     </div>
   );
 }
@@ -186,9 +185,6 @@ function formatEventDate(event: Event) {
   });
 }
 
-
-
-
 function getQrPayload(qrCode?: EventQrCode | null) {
   return qrCode?.qr_payload?.trim() || qrCode?.qr_token?.trim() || "";
 }
@@ -209,24 +205,24 @@ function EventListCard({
       onClick={onClick}
       className={`w-full text-left rounded-2xl border p-4 transition-all shadow-sm hover:shadow-md ${
         active
-          ? "border-[#A8D5D5] bg-[#7AB2B2]/10"
-          : "border-gray-100 bg-white hover:border-teal-200 hover:bg-[#7AB2B2]/10"
+          ? "border-[#D4AF37] bg-[#E8F5E9] shadow-md"
+          : "border-[#0D5C3A]/10 bg-white hover:border-[#0D5C3A]/30 hover:bg-[#E8F5E9]/30"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-gray-800 text-sm truncate">
+          <p className="font-semibold text-[#0D5C3A] text-sm truncate">
             {event.event_title}
           </p>
 
-          <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 mt-2 text-xs text-[#0D5C3A]/60">
             <Icon3D size="sm" variant="teal">
               <CalendarDays size={14} />
             </Icon3D>
             <span>{formatEventDate(event)}</span>
           </div>
 
-          <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400 min-w-0">
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-[#0D5C3A]/60 min-w-0">
             <Icon3D size="sm" variant="blue">
               <MapPin size={14} />
             </Icon3D>
@@ -237,8 +233,8 @@ function EventListCard({
         <span
           className={`text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap ${
             active
-              ? "bg-[#7AB2B2]/20 text-[#236175]"
-              : "bg-gray-100 text-gray-500"
+              ? "bg-[#D4AF37]/20 text-[#9A7A1A] border border-[#D4AF37]/30"
+              : "bg-[#0D5C3A]/10 text-[#0D5C3A] border border-[#0D5C3A]/20"
           }`}
         >
           {event.category}
@@ -389,7 +385,10 @@ export default function GenerateQRPage() {
         if (successful) {
           markCopySuccess();
         } else {
-          showFeedback("error", "Gagal menyalin token otomatis. Silakan salin manual.");
+          showFeedback(
+            "error",
+            "Gagal menyalin token otomatis. Silakan salin manual.",
+          );
         }
       }
     } catch (error) {
@@ -399,397 +398,386 @@ export default function GenerateQRPage() {
   };
 
   return (
-    <div className="h-screen bg-gray-100 flex overflow-hidden">
-      <AdminSidebar />
+    <AdminLayout title="Buat QR Code">
+      {/* ── Two Column ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
+        {/* Left: Pilih Event + Form */}
+        <div className="xl:col-span-2 bg-white border border-[#0D5C3A]/10 rounded-2xl p-6 shadow-md shadow-[#0D5C3A]/5 flex flex-col gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-[#0D5C3A]">
+              Atur QR Code
+            </h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Pilih event dan tentukan masa berlaku QR
+            </p>
+          </div>
 
-      <div className="flex-1 ml-56 flex flex-col h-screen">
-        <AdminHeader title="Buat QR" />
+          {/* Event Select */}
+          <div>
+            <label className="block text-sm font-medium text-[#0D5C3A] mb-2">
+              Event
+            </label>
 
-        <main className="flex-1 overflow-y-auto p-5 space-y-5">
+            <div className="relative">
+              <FormSelect
+                value={selectedId ?? ""}
+                onChange={(e) => {
+                  setSelectedId(Number(e.target.value) || null);
+                  setGeneratedQr(null);
+                  setQrDataUrl(null);
+                }}
+                disabled={loadingEvents}
+                className="w-full appearance-none border border-[#0D5C3A]/20 rounded-xl px-4 py-2.5 text-sm text-[#0D5C3A] bg-[#F1F8F4] focus:outline-none focus:ring-2 focus:ring-[#0D5C3A] focus:border-transparent cursor-pointer disabled:bg-gray-100"
+              >
+                <option value="">Pilih event...</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.event_title}
+                  </option>
+                ))}
+              </FormSelect>
 
-          {/* ── Two Column ── */}
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
-            {/* Left: Pilih Event + Form */}
-            <div className="xl:col-span-2 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-800">
-                  Atur QR Code
-                </h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Pilih event dan tentukan masa berlaku QR
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#0D5C3A]/40 pointer-events-none">
+                ▾
+              </span>
+            </div>
+          </div>
+
+          {/* Selected Event Detail */}
+          {selectedEvent && (
+            <div className="bg-[#E8F5E9] border border-[#0D5C3A]/20 rounded-xl p-4 space-y-2 text-sm">
+              <p className="font-semibold text-[#0D5C3A]">
+                {selectedEvent.event_title}
+              </p>
+
+              <p className="text-[#0D5C3A]/80 flex items-center gap-2">
+                <Icon3D size="sm" variant="teal">
+                  <CalendarDays size={14} />
+                </Icon3D>
+                {formatEventDate(selectedEvent)}
+              </p>
+
+              <p className="text-[#0D5C3A]/80 flex items-center gap-2">
+                <Icon3D size="sm" variant="blue">
+                  <MapPin size={14} />
+                </Icon3D>
+                {selectedEvent.location}
+              </p>
+
+              <span className="inline-block text-xs bg-[#D4AF37]/20 text-[#9A7A1A] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30">
+                {selectedEvent.category}
+              </span>
+            </div>
+          )}
+
+          {/* QR Settings */}
+          <div>
+            <label className="block text-sm font-medium text-[#0D5C3A] mb-2">
+              Masa Berlaku QR Code
+            </label>
+            <div className="flex items-center gap-3">
+              <FormInput
+                type="number"
+                min={1}
+                max={30}
+                value={durationDays}
+                onChange={(e) => setDurationDays(Number(e.target.value))}
+                className="w-full border border-[#0D5C3A]/20 rounded-xl px-4 py-2.5 text-sm text-[#0D5C3A] bg-[#F1F8F4] focus:outline-none focus:ring-2 focus:ring-[#0D5C3A] focus:border-transparent"
+                required
+              />
+              <span className="text-sm text-[#0D5C3A]/60 whitespace-nowrap">
+                Hari
+              </span>
+            </div>
+            <p className="text-xs text-[#0D5C3A]/60 mt-1">
+              Masukkan durasi aktif QR Code dalam satuan hari (1 - 30 hari).
+            </p>
+          </div>
+
+          {/* Existing QR Info */}
+          {selectedId && !loadingQr && activeQr && !generatedQr && (
+            <div className="p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-xs flex items-start gap-2">
+              <AlertCircle size={15} className="mt-0.5 shrink-0" />
+              <span>
+                Event ini sudah memiliki QR aktif. Pembuatan ulang akan
+                menonaktifkan QR sebelumnya.
+              </span>
+            </div>
+          )}
+
+          {selectedId && !loadingQr && activeQrError && (
+            <div className="p-3 bg-[#E8F5E9] border border-[#0D5C3A]/20 text-[#0D5C3A]/70 rounded-xl text-xs flex items-start gap-2">
+              <AlertCircle size={15} className="mt-0.5 shrink-0" />
+              <span>Event ini belum memiliki QR aktif.</span>
+            </div>
+          )}
+
+          {/* Error */}
+          {generateQR.isError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle size={15} />
+              {getApiErrorMessage(
+                generateQR.error,
+                "QR Code belum berhasil dibuat. Silakan coba lagi.",
+              )}
+            </div>
+          )}
+
+          {/* Generate Button */}
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerateDisabled}
+            className="w-full mt-auto bg-gradient-to-r from-[#0D5C3A] to-[#0A4D30] hover:from-[#0A4D30] hover:to-[#073D26] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-[#0D5C3A]/20"
+          >
+            {generateQR.isPending ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Membuat...
+              </>
+            ) : (
+              <>
+                <span className="w-7 h-7 inline-flex items-center justify-center rounded-xl bg-white/20 shadow-inner border border-white/30">
+                  <Sparkles size={16} />
+                </span>
+                Buat QR Code
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Right: Preview */}
+        <div className="xl:col-span-3 bg-white border border-[#0D5C3A]/10 rounded-2xl p-6 shadow-md shadow-[#0D5C3A]/5 flex flex-col min-h-[520px]">
+          <div className="mb-5 flex items-center gap-3">
+            <Icon3D variant="teal">
+              <QrCode size={18} />
+            </Icon3D>
+            <div>
+              <h3 className="text-base font-semibold text-[#0D5C3A]">
+                Pratinjau QR Code
+              </h3>
+              <p className="text-xs text-[#0D5C3A]/60 mt-0.5">
+                QR aktif dari event yang dipilih akan tampil di sini
+              </p>
+            </div>
+          </div>
+
+          {!selectedEvent ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
+              <Icon3D variant="gray" size="lg">
+                <QrCode size={24} />
+              </Icon3D>
+
+              <div className="text-center">
+                <p className="font-semibold text-[#0D5C3A]/50 text-lg">
+                  Belum Ada Event Dipilih
+                </p>
+                <p className="text-sm text-[#0D5C3A]/40 mt-1 max-w-xs">
+                  Pilih event terlebih dahulu untuk melihat atau membuat QR
+                  Code.
                 </p>
               </div>
+            </div>
+          ) : loadingQr && !generatedQr ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
+              <div className="w-52 h-52 bg-[#E8F5E9] rounded-2xl animate-pulse" />
+              <div className="h-4 bg-[#E8F5E9] rounded w-48 animate-pulse" />
+            </div>
+          ) : !displayedQr ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
+              <Icon3D variant="gray" size="lg">
+                <QrCode size={24} />
+              </Icon3D>
 
-              {/* Event Select */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Event
-                </label>
-
-                <div className="relative">
-                  <FormSelect
-                    value={selectedId ?? ""}
-                    onChange={(e) => {
-                      setSelectedId(Number(e.target.value) || null);
-                      setGeneratedQr(null);
-                      setQrDataUrl(null);
-                    }}
-                    disabled={loadingEvents}
-                    className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent cursor-pointer disabled:bg-gray-100"
-                  >
-                    <option value="">Pilih event...</option>
-                    {events.map((event) => (
-                      <option key={event.id} value={event.id}>
-                        {event.event_title}
-                      </option>
-                    ))}
-                  </FormSelect>
-
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    ▾
-                  </span>
-                </div>
-              </div>
-
-              {/* Selected Event Detail */}
-              {selectedEvent && (
-                <div className="bg-[#7AB2B2]/10 border border-[#7AB2B2]/20 rounded-xl p-4 space-y-2 text-sm">
-                  <p className="font-semibold text-teal-800">
-                    {selectedEvent.event_title}
-                  </p>
-
-                  <p className="text-[#2D7EA0] flex items-center gap-2">
-                    <Icon3D size="sm" variant="teal">
-                      <CalendarDays size={14} />
-                    </Icon3D>
-                    {formatEventDate(selectedEvent)}
-                  </p>
-
-                  <p className="text-[#2D7EA0] flex items-center gap-2">
-                    <Icon3D size="sm" variant="blue">
-                      <MapPin size={14} />
-                    </Icon3D>
-                    {selectedEvent.location}
-                  </p>
-
-                  <span className="inline-block text-xs bg-[#7AB2B2]/20 text-[#236175] px-2.5 py-0.5 rounded-full">
-                    {selectedEvent.category}
-                  </span>
-                </div>
-              )}
-
-              {/* QR Settings */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Masa Berlaku QR Code
-                </label>
-                <div className="flex items-center gap-3">
-                  <FormInput
-                    type="number"
-                    min={1}
-                    max={30}
-                    value={durationDays}
-                    onChange={(e) => setDurationDays(Number(e.target.value))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] focus:border-transparent"
-                    required
-                  />
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
-                    Hari
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Masukkan durasi aktif QR Code dalam satuan hari (1 - 30 hari).
+              <div className="text-center">
+                <p className="font-semibold text-[#0D5C3A]/50 text-lg">
+                  QR Belum Dibuat
+                </p>
+                <p className="text-sm text-[#0D5C3A]/40 mt-1 max-w-xs">
+                  Atur waktu mulai berlaku dan durasi, lalu klik Buat QR Code.
                 </p>
               </div>
-
-              {/* Existing QR Info */}
-              {selectedId && !loadingQr && activeQr && !generatedQr && (
-                <div className="p-3 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl text-xs flex items-start gap-2">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                  <span>
-                    Event ini sudah memiliki QR aktif. Pembuatan ulang akan
-                    menonaktifkan QR sebelumnya.
-                  </span>
-                </div>
-              )}
-
-              {selectedId && !loadingQr && activeQrError && (
-                <div className="p-3 bg-gray-50 border border-gray-100 text-gray-500 rounded-xl text-xs flex items-start gap-2">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                  <span>Event ini belum memiliki QR aktif.</span>
-                </div>
-              )}
-
-              {/* Error */}
-              {generateQR.isError && (
-                <div className="p-3 bg-red-50 border border-red-100 text-red-500 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle size={15} />
-                  {getApiErrorMessage(
-                    generateQR.error,
-                    "QR Code belum berhasil dibuat. Silakan coba lagi."
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-6">
+              <div className="relative">
+                <div className="w-60 h-60 bg-white border-2 border-[#D4AF37] rounded-2xl flex items-center justify-center shadow-lg shadow-[#0D5C3A]/20 p-4">
+                  {isGeneratingQrImage ? (
+                    <div className="w-full h-full bg-[#E8F5E9] rounded-xl animate-pulse" />
+                  ) : (
+                    <QRDisplay src={qrDataUrl} />
                   )}
                 </div>
-              )}
 
-              {/* Generate Button */}
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerateDisabled}
-                className="w-full mt-auto bg-[#2D7EA0] hover:bg-[#236175] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                {generateQR.isPending ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Membuat...
-                  </>
-                ) : (
-                  <>
-                    <span className="w-7 h-7 inline-flex items-center justify-center rounded-xl bg-white/20 shadow-inner border border-white/30">
-                      <Zap size={16} />
-                    </span>
-                    Buat QR Code
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Right: Preview */}
-            <div className="xl:col-span-3 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col min-h-[520px]">
-              <div className="mb-5 flex items-center gap-3">
-                <Icon3D variant="teal">
-                  <QrCode size={18} />
-                </Icon3D>
-                <div>
-                  <h3 className="text-base font-semibold text-gray-800">
-                    Pratinjau QR Code
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    QR aktif dari event yang dipilih akan tampil di sini
-                  </p>
-                </div>
+                <span
+                  className={`absolute -top-2 -right-2 text-white text-xs px-2.5 py-1 rounded-full font-medium shadow shadow-[#0D5C3A]/30 ${
+                    displayedQr.is_valid_now
+                      ? "bg-[#0D5C3A]"
+                      : displayedQr.is_expired
+                        ? "bg-red-500"
+                        : "bg-amber-500"
+                  }`}
+                >
+                  {displayedQr.is_valid_now
+                    ? "Aktif"
+                    : displayedQr.is_expired
+                      ? "Kedaluwarsa"
+                      : "Terjadwal"}
+                </span>
               </div>
 
-              {!selectedEvent ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
-                  <Icon3D variant="gray" size="lg">
-                    <QrCode size={24} />
-                  </Icon3D>
+              <div className="text-center">
+                <p className="font-semibold text-[#0D5C3A]">
+                  {selectedEvent.event_title}
+                </p>
 
-                  <div className="text-center">
-                    <p className="font-semibold text-gray-500 text-lg">
-                      Belum Ada Event Dipilih
-                    </p>
-                    <p className="text-sm text-gray-400 mt-1 max-w-xs">
-                      Pilih event terlebih dahulu untuk melihat atau membuat QR
-                      Code.
-                    </p>
-                  </div>
-                </div>
-              ) : loadingQr && !generatedQr ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
-                  <div className="w-52 h-52 bg-gray-100 rounded-2xl animate-pulse" />
-                  <div className="h-4 bg-gray-100 rounded w-48 animate-pulse" />
-                </div>
-              ) : !displayedQr ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 py-10">
-                  <Icon3D variant="gray" size="lg">
-                    <QrCode size={24} />
-                  </Icon3D>
-
-                  <div className="text-center">
-                    <p className="font-semibold text-gray-500 text-lg">
-                      QR Belum Dibuat
-                    </p>
-                    <p className="text-sm text-gray-400 mt-1 max-w-xs">
-                      Atur waktu mulai berlaku dan durasi, lalu klik Buat
-                      QR Code.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6">
-                  <div className="relative">
-                    <div className="w-60 h-60 bg-white border-2 border-teal-200 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-300/70 p-4">
-                      {isGeneratingQrImage ? (
-                        <div className="w-full h-full bg-gray-100 rounded-xl animate-pulse" />
-                      ) : (
-                        <QRDisplay src={qrDataUrl} />
-                      )}
-                    </div>
-
-                    <span
-                      className={`absolute -top-2 -right-2 text-white text-xs px-2.5 py-1 rounded-full font-medium shadow shadow-gray-300/70 ${
-                        displayedQr.is_valid_now
-                          ? "bg-[#3EBDAF]"
-                          : displayedQr.is_expired
-                            ? "bg-red-500"
-                            : "bg-amber-500"
-                      }`}
-                    >
-                      {displayedQr.is_valid_now
-                        ? "Aktif"
-                        : displayedQr.is_expired
-                          ? "Kedaluwarsa"
-                          : "Terjadwal"}
-                    </span>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="font-semibold text-gray-800">
-                      {selectedEvent.event_title}
-                    </p>
-
-                    <p className="text-sm text-gray-400 mt-0.5">
-                      {formatEventDate(selectedEvent)} •{" "}
-                      {selectedEvent.location}
-                    </p>
-                  </div>
-
-                  <div className="w-full max-w-md bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2 text-sm">
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <Clock3 size={14} />
-                        Dibuat pada
-                      </span>
-                      <span className="font-medium text-gray-700 text-right">
-                        {displayedQr.created_at_wib || "-"}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <TimerReset size={14} />
-                        Masa Berlaku
-                      </span>
-                      <span className="font-medium text-gray-700 text-right">
-                        {displayedQr.duration_days} Hari
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Mulai Aktif</span>
-                      <span className="font-medium text-gray-700 text-right">
-                        {displayedQr.valid_from_wib || "-"}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Kedaluwarsa Pada</span>
-                      <span className="font-semibold text-red-600 text-right">
-                        {displayedQr.expired_at_wib || "-"}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center gap-4">
-                      <span className="text-gray-500">Token</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-gray-500 text-right truncate max-w-[180px]">
-                          {qrPayload}
-                        </span>
-                        <button
-                          onClick={() => handleCopyToken(qrPayload)}
-                          className="text-gray-400 hover:text-[#2D7EA0] transition-colors p-1"
-                          title="Salin Data QR"
-                        >
-                          {copySuccess ? (
-                            <CheckCircle size={14} className="text-[#3EBDAF]" />
-                          ) : (
-                            <Copy size={14} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        if (!qrDataUrl || !selectedEvent) return;
-
-                        downloadDataUrl({
-                          dataUrl: qrDataUrl,
-                          fileName: `QR-${selectedEvent.event_title}`,
-                        });
-                      }}
-                      disabled={!qrDataUrl}
-                      className="flex items-center gap-2 bg-[#2D7EA0] hover:bg-[#236175] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
-                    >
-                      <Download size={16} />
-                      Unduh PNG
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (qrDataUrl) {
-                          window.open(qrDataUrl, "_blank");
-                        }
-                      }}
-                      disabled={!qrDataUrl}
-                      className="flex items-center gap-2 border border-teal-200 text-[#2D7EA0] hover:bg-[#7AB2B2]/10 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
-                    >
-                      <ExternalLink size={16} />
-                      Buka QR
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Event List ── */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-            <div className="mb-5 flex items-center gap-3">
-              <Icon3D variant="blue">
-                <CalendarDays size={18} />
-              </Icon3D>
-              <div>
-                <h3 className="text-base font-semibold text-gray-800">
-                  Daftar Event
-                </h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-              Klik salah satu event untuk membuat atau melihat QR aktif
+                <p className="text-sm text-[#0D5C3A]/60 mt-0.5">
+                  {formatEventDate(selectedEvent)} • {selectedEvent.location}
                 </p>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              {loadingEvents ? (
-                [1, 2, 3, 4].map((i) => <EventCardSkeleton key={i} />)
-              ) : eventsError ? (
-                <div className="md:col-span-2 xl:col-span-4 text-center py-8 text-red-400">
-                  <AlertCircle size={36} className="mx-auto mb-2" />
-                  <p className="text-sm">Gagal memuat data event</p>
+              <div className="w-full max-w-md bg-[#E8F5E9] border border-[#0D5C3A]/20 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-[#0D5C3A]/70 flex items-center gap-2">
+                    <Clock size={14} />
+                    Dibuat pada
+                  </span>
+                  <span className="font-medium text-[#0D5C3A] text-right">
+                    {displayedQr.created_at_wib || "-"}
+                  </span>
                 </div>
-              ) : filteredEvents.length === 0 ? (
-                <div className="md:col-span-2 xl:col-span-4 text-center py-8 text-gray-400">
-                  <Icon3D variant="gray" size="lg">
-                    <CalendarDays size={24} />
-                  </Icon3D>
-                  <p className="text-sm mt-3">Belum ada event yang tersedia</p>
-                </div>
-              ) : (
-                filteredEvents.map((event) => (
-                  <EventListCard
-                    key={event.id}
-                    event={event}
-                    active={event.id === selectedId}
-                    onClick={() => handleSelectEvent(event)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
 
-          <p className="text-center text-xs text-gray-400 pb-4">
-            © 2026 Sistem Presensi Event Berbasis QR - Pesantren
-          </p>
-        </main>
+                <div className="flex justify-between gap-4">
+                  <span className="text-[#0D5C3A]/70 flex items-center gap-2">
+                    <Timer size={14} />
+                    Masa Berlaku
+                  </span>
+                  <span className="font-medium text-[#0D5C3A] text-right">
+                    {displayedQr.duration_days} Hari
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-4">
+                  <span className="text-[#0D5C3A]/70">Mulai Aktif</span>
+                  <span className="font-medium text-[#0D5C3A] text-right">
+                    {displayedQr.valid_from_wib || "-"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-4">
+                  <span className="text-[#0D5C3A]/70">Kedaluwarsa Pada</span>
+                  <span className="font-semibold text-red-600 text-right">
+                    {displayedQr.expired_at_wib || "-"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-[#0D5C3A]/70">Token</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-[#0D5C3A]/60 text-right truncate max-w-[180px]">
+                      {qrPayload}
+                    </span>
+                    <button
+                      onClick={() => handleCopyToken(qrPayload)}
+                      className="text-[#0D5C3A]/40 hover:text-[#0D5C3A] transition-colors p-1"
+                      title="Salin Data QR"
+                    >
+                      {copySuccess ? (
+                        <CheckCircle size={14} className="text-[#0D5C3A]" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    if (!qrDataUrl || !selectedEvent) return;
+
+                    downloadDataUrl({
+                      dataUrl: qrDataUrl,
+                      fileName: `QR-${selectedEvent.event_title}`,
+                    });
+                  }}
+                  disabled={!qrDataUrl}
+                  className="flex items-center gap-2 bg-gradient-to-r from-[#0D5C3A] to-[#0A4D30] hover:from-[#0A4D30] hover:to-[#073D26] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md shadow-[#0D5C3A]/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Download size={16} />
+                  Unduh PNG
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (qrDataUrl) {
+                      window.open(qrDataUrl, "_blank");
+                    }
+                  }}
+                  disabled={!qrDataUrl}
+                  className="flex items-center gap-2 border-2 border-[#D4AF37] text-[#9A7A1A] hover:bg-[#D4AF37]/10 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <ExternalLink size={16} />
+                  Buka QR
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Event List ── */}
+      <div className="bg-white border border-[#0D5C3A]/10 rounded-2xl p-6 shadow-md shadow-[#0D5C3A]/5">
+        <div className="mb-5 flex items-center gap-3">
+          <Icon3D variant="gold">
+            <CalendarDays size={18} />
+          </Icon3D>
+          <div>
+            <h3 className="text-base font-semibold text-[#0D5C3A]">
+              Daftar Event
+            </h3>
+            <p className="text-xs text-[#0D5C3A]/60 mt-0.5">
+              Klik salah satu event untuk membuat atau melihat QR aktif
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {loadingEvents ? (
+            [1, 2, 3, 4].map((i) => <EventCardSkeleton key={i} />)
+          ) : eventsError ? (
+            <div className="md:col-span-2 xl:col-span-4 text-center py-8 text-red-500">
+              <AlertCircle size={36} className="mx-auto mb-2" />
+              <p className="text-sm">Gagal memuat data event</p>
+            </div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="md:col-span-2 xl:col-span-4 text-center py-8 text-[#0D5C3A]/40">
+              <Icon3D variant="gray" size="lg">
+                <CalendarDays size={24} />
+              </Icon3D>
+              <p className="text-sm mt-3">Belum ada event yang tersedia</p>
+            </div>
+          ) : (
+            filteredEvents.map((event) => (
+              <EventListCard
+                key={event.id}
+                event={event}
+                active={event.id === selectedId}
+                onClick={() => handleSelectEvent(event)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      <p className="text-center text-xs text-[#0D5C3A]/40 pb-4">
+        © 2026 Sistem Presensi Event - Pondok Pesantren Al-Qur&apos;an Al-Falah
+      </p>
 
       {feedback && (
         <FeedbackToast type={feedback.type} message={feedback.message} />
       )}
-    </div>
+    </AdminLayout>
   );
 }

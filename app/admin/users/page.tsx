@@ -717,7 +717,6 @@ export default function UsersPage() {
     totalFilteredUsers,
     totalPages,
     updateUser,
-    users,
     closeModal,
     provinceFilter,
     cityFilter,
@@ -736,7 +735,7 @@ export default function UsersPage() {
   const { data: villages = [] } = useVillages(districtFilter);
 
   const statusTabs = [
-    { value: "all" as const, label: "Semua", count: users.length },
+    { value: "all" as const, label: "Semua", count: stats.totalUsers },
     {
       value: "pending" as const,
       label: "Menunggu Persetujuan",
@@ -772,7 +771,7 @@ export default function UsersPage() {
         {[
           {
             title: "Total Pengguna",
-            value: isLoading ? "..." : users.length,
+            value: isLoading ? "..." : stats.totalUsers,
             desc: "Pengguna terdaftar",
             icon: <Users size={20} strokeWidth={2.5} />,
             variant: "teal" as const,

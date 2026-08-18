@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { AlertCircle, BookOpen, CheckCircle2, Eye, EyeOff, Phone } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Phone } from "lucide-react";
 import { useLogin } from "@/hooks/alumni/useLogin";
 import { useRegister } from "@/hooks/alumni/useRegister";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
@@ -687,8 +687,12 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
       <div className="w-full max-w-sm md:max-w-md min-w-0">
         {/* App logo and label */}
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0D5C3A] text-white shadow">
-            <BookOpen size={16} className="text-[#D4AF37]" />
+          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white shadow">
+            <img
+              src="/images/logo-pesantren.png"
+              alt="Logo Pondok Pesantren Al-Qur'an Al-Falah"
+              className="h-full w-full object-contain"
+            />
           </span>
           <div className="flex flex-col">
             <span className="font-bold text-xs tracking-wider text-[#0D5C3A] uppercase">

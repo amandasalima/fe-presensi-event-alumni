@@ -79,9 +79,11 @@ export function sanitizeBroadcastMessage(message?: string | null) {
 
 	return message
 		.replace(
-			/\s*pesan\s+ini\s+dikirim\s+otomatis\s+oleh\s+sistem\s+laravel\.?\s*/gi,
+			/\s*pesan\s+ini\s+dikirim\s+(?:secara\s+)?otomatis\s+oleh\s+sistem\s+laravel\.?\s*/gi,
 			"\n",
 		)
+		// Keterangan teknologi tidak diperlukan oleh penerima WhatsApp.
+		.replace(/^.*\blaravel\b.*$/gim, "")
 		.replace(/\n{3,}/g, "\n\n")
 		.trim();
 }

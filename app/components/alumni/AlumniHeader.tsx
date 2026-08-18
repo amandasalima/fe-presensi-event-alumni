@@ -106,8 +106,12 @@ export default function AlumniHeader() {
     <header className="fixed inset-x-0 top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top)] shadow-sm">
       <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-[#41A07E] flex items-center justify-center text-white flex-shrink-0">
-            <Icon name="qr" className="w-4 h-4" />
+          <div className="w-8 h-8 overflow-hidden rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+            <img
+              src="/images/logo-pesantren.png"
+              alt="Logo Pondok Pesantren Al-Qur'an Al-Falah"
+              className="h-full w-full object-contain"
+            />
           </div>
 
           <span className="text-[13px] min-[360px]:text-sm font-semibold text-gray-700 truncate">

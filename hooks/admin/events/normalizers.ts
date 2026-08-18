@@ -123,6 +123,8 @@ export function normalizeEvent(event: RawEvent): Event {
 		quota_status: event.quota_status,
 		quota_message: event.quota_message,
 		registered: event.registered ?? participantCount,
+		registrations_count: event.registrations_count,
+		presensis_count: event.presensis_count,
 		created_at: event.created_at,
 		updated_at: event.updated_at,
 	};

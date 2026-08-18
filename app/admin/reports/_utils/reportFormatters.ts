@@ -11,6 +11,9 @@ export interface ReportEvent {
 	event_date?: string;
 	status_event: "Mendatang" | "Selesai";
 	quota?: number;
+	location?: string;
+	registrations_count?: number;
+	presensis_count?: number;
 }
 
 export interface Presence {

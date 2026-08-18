@@ -15,6 +15,10 @@ import {
 import AdminLayout from "@/app/components/AdminLayout";
 import FeedbackToast from "@/app/components/FeedbackToast";
 import { FormSelect } from "@/app/components/FormControl";
+import type {
+  AttendanceByAngkatan,
+  AttendanceByDomicile,
+} from "@/hooks/admin/useAttendances";
 import { useReportsPage } from "./_hooks/useReportsPage";
 import {
   formatDate,
@@ -120,6 +124,138 @@ function Pagination({
   );
 }
 
+function getCompactAngkatanLabel(value: string) {
+  if (value === "Tidak diketahui") return "?";
+  if (/^\d{4}$/.test(value)) return value.slice(-2);
+  return value.length > 5 ? `${value.slice(0, 4)}…` : value;
+}
+
+function AngkatanBreakdownChart({
+  items,
+}: {
+  items: AttendanceByAngkatan[];
+}) {
+  if (items.length === 0) {
+    return (
+      <div className="flex h-[174px] items-center justify-center text-xs text-gray-400">
+        Belum ada data angkatan
+      </div>
+    );
+  }
+
+  const maxTotal = Math.max(...items.map((item) => item.total), 1);
+  const chartWidth = Math.max(280, items.length * 48);
+
+  return (
+    <div className="mt-3 overflow-x-auto pb-1">
+      <div
+        className="flex h-[174px] items-end gap-2 border-b border-[#0D5C3A]/10 px-2"
+        style={{ minWidth: `${chartWidth}px` }}
+      >
+        {items.map((item) => {
+          const barHeight =
+            item.total > 0
+              ? Math.max(8, Math.round((item.total / maxTotal) * 112))
+              : 0;
+
+          return (
+            <div
+              key={item.angkatan}
+              className="flex h-full w-10 shrink-0 flex-col items-center justify-end"
+              title={`${item.angkatan}: ${item.total} kehadiran`}
+              aria-label={`${item.angkatan}, ${item.total} kehadiran`}
+            >
+              <span className="mb-1 text-[10px] font-bold text-[#236175]">
+                {item.total}
+              </span>
+              <div className="flex h-28 items-end">
+                <div
+                  className="w-6 rounded-t-md bg-gradient-to-t from-[#0D5C3A] to-[#3EBDAF] transition-[height]"
+                  style={{ height: `${barHeight}px` }}
+                />
+              </div>
+              <span className="mt-1.5 max-w-10 truncate text-[10px] font-medium text-gray-500">
+                {getCompactAngkatanLabel(item.angkatan)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DomicileBreakdownChart({
+  items,
+  expanded,
+  onToggle,
+}: {
+  items: AttendanceByDomicile[];
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (items.length === 0) {
+    return (
+      <div className="flex h-[174px] items-center justify-center text-xs text-gray-400">
+        Belum ada data domisili
+      </div>
+    );
+  }
+
+  const visibleItems = expanded ? items : items.slice(0, 5);
+  const maxTotal = Math.max(...visibleItems.map((item) => item.total), 1);
+
+  return (
+    <div className="mt-3 flex h-[174px] flex-col">
+      <div
+        className={`min-h-0 flex-1 space-y-2 pr-1 ${
+          expanded ? "overflow-y-auto" : "overflow-hidden"
+        }`}
+      >
+        {visibleItems.map((item, index) => {
+          const label = formatDomicile(item.city_name, item.province_name);
+          const barWidth =
+            item.total > 0
+              ? Math.max(4, Math.round((item.total / maxTotal) * 100))
+              : 0;
+
+          return (
+            <div
+              key={`${item.city_code ?? "unknown"}-${index}`}
+              className="flex items-center gap-2 text-[11px]"
+              title={`${label}: ${item.total} kehadiran`}
+              aria-label={`${label}, ${item.total} kehadiran`}
+            >
+              <span className="w-28 shrink-0 truncate text-gray-600 sm:w-36">
+                {label}
+              </span>
+              <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#2D7EA0] to-[#7AB2B2]"
+                  style={{ width: `${barWidth}%` }}
+                />
+              </div>
+              <span className="w-7 shrink-0 text-right font-bold text-[#236175]">
+                {item.total}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {items.length > 5 && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="mt-2 self-start text-[11px] font-semibold text-[#2D7EA0] transition hover:text-[#236175]"
+        >
+          {expanded ? "Tampilkan ringkas" : `Lihat semua (${items.length})`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Icon 3D ──────────────────────────────────────────────────────────────────
 function Icon3D({
   children,
@@ -160,6 +296,7 @@ function Icon3D({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
   const {
+    attendanceErrorMessage,
     attendanceByAngkatan,
     attendanceByDomicile,
     attendanceCurrentPage,
@@ -172,12 +309,14 @@ export default function ReportsPage() {
     getHadir,
     getRate,
     handleDownload,
+    isAttendanceError,
     isExporting,
+    isInitialAttendanceLoading,
     exportingFormat,
-    loadingAttendanceSummaries,
     loadingAttendances,
     loadingEvents,
-    selectedAttendanceEvent,
+    refetchAttendances,
+    selectedEventMetadata,
     selectedEventId,
     setAttendanceParams,
     setSelectedEventId,
@@ -188,6 +327,7 @@ export default function ReportsPage() {
 
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventPage, setEventPage] = useState(1);
+  const [showAllDomiciles, setShowAllDomiciles] = useState(false);
 
   const EVENT_PER_PAGE = 5;
 
@@ -204,6 +344,7 @@ export default function ReportsPage() {
 
   const openEventDetail = (eventId: number) => {
     setSelectedEventId(eventId);
+    setShowAllDomiciles(false);
     setIsEventModalOpen(true);
   };
   const handleAttendanceSort = (column: AttendanceSortColumn) => {
@@ -246,7 +387,7 @@ export default function ReportsPage() {
           },
           {
             label: "Peserta",
-            value: loadingAttendanceSummaries ? "..." : totalHadir,
+            value: loadingEvents ? "..." : totalHadir,
             sub: "Total Kehadiran",
             icon: (
               <Icon3D variant="gold" size="md">
@@ -257,7 +398,7 @@ export default function ReportsPage() {
           {
             label: "Rate",
             value:
-              loadingEvents || loadingAttendanceSummaries
+              loadingEvents
                 ? "..."
                 : `${avgRate}%`,
             sub: "Rata-rata Kehadiran",
@@ -307,6 +448,7 @@ export default function ReportsPage() {
               setSelectedEventId(eventId);
 
               if (eventId) {
+                setShowAllDomiciles(false);
                 setIsEventModalOpen(true);
               }
             }}
@@ -375,7 +517,7 @@ export default function ReportsPage() {
               </thead>
 
               <tbody>
-                {loadingEvents || loadingAttendanceSummaries ? (
+                {loadingEvents ? (
                   <TableSkeleton cols={5} />
                 ) : events.length === 0 ? (
                   <tr>
@@ -475,7 +617,7 @@ export default function ReportsPage() {
       </footer>
 
       {/* ── Event Detail Modal ── */}
-      {isEventModalOpen && selectedAttendanceEvent && (
+      {isEventModalOpen && selectedEventId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={closeEventDetail}
@@ -494,7 +636,8 @@ export default function ReportsPage() {
 
                   <div className="min-w-0">
                     <h2 className="truncate text-lg font-bold text-gray-900">
-                      {selectedAttendanceEvent.event_title}
+                      {selectedEventMetadata?.event_title ??
+                        "Detail Kehadiran Event"}
                     </h2>
                     <p className="mt-1 text-xs text-gray-500">
                       Detail kehadiran event
@@ -505,18 +648,23 @@ export default function ReportsPage() {
                 <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
                   <span className="flex items-center gap-1.5">
                     <CalendarDays size={14} className="text-[#2D7EA0]" />
-                    {formatDate(selectedAttendanceEvent.event_date)}
+                    {formatDate(selectedEventMetadata?.event_date)}
                   </span>
 
-                  {selectedAttendanceEvent.location && (
+                  {selectedEventMetadata?.location && (
                     <span className="flex items-center gap-1.5">
                       <MapPin size={14} className="text-[#2D7EA0]" />
-                      {selectedAttendanceEvent.location}
+                      {selectedEventMetadata.location}
                     </span>
                   )}
 
                   <span className="font-semibold text-[#2D7EA0]">
-                    Total kehadiran: {totalAttendances}
+                    Total kehadiran:{" "}
+                    {isInitialAttendanceLoading
+                      ? "Memuat..."
+                      : isAttendanceError
+                        ? "Gagal dimuat"
+                        : totalAttendances}
                   </span>
                 </div>
               </div>
@@ -548,72 +696,60 @@ export default function ReportsPage() {
 
             {/* Modal breakdown and table */}
             <div className="max-h-[70vh] overflow-y-auto p-5">
-              <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <section className="rounded-xl border border-[#0D5C3A]/10 bg-[#0D5C3A]/[0.03] p-4">
-                  <h3 className="text-sm font-bold text-[#0D5C3A]">
-                    Kehadiran berdasarkan Angkatan
-                  </h3>
-                  <div className="mt-3 space-y-2">
-                    {attendanceByAngkatan.length === 0 ? (
-                      <p className="text-xs text-gray-400">
-                        Belum ada data angkatan
-                      </p>
-                    ) : (
-                      attendanceByAngkatan.map((item) => (
-                        <div
-                          key={item.angkatan}
-                          className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-xs shadow-sm"
-                        >
-                          <span className="truncate text-gray-600">
-                            {item.angkatan}
-                          </span>
-                          <span className="shrink-0 font-bold text-[#2D7EA0]">
-                            {item.total}
-                          </span>
-                        </div>
-                      ))
-                    )}
+              {isInitialAttendanceLoading ? (
+                <div className="space-y-4" aria-label="Memuat data kehadiran">
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    {[1, 2].map((item) => (
+                      <div
+                        key={item}
+                        className="h-[224px] animate-pulse rounded-xl border border-gray-100 bg-gray-50"
+                      />
+                    ))}
                   </div>
-                </section>
+                  <div className="h-40 animate-pulse rounded-xl border border-gray-100 bg-gray-50" />
+                </div>
+              ) : isAttendanceError ? (
+                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-red-100 bg-red-50/60 px-5 py-10 text-center">
+                  <p className="text-sm font-bold text-red-700">
+                    Data kehadiran gagal dimuat.
+                  </p>
+                  <p className="mt-1 max-w-lg text-xs text-red-600">
+                    {attendanceErrorMessage}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void refetchAttendances()}
+                    disabled={loadingAttendances}
+                    className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingAttendances ? "Mencoba..." : "Coba Lagi"}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    <section className="h-[252px] overflow-hidden rounded-xl border border-[#0D5C3A]/10 bg-[#0D5C3A]/[0.03] p-4">
+                      <h3 className="text-sm font-bold text-[#0D5C3A]">
+                        Kehadiran berdasarkan Angkatan
+                      </h3>
+                      <AngkatanBreakdownChart items={attendanceByAngkatan} />
+                    </section>
 
-                <section className="rounded-xl border border-[#2D7EA0]/10 bg-[#2D7EA0]/[0.03] p-4">
-                  <h3 className="text-sm font-bold text-[#236175]">
-                    Kehadiran berdasarkan Domisili
-                  </h3>
-                  <div className="mt-3 space-y-2">
-                    {attendanceByDomicile.length === 0 ? (
-                      <p className="text-xs text-gray-400">
-                        Belum ada data domisili
-                      </p>
-                    ) : (
-                      attendanceByDomicile.map((item, index) => (
-                        <div
-                          key={`${item.city_code ?? "unknown"}-${index}`}
-                          className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-xs shadow-sm"
-                        >
-                          <span
-                            className="min-w-0 truncate text-gray-600"
-                            title={formatDomicile(
-                              item.city_name,
-                              item.province_name,
-                            )}
-                          >
-                            {formatDomicile(
-                              item.city_name,
-                              item.province_name,
-                            )}
-                          </span>
-                          <span className="shrink-0 font-bold text-[#2D7EA0]">
-                            {item.total}
-                          </span>
-                        </div>
-                      ))
-                    )}
+                    <section className="h-[252px] overflow-hidden rounded-xl border border-[#2D7EA0]/10 bg-[#2D7EA0]/[0.03] p-4">
+                      <h3 className="text-sm font-bold text-[#236175]">
+                        Kehadiran berdasarkan Domisili
+                      </h3>
+                      <DomicileBreakdownChart
+                        items={attendanceByDomicile}
+                        expanded={showAllDomiciles}
+                        onToggle={() =>
+                          setShowAllDomiciles((previous) => !previous)
+                        }
+                      />
+                    </section>
                   </div>
-                </section>
-              </div>
 
-              <div className="overflow-hidden rounded-xl border border-gray-100">
+                  <div className="overflow-hidden rounded-xl border border-gray-100">
                 <div className="w-full overflow-x-auto">
                   <table className="w-full min-w-[1180px] text-xs">
                     <thead>
@@ -759,7 +895,9 @@ export default function ReportsPage() {
                     onPageChange={handleAttendancePageChange}
                   />
                 )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

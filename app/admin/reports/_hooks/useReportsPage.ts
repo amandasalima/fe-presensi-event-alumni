@@ -1,40 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueries } from "@tanstack/react-query";
 import {
 	fetchEventAttendances,
 	type GetEventAttendancesParams,
 	useEventAttendances,
 } from "@/hooks/admin/useAttendances";
 import { useEvents } from "@/hooks/admin/useEvents";
-import { fetchAPI, getApiErrorMessage } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api";
 import {
 	exportAttendancesToExcel,
 	exportAttendancesToPdf,
 	type ReportEvent,
 } from "../_utils/reportFormatters";
 
-type AttendanceSummaryData = {
-	summary?: {
-		total_attended?: number;
-	};
-	total?: number;
-	attendances?: unknown[];
-};
-
-type AttendanceSummaryResponse = {
-	success: boolean;
-	data: AttendanceSummaryData;
-};
-
-function getAttendanceTotal(data?: AttendanceSummaryData) {
-	return data?.summary?.total_attended ?? data?.total ?? data?.attendances?.length ?? 0;
-}
-
 export function useReportsPage() {
 	const [selectedEventId, setSelectedEventIdState] = useState<number | null>(null);
-	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [attendanceParams, setAttendanceParams] = useState<GetEventAttendancesParams>({
 		page: 1,
 		per_page: 10,
@@ -54,37 +35,22 @@ export function useReportsPage() {
 		isFetching: isFetchingAttendances,
 		isError: isAttendanceError,
 		error: attendanceError,
+		refetch: refetchAttendances,
 	} = useEventAttendances(selectedEventId, attendanceParams);
 	const { data: events = [], isLoading: loadingEvents } = useEvents();
 	const typedEvents = events as ReportEvent[];
-	const attendanceSummaryQueries = useQueries({
-		queries: typedEvents.map((event) => ({
-			queryKey: ["admin-event-attendance-summary", event.id],
-			queryFn: async () => {
-				const response = (await fetchAPI(
-					`/admin/events/${event.id}/attendances?per_page=1`,
-				)) as AttendanceSummaryResponse;
-
-				return response.data;
-			},
-			enabled: !!event.id,
-			staleTime: 30 * 1000,
-		})),
-	});
-	const loadingAttendanceSummaries = attendanceSummaryQueries.some(
-		(query) => query.isLoading,
-	);
 	const attendanceCountByEvent = useMemo(
 		() =>
-			typedEvents.reduce<Record<number, number>>((counts, event, index) => {
-				counts[event.id] = getAttendanceTotal(
-					attendanceSummaryQueries[index]?.data,
-				);
-				return counts;
-			}, {}),
-		[typedEvents, attendanceSummaryQueries],
+			new Map(
+				typedEvents.map((event) => [event.id, event.presensis_count ?? 0]),
+			),
+		[typedEvents],
 	);
 	const selectedAttendanceEvent = attendanceData?.event ?? null;
+	const selectedEventMetadata =
+		selectedAttendanceEvent ??
+		typedEvents.find((event) => event.id === selectedEventId) ??
+		null;
 	const attendances = attendanceData?.attendances ?? [];
 	const attendanceByAngkatan = attendanceData?.breakdown?.by_angkatan ?? [];
 	const attendanceByDomicile = attendanceData?.breakdown?.by_domicile ?? [];
@@ -92,13 +58,12 @@ export function useReportsPage() {
 	const attendanceLastPage = attendanceData?.last_page ?? 1;
 	const totalAttendances =
 		attendanceData?.summary?.total_attended ?? attendanceData?.total ?? 0;
-	const selected = typedEvents.find((event) => event.id === selectedId) ?? null;
 	const selesai = typedEvents.filter((event) => event.status_event === "Selesai").length;
-	const totalHadir = Object.values(attendanceCountByEvent).reduce(
+	const totalHadir = Array.from(attendanceCountByEvent.values()).reduce(
 		(total, count) => total + count,
 		0,
 	);
-	const getHadir = (eventId: number) => attendanceCountByEvent[eventId] ?? 0;
+	const getHadir = (eventId: number) => attendanceCountByEvent.get(eventId) ?? 0;
 	const getRate = (eventId: number, quota?: number | null) => {
 		if (!quota) return 0;
 		return Math.round((getHadir(eventId) / quota) * 100);
@@ -206,7 +171,10 @@ export function useReportsPage() {
 	};
 
 	return {
-		attendanceError,
+		attendanceErrorMessage: getApiErrorMessage(
+			attendanceError,
+			"Data kehadiran gagal dimuat.",
+		),
 		attendanceByAngkatan,
 		attendanceByDomicile,
 		attendanceCurrentPage,
@@ -223,15 +191,14 @@ export function useReportsPage() {
 		isExporting: exportingFormat !== null,
 		exportingFormat,
 		isAttendanceError,
+		isInitialAttendanceLoading:
+			isLoadingAttendances && attendanceData === undefined,
 		loadingAttendances: isLoadingAttendances || isFetchingAttendances,
-		loadingAttendanceSummaries,
 		loadingEvents,
-		selected,
-		selectedAttendanceEvent,
+		selectedEventMetadata,
 		selectedEventId,
-		selectedId,
+		refetchAttendances,
 		setSelectedEventId,
-		setSelectedId,
 		selesai,
 		totalAttendances,
 		totalHadir,

@@ -31,6 +31,8 @@ export interface Event {
 	quota_status?: "unlimited" | "available" | "full";
 	quota_message?: string;
 	registered?: number;
+	registrations_count?: number;
+	presensis_count?: number;
 	created_at?: string;
 	updated_at?: string;
 }
@@ -82,6 +84,8 @@ export type RawEvent = {
 	quota_status?: "unlimited" | "available" | "full";
 	quota_message?: string;
 	registered?: number;
+	registrations_count?: number;
+	presensis_count?: number;
 	created_at?: string;
 	updated_at?: string;
 };

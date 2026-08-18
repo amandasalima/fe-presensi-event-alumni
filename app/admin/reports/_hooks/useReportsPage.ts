@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import {
+	fetchEventAttendances,
 	type GetEventAttendancesParams,
 	useEventAttendances,
 } from "@/hooks/admin/useAttendances";
 import { useEvents } from "@/hooks/admin/useEvents";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getApiErrorMessage } from "@/lib/api";
 import {
 	exportAttendancesToExcel,
 	exportAttendancesToPdf,
@@ -32,11 +33,15 @@ function getAttendanceTotal(data?: AttendanceSummaryData) {
 }
 
 export function useReportsPage() {
-	const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+	const [selectedEventId, setSelectedEventIdState] = useState<number | null>(null);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [attendanceParams, setAttendanceParams] = useState<GetEventAttendancesParams>({
-		per_page: 100,
+		page: 1,
+		per_page: 10,
 	});
+	const [exportingFormat, setExportingFormat] = useState<"PDF" | "Excel" | null>(
+		null,
+	);
 	const [feedback, setFeedback] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -45,7 +50,8 @@ export function useReportsPage() {
 
 	const {
 		data: attendanceData,
-		isLoading: loadingAttendances,
+		isLoading: isLoadingAttendances,
+		isFetching: isFetchingAttendances,
 		isError: isAttendanceError,
 		error: attendanceError,
 	} = useEventAttendances(selectedEventId, attendanceParams);
@@ -80,6 +86,10 @@ export function useReportsPage() {
 	);
 	const selectedAttendanceEvent = attendanceData?.event ?? null;
 	const attendances = attendanceData?.attendances ?? [];
+	const attendanceByAngkatan = attendanceData?.breakdown?.by_angkatan ?? [];
+	const attendanceByDomicile = attendanceData?.breakdown?.by_domicile ?? [];
+	const attendanceCurrentPage = attendanceData?.current_page ?? 1;
+	const attendanceLastPage = attendanceData?.last_page ?? 1;
 	const totalAttendances =
 		attendanceData?.summary?.total_attended ?? attendanceData?.total ?? 0;
 	const selected = typedEvents.find((event) => event.id === selectedId) ?? null;
@@ -116,48 +126,91 @@ export function useReportsPage() {
 		setFeedback(nextFeedback);
 		feedbackTimeoutRef.current = setTimeout(() => setFeedback(null), 3000);
 	};
+	const setSelectedEventId = (eventId: number | null) => {
+		setSelectedEventIdState(eventId);
+		setAttendanceParams((previous) => ({ ...previous, page: 1 }));
+	};
 
 	useEffect(() => clearFeedbackTimeout, []);
 
-	const handleDownload = (format: "PDF" | "Excel" | "CSV") => {
-		if (!selectedAttendanceEvent) return;
+	const handleDownload = async (format: "PDF" | "Excel") => {
+		if (!selectedEventId || exportingFormat) return;
 
-		if (format === "PDF") {
-			const opened = exportAttendancesToPdf(
-				selectedAttendanceEvent,
-				attendances,
-				attendanceData?.summary,
+		const preparedPdfWindow =
+			format === "PDF"
+				? window.open("", "_blank", "width=1120,height=800")
+				: null;
+
+		if (format === "PDF" && !preparedPdfWindow) {
+			showFeedback({
+				type: "error",
+				message: "Popup PDF diblokir browser. Izinkan popup lalu coba lagi.",
+			});
+			return;
+		}
+
+		setExportingFormat(format);
+
+		try {
+			const firstPage = await fetchEventAttendances(selectedEventId, {
+				page: 1,
+				per_page: 100,
+			});
+			const remainingPages = await Promise.all(
+				Array.from(
+					{ length: Math.max(0, firstPage.last_page - 1) },
+					(_, index) => index + 2,
+				).map((page) =>
+					fetchEventAttendances(selectedEventId, { page, per_page: 100 }),
+				),
 			);
+			const allAttendances = [
+				...firstPage.attendances,
+				...remainingPages.flatMap((page) => page.attendances),
+			];
 
-			if (!opened) {
-				showFeedback({
-					type: "error",
-					message: "Popup PDF diblokir browser. Izinkan popup lalu coba lagi.",
-				});
-			} else {
+			if (format === "PDF") {
+				exportAttendancesToPdf(
+					firstPage.event,
+					allAttendances,
+					firstPage.summary,
+					preparedPdfWindow,
+				);
 				showFeedback({
 					type: "success",
 					message: "Data kehadiran siap dicetak atau disimpan sebagai PDF",
 				});
+			} else {
+				exportAttendancesToExcel(
+					firstPage.event,
+					allAttendances,
+					firstPage.summary,
+				);
+				showFeedback({
+					type: "success",
+					message: "Data kehadiran berhasil diekspor ke Excel",
+				});
 			}
-			return;
-		}
-
-		if (format === "Excel") {
-			exportAttendancesToExcel(
-				selectedAttendanceEvent,
-				attendances,
-				attendanceData?.summary,
-			);
+		} catch (error) {
+			preparedPdfWindow?.close();
 			showFeedback({
-				type: "success",
-				message: "Data kehadiran berhasil diexport ke Excel",
+				type: "error",
+				message: getApiErrorMessage(
+					error,
+					"Gagal menyiapkan data kehadiran untuk diekspor.",
+				),
 			});
+		} finally {
+			setExportingFormat(null);
 		}
 	};
 
 	return {
 		attendanceError,
+		attendanceByAngkatan,
+		attendanceByDomicile,
+		attendanceCurrentPage,
+		attendanceLastPage,
 		attendances,
 		attendanceParams,
 		setAttendanceParams,
@@ -167,8 +220,10 @@ export function useReportsPage() {
 		getHadir,
 		getRate,
 		handleDownload,
+		isExporting: exportingFormat !== null,
+		exportingFormat,
 		isAttendanceError,
-		loadingAttendances,
+		loadingAttendances: isLoadingAttendances || isFetchingAttendances,
 		loadingAttendanceSummaries,
 		loadingEvents,
 		selected,

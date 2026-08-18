@@ -88,6 +88,16 @@ export function formatEventTime(startTime?: string | null, endTime?: string | nu
 	return `${start} - ${end}`;
 }
 
+export function formatDomicile(
+	cityName?: string | null,
+	provinceName?: string | null,
+	fallback = "Tidak diketahui",
+) {
+	if (!cityName || cityName === "Tidak diketahui") return fallback;
+
+	return provinceName ? `${cityName}, ${provinceName}` : cityName;
+}
+
 export function getUserName(attendance: Attendance) {
 	return attendance.user?.name ?? `User #${attendance.user_id}`;
 }
@@ -154,6 +164,11 @@ function getAttendanceRows(attendances: Attendance[]) {
 		email: attendance.user?.email ?? "-",
 		phone: attendance.user?.phone ?? "-",
 		angkatan: attendance.user?.angkatan ?? "-",
+		domicile: formatDomicile(
+			attendance.user?.domicile?.city?.name,
+			attendance.user?.domicile?.province?.name,
+			"-",
+		),
 		registeredAt: formatDateTimeIndonesia(attendance.attendance?.registered_at),
 		scannedAt: formatDateTimeIndonesia(getAttendanceScannedAt(attendance)),
 		status: getAttendanceStatus(attendance),
@@ -183,6 +198,7 @@ export function exportAttendancesToExcel(
 			<td>${escapeExportValue(row.email)}</td>
 			<td>${escapeExportValue(row.phone)}</td>
 			<td>${escapeExportValue(row.angkatan)}</td>
+			<td>${escapeExportValue(row.domicile)}</td>
 			<td>${escapeExportValue(row.registeredAt)}</td>
 			<td>${escapeExportValue(row.scannedAt)}</td>
 			<td>${escapeExportValue(row.status)}</td>
@@ -239,6 +255,7 @@ export function exportAttendancesToExcel(
 							<th>Email</th>
 							<th>No HP</th>
 							<th>Angkatan</th>
+							<th>Domisili</th>
 							<th>Jam Daftar</th>
 							<th>Jam Hadir / Scan QR</th>
 							<th>Status Hadir</th>
@@ -266,6 +283,7 @@ export function exportAttendancesToPdf(
 	event: AttendanceEvent,
 	attendances: Attendance[],
 	summary?: AttendanceResponseData["summary"],
+	preparedWindow?: Window | null,
 ) {
 	const info = getEventExportInfo(event);
 	const rows = getAttendanceRows(attendances).map(
@@ -276,13 +294,15 @@ export function exportAttendancesToPdf(
 			<td>${escapeExportValue(row.email)}</td>
 			<td>${escapeExportValue(row.phone)}</td>
 			<td>${escapeExportValue(row.angkatan)}</td>
+			<td>${escapeExportValue(row.domicile)}</td>
 			<td>${escapeExportValue(row.registeredAt)}</td>
 			<td>${escapeExportValue(row.scannedAt)}</td>
 			<td>${escapeExportValue(row.status)}</td>
 		</tr>
 	`,
 	);
-	const printWindow = window.open("", "_blank", "width=1120,height=800");
+	const printWindow =
+		preparedWindow ?? window.open("", "_blank", "width=1120,height=800");
 
 	if (!printWindow) return false;
 
@@ -316,15 +336,15 @@ export function exportAttendancesToPdf(
 						font-size: 12px;
 						font-weight: 700;
 					}
-					table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+					table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
 					th {
 						background: #2D7EA0;
 						color: white;
 						text-align: left;
-						padding: 8px;
+						padding: 6px;
 						border: 1px solid #236175;
 					}
-					td { padding: 7px 8px; border: 1px solid #d1d5db; vertical-align: top; }
+					td { padding: 6px; border: 1px solid #d1d5db; vertical-align: top; }
 					tr:nth-child(even) td { background: #f8fafc; }
 					.center { text-align: center; }
 				</style>
@@ -353,6 +373,7 @@ export function exportAttendancesToPdf(
 							<th>Email</th>
 							<th>No HP</th>
 							<th>Angkatan</th>
+							<th>Domisili</th>
 							<th>Jam Daftar</th>
 							<th>Jam Hadir / Scan QR</th>
 							<th>Status Hadir</th>

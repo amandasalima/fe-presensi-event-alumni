@@ -19,8 +19,11 @@ import { useReportsPage } from "./_hooks/useReportsPage";
 import {
   formatDate,
   formatDateTimeIndonesia,
+  formatDomicile,
   type ReportEvent,
 } from "./_utils/reportFormatters";
+
+type AttendanceSortColumn = "angkatan" | "domicile";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function capitalizeStatus(value?: string | null) {
@@ -157,6 +160,11 @@ function Icon3D({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
   const {
+    attendanceByAngkatan,
+    attendanceByDomicile,
+    attendanceCurrentPage,
+    attendanceLastPage,
+    attendanceParams,
     avgRate,
     attendances,
     events,
@@ -164,11 +172,14 @@ export default function ReportsPage() {
     getHadir,
     getRate,
     handleDownload,
+    isExporting,
+    exportingFormat,
     loadingAttendanceSummaries,
     loadingAttendances,
     loadingEvents,
     selectedAttendanceEvent,
     selectedEventId,
+    setAttendanceParams,
     setSelectedEventId,
     selesai,
     totalAttendances,
@@ -177,10 +188,8 @@ export default function ReportsPage() {
 
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventPage, setEventPage] = useState(1);
-  const [attendancePage, setAttendancePage] = useState(1);
 
   const EVENT_PER_PAGE = 5;
-  const ATTENDANCE_PER_PAGE = 5;
 
   const eventTotalPages = Math.max(
     1,
@@ -193,21 +202,27 @@ export default function ReportsPage() {
     return events.slice(start, start + EVENT_PER_PAGE);
   }, [events, safeEventPage]);
 
-  const attendanceTotalPages = Math.max(
-    1,
-    Math.ceil(attendances.length / ATTENDANCE_PER_PAGE),
-  );
-  const safeAttendancePage = Math.min(attendancePage, attendanceTotalPages);
-
-  const paginatedAttendances = useMemo(() => {
-    const start = (safeAttendancePage - 1) * ATTENDANCE_PER_PAGE;
-    return attendances.slice(start, start + ATTENDANCE_PER_PAGE);
-  }, [attendances, safeAttendancePage]);
-
   const openEventDetail = (eventId: number) => {
     setSelectedEventId(eventId);
-    setAttendancePage(1);
     setIsEventModalOpen(true);
+  };
+  const handleAttendanceSort = (column: AttendanceSortColumn) => {
+    setAttendanceParams((previous) => ({
+      ...previous,
+      sort_by: column,
+      sort_dir:
+        previous.sort_by === column && previous.sort_dir === "asc"
+          ? "desc"
+          : "asc",
+      page: 1,
+    }));
+  };
+  const getAttendanceSortIndicator = (column: AttendanceSortColumn) => {
+    if (attendanceParams.sort_by !== column) return "↕";
+    return attendanceParams.sort_dir === "desc" ? "↓" : "↑";
+  };
+  const handleAttendancePageChange = (page: number) => {
+    setAttendanceParams((previous) => ({ ...previous, page }));
   };
 
   const closeEventDetail = () => {
@@ -292,7 +307,6 @@ export default function ReportsPage() {
               setSelectedEventId(eventId);
 
               if (eventId) {
-                setAttendancePage(1);
                 setIsEventModalOpen(true);
               }
             }}
@@ -512,11 +526,12 @@ export default function ReportsPage() {
                   <button
                     key={format}
                     type="button"
-                    onClick={() => handleDownload(format)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0D5C3A] to-[#0A4D30] hover:from-[#0A4D30] hover:to-[#073D26] px-3 py-2 text-xs font-semibold text-white transition-all shadow-md shadow-[#0D5C3A]/20"
+                    onClick={() => void handleDownload(format)}
+                    disabled={isExporting}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0D5C3A] to-[#0A4D30] hover:from-[#0A4D30] hover:to-[#073D26] px-3 py-2 text-xs font-semibold text-white transition-all shadow-md shadow-[#0D5C3A]/20 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Download size={13} strokeWidth={2.5} />
-                    {format}
+                    {exportingFormat === format ? "Menyiapkan..." : format}
                   </button>
                 ))}
 
@@ -531,11 +546,76 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Modal table */}
+            {/* Modal breakdown and table */}
             <div className="max-h-[70vh] overflow-y-auto p-5">
+              <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <section className="rounded-xl border border-[#0D5C3A]/10 bg-[#0D5C3A]/[0.03] p-4">
+                  <h3 className="text-sm font-bold text-[#0D5C3A]">
+                    Kehadiran berdasarkan Angkatan
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    {attendanceByAngkatan.length === 0 ? (
+                      <p className="text-xs text-gray-400">
+                        Belum ada data angkatan
+                      </p>
+                    ) : (
+                      attendanceByAngkatan.map((item) => (
+                        <div
+                          key={item.angkatan}
+                          className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-xs shadow-sm"
+                        >
+                          <span className="truncate text-gray-600">
+                            {item.angkatan}
+                          </span>
+                          <span className="shrink-0 font-bold text-[#2D7EA0]">
+                            {item.total}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                <section className="rounded-xl border border-[#2D7EA0]/10 bg-[#2D7EA0]/[0.03] p-4">
+                  <h3 className="text-sm font-bold text-[#236175]">
+                    Kehadiran berdasarkan Domisili
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    {attendanceByDomicile.length === 0 ? (
+                      <p className="text-xs text-gray-400">
+                        Belum ada data domisili
+                      </p>
+                    ) : (
+                      attendanceByDomicile.map((item, index) => (
+                        <div
+                          key={`${item.city_code ?? "unknown"}-${index}`}
+                          className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-xs shadow-sm"
+                        >
+                          <span
+                            className="min-w-0 truncate text-gray-600"
+                            title={formatDomicile(
+                              item.city_name,
+                              item.province_name,
+                            )}
+                          >
+                            {formatDomicile(
+                              item.city_name,
+                              item.province_name,
+                            )}
+                          </span>
+                          <span className="shrink-0 font-bold text-[#2D7EA0]">
+                            {item.total}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
+
               <div className="overflow-hidden rounded-xl border border-gray-100">
                 <div className="w-full overflow-x-auto">
-                  <table className="w-full min-w-[1000px] text-xs">
+                  <table className="w-full min-w-[1180px] text-xs">
                     <thead>
                       <tr className="bg-[#0D5C3A]/10">
                         <th className="p-3 text-center font-semibold text-[#0D5C3A] rounded-l-xl">
@@ -547,8 +627,31 @@ export default function ReportsPage() {
                         <th className="p-3 text-center font-semibold text-[#0D5C3A]">
                           No HP
                         </th>
-                        <th className="p-3 text-center font-semibold text-[#0D5C3A]">
-                          Angkatan
+                        <th className="p-0 text-center font-semibold text-[#0D5C3A]">
+                          <button
+                            type="button"
+                            onClick={() => handleAttendanceSort("angkatan")}
+                            className="inline-flex w-full cursor-pointer items-center justify-center gap-1 px-3 py-3 transition hover:bg-[#0D5C3A]/5"
+                            title="Urutkan berdasarkan angkatan"
+                          >
+                            Angkatan
+                            <span className="text-[11px] text-[#2D7EA0]">
+                              {getAttendanceSortIndicator("angkatan")}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="p-0 text-center font-semibold text-[#0D5C3A]">
+                          <button
+                            type="button"
+                            onClick={() => handleAttendanceSort("domicile")}
+                            className="inline-flex w-full cursor-pointer items-center justify-center gap-1 px-3 py-3 transition hover:bg-[#0D5C3A]/5"
+                            title="Urutkan berdasarkan domisili"
+                          >
+                            Domisili
+                            <span className="text-[11px] text-[#2D7EA0]">
+                              {getAttendanceSortIndicator("domicile")}
+                            </span>
+                          </button>
                         </th>
                         <th className="p-3 text-center font-semibold text-[#0D5C3A]">
                           Jam Daftar
@@ -564,18 +667,18 @@ export default function ReportsPage() {
 
                     <tbody>
                       {loadingAttendances ? (
-                        <TableSkeleton cols={7} />
+                        <TableSkeleton cols={8} />
                       ) : attendances.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={8}
                             className="py-10 text-center text-sm text-gray-400"
                           >
                             Belum ada data kehadiran untuk event ini.
                           </td>
                         </tr>
                       ) : (
-                        paginatedAttendances.map((attendance, i: number) => {
+                        attendances.map((attendance, i: number) => {
                           const nested = attendance.attendance;
                           const scannedAt =
                             nested?.scanned_at || attendance.scanned_at;
@@ -613,7 +716,17 @@ export default function ReportsPage() {
                               </td>
 
                               <td className="p-3 text-center text-gray-500">
-                                {attendance.user?.angkatan ?? "-"}
+                                {attendance.user?.angkatan ??
+                                  attendance.user?.graduation_year ??
+                                  "-"}
+                              </td>
+
+                              <td className="p-3 text-center text-gray-500">
+                                {formatDomicile(
+                                  attendance.user?.domicile?.city?.name,
+                                  attendance.user?.domicile?.province?.name,
+                                  "-",
+                                )}
                               </td>
 
                               <td className="p-3 text-center text-gray-500 whitespace-nowrap">
@@ -641,9 +754,9 @@ export default function ReportsPage() {
 
                 {!loadingAttendances && attendances.length > 0 && (
                   <Pagination
-                    currentPage={safeAttendancePage}
-                    totalPages={attendanceTotalPages}
-                    onPageChange={setAttendancePage}
+                    currentPage={attendanceCurrentPage}
+                    totalPages={attendanceLastPage}
+                    onPageChange={handleAttendancePageChange}
                   />
                 )}
               </div>

@@ -1,6 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchAPI } from "@/lib/api";
 
+export interface AttendanceDomicileRegion {
+	code?: string | null;
+	name?: string | null;
+}
+
+export interface AttendanceDomicile {
+	province?: AttendanceDomicileRegion | null;
+	city?: AttendanceDomicileRegion | null;
+	district?: AttendanceDomicileRegion | null;
+	village?: AttendanceDomicileRegion | null;
+	postal_code?: string | null;
+	address?: string | null;
+}
+
 export interface AttendanceUser {
 	id: number;
 	name: string;
@@ -9,8 +23,28 @@ export interface AttendanceUser {
 	email: string;
 	phone?: string;
 	angkatan?: string;
+	graduation_year?: string;
+	domicile?: AttendanceDomicile | null;
 	role?: string;
 	created_at?: string;
+}
+
+export interface AttendanceByAngkatan {
+	angkatan: string;
+	total: number;
+}
+
+export interface AttendanceByDomicile {
+	city_code: string | null;
+	city_name: string;
+	province_code: string | null;
+	province_name: string | null;
+	total: number;
+}
+
+export interface AttendanceBreakdown {
+	by_angkatan: AttendanceByAngkatan[];
+	by_domicile: AttendanceByDomicile[];
 }
 
 export interface AttendanceEvent {
@@ -57,6 +91,7 @@ export interface AttendanceResponseData {
 		quota_status?: "unlimited" | "available" | "full";
 		quota_message?: string;
 	};
+	breakdown?: AttendanceBreakdown;
 	attendances: Attendance[];
 	total: number;
 	current_page: number;
@@ -85,25 +120,32 @@ export interface GetEventAttendancesParams {
 	per_page?: number;
 }
 
+export async function fetchEventAttendances(
+	eventId: number,
+	params?: GetEventAttendancesParams,
+) {
+	const query = new URLSearchParams();
+	if (params) {
+		Object.entries(params).forEach(([key, val]) => {
+			if (val !== undefined && val !== null && val !== "") {
+				query.append(key, String(val));
+			}
+		});
+	}
+
+	const queryString = query.toString();
+	const endpoint = `/admin/events/${eventId}/attendances${queryString ? `?${queryString}` : ""}`;
+	const response = (await fetchAPI(endpoint)) as AttendanceResponse;
+
+	return response.data;
+}
+
 export function useEventAttendances(eventId: number | null, params?: GetEventAttendancesParams) {
 	return useQuery({
 		queryKey: ["admin-event-attendances", eventId, params],
-		queryFn: async () => {
-			const query = new URLSearchParams();
-			if (params) {
-				Object.entries(params).forEach(([key, val]) => {
-					if (val !== undefined && val !== null && val !== "") {
-						query.append(key, String(val));
-					}
-				});
-			}
-
-			const queryString = query.toString();
-			const endpoint = `/admin/events/${eventId}/attendances${queryString ? `?${queryString}` : ""}`;
-			const response = (await fetchAPI(endpoint)) as AttendanceResponse;
-
-			return response.data;
-		},
+		queryFn: () => fetchEventAttendances(eventId as number, params),
+		placeholderData: (previousData, previousQuery) =>
+			previousQuery?.queryKey[1] === eventId ? previousData : undefined,
 		enabled: !!eventId,
 	});
 }

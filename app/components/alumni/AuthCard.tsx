@@ -398,7 +398,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   if (Object.values(localErrors).some(Boolean)) return;
 
   // ✅ CREATE PAYLOAD
-  const payload: any = { ...form };
+  const payload: RegisterPayload = { ...form };
 
   // ✅ ADD temp_token if available
   if (tempToken) {

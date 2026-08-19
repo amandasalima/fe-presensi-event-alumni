@@ -22,6 +22,7 @@ export interface RegisterPayload {
   domicile_village_code?: string;
   domicile_postal_code?: string;
   domicile_address?: string;
+  temp_token?: string;
 }
 
 export interface LoginAuthResponse {

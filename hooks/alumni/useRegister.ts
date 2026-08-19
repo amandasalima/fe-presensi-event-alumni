@@ -21,6 +21,7 @@ async function registerFn(payload: RegisterPayload): Promise<RegisterAuthRespons
     domicile_village_code: payload.domicile_village_code,
     domicile_postal_code: payload.domicile_postal_code,
     domicile_address: payload.domicile_address,
+    temp_token: payload.temp_token,
   };
   const { data } = await api.post<RegisterAuthResponse>("/auth/register", dataToSend);
   return data;

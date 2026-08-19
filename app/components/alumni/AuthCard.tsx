@@ -8,6 +8,7 @@ import { useRegister } from "@/hooks/alumni/useRegister";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
 import { FormInput, FormSelect } from "@/app/components/FormControl";
 import { getApiErrorMessage } from "@/lib/api";
+import { GoogleLoginButton, GoogleRegisterButton } from "./GoogleAuthButtons";
 import SuccessModal from "./SuccessModal";
 import DomicileFormFields from "@/app/components/DomicileFormFields";
 
@@ -185,7 +186,9 @@ function PasswordStrength({ password }: { password: string }) {
             />
           ))}
         </div>
-        <span className={`w-20 text-right text-xs font-semibold ${strength.textColor}`}>
+        <span
+          className={`w-20 text-right text-xs font-semibold ${strength.textColor}`}
+        >
           {strength.label}
         </span>
       </div>
@@ -216,6 +219,7 @@ function LoginForm() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const { mutate: login, isPending, error } = useLogin();
 
   const serverError = error
@@ -240,11 +244,25 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-      {serverError && (
+      {(serverError || googleError) && (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-100">
-          {serverError}
+          {serverError || googleError}
         </div>
       )}
+
+      {/* Google OAuth Button */}
+      <GoogleLoginButton
+        onError={(error) => setGoogleError(error)}
+        disabled={isPending}
+      />
+
+      <div className="relative flex items-center gap-3 my-1">
+        <div className="flex-1 border-t border-slate-200"></div>
+        <span className="text-xs font-medium text-slate-400 uppercase">
+          atau
+        </span>
+        <div className="flex-1 border-t border-slate-200"></div>
+      </div>
 
       <Field label="Email" error={submitted ? loginErrors.email : undefined}>
         <Input
@@ -256,7 +274,10 @@ function LoginForm() {
         />
       </Field>
 
-      <Field label="Kata Sandi" error={submitted ? loginErrors.password : undefined}>
+      <Field
+        label="Kata Sandi"
+        error={submitted ? loginErrors.password : undefined}
+      >
         <div className="relative">
           <Input
             type={showPass ? "text" : "password"}
@@ -299,7 +320,7 @@ function LoginForm() {
         disabled={isPending}
         className="mt-1 w-full rounded-xl bg-[#0D5C3A] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#E8F5E9]/45 transition-colors hover:bg-[#084028] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {isPending ? "Memproses..." : "Masuk"}
+        {isPending ? "Memproses..." : "Masuk dengan Email"}
       </button>
     </form>
   );
@@ -327,23 +348,37 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(REGISTER_APPROVAL_MESSAGE);
+  const [successMessage, setSuccessMessage] = useState(
+    REGISTER_APPROVAL_MESSAGE,
+  );
   const [submitted, setSubmitted] = useState(false);
-  const [touched, setTouched] = useState<Partial<Record<RegisterField, boolean>>>({});
+  const [touched, setTouched] = useState<
+    Partial<Record<RegisterField, boolean>>
+  >({});
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const { mutate: register, isPending, error } = useRegister();
+  const [oauthCompleted, setOauthCompleted] = useState(false);
+  const [tempToken, setTempToken] = useState<string | null>(null);
 
   const registerErrorData = error?.response?.data;
   const serverError =
-    typeof registerErrorData?.message === "string" && registerErrorData.message.trim()
+    typeof registerErrorData?.message === "string" &&
+    registerErrorData.message.trim()
       ? registerErrorData.message
       : error
-        ? getApiErrorMessage(error, "Pendaftaran belum berhasil. Periksa kembali data Anda.")
+        ? getApiErrorMessage(
+            error,
+            "Pendaftaran belum berhasil. Periksa kembali data Anda.",
+          )
         : null;
   const fieldErrors = getRegisterFieldErrors(registerErrorData?.errors);
 
   const localErrors = getRegisterErrors(form);
 
-  function setField<K extends RegisterField>(field: K, value: RegisterPayload[K]) {
+  function setField<K extends RegisterField>(
+    field: K,
+    value: RegisterPayload[K],
+  ) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setTouched((current) => ({ ...current, [field]: true }));
   }
@@ -358,17 +393,48 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   }
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitted(true);
-    if (Object.values(localErrors).some(Boolean)) return;
+  e.preventDefault();
+  setSubmitted(true);
+  if (Object.values(localErrors).some(Boolean)) return;
 
-    register(form, {
-      onSuccess: (response) => {
-        setSuccessMessage(response.message?.trim() || REGISTER_APPROVAL_MESSAGE);
-        setShowSuccessModal(true);
-      },
-    });
+  // ✅ CREATE PAYLOAD
+  const payload: any = { ...form };
+
+  // ✅ ADD temp_token if available
+  if (tempToken) {
+    payload.temp_token = tempToken;
+    console.log('✅ Including temp_token in payload:', tempToken.substring(0, 20) + '...');
+  } else {
+    console.log('📧 No temp_token - regular email registration');
   }
+
+  // 🔍 DEBUG: Show full payload (without password)
+  console.log('📦 Final payload:', {
+    ...payload,
+    password: payload.password ? '***' : undefined,
+    password_confirmation: payload.password_confirmation ? '***' : undefined,
+  });
+
+  register(payload, {
+    onSuccess: (response) => {
+      console.log('✅ Registration response:', response);
+      setSuccessMessage(response.message?.trim() || REGISTER_APPROVAL_MESSAGE);
+      setShowSuccessModal(true);
+
+      // Clear OAuth data
+      if (tempToken) {
+        sessionStorage.removeItem("oauth_temp_token");
+        sessionStorage.removeItem("oauth_user_data");
+        setTempToken(null);
+        setOauthCompleted(false);
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Registration error:', error);
+    },
+  });
+}
+
 
   function handleSuccessModalClose() {
     setShowSuccessModal(false);
@@ -378,21 +444,60 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   return (
     <>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-        {serverError && (
+        {(serverError || googleError) && (
           <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-100">
-            <p className="font-semibold mb-1">{serverError}</p>
+            <p className="font-semibold mb-1">{serverError || googleError}</p>
             {Object.keys(fieldErrors).length > 0 && (
               <ul className="list-disc list-inside text-xs mt-2 space-y-1">
                 {Object.entries(fieldErrors).map(([field, errors]) => (
                   <li key={field}>
-                    <strong>{getFieldLabel(field)}:</strong>{" "}
-                    {errors}
+                    <strong>{getFieldLabel(field)}:</strong> {errors}
                   </li>
                 ))}
               </ul>
             )}
           </div>
         )}
+
+        {/* Google OAuth Button */}
+        <GoogleRegisterButton
+          onError={(error) => {
+            setGoogleError(error);
+            setOauthCompleted(false);
+            setTempToken(null); // Clear on error
+          }}
+          onSuccess={(token, userData) => {
+            console.log("🔑 OAuth callback success!");
+            console.log("Token received:", token.substring(0, 20) + "...");
+
+            // ✅ STORE TOKEN
+            setTempToken(token);
+            setOauthCompleted(true);
+            setGoogleError(null);
+            sessionStorage.setItem("oauth_temp_token", token);
+
+            // Pre-fill form
+            setForm((prev) => ({
+              ...prev,
+              first_name: userData.first_name || prev.first_name,
+              last_name: userData.last_name || prev.last_name,
+              email: userData.email || prev.email,
+            }));
+
+            // ⚠️ This will show stale state (expected)
+            // Real check happens in handleSubmit
+            console.log("State will update in next render");
+          }}
+          disabled={isPending || oauthCompleted}
+        />
+
+        <div className="relative flex items-center gap-3 my-1">
+          <div className="flex-1 border-t border-slate-200"></div>
+          <span className="text-xs font-medium text-slate-400 uppercase">
+            atau daftar dengan email
+          </span>
+          <div className="flex-1 border-t border-slate-200"></div>
+        </div>
 
         <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3">
           <Field label="Nama Depan" error={getError("first_name")}>
@@ -401,7 +506,9 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               placeholder="nama depan anda"
               value={form.first_name}
               onChange={(e) => setField("first_name", e.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, first_name: true }))}
+              onBlur={() =>
+                setTouched((current) => ({ ...current, first_name: true }))
+              }
               hasError={Boolean(getError("first_name"))}
             />
           </Field>
@@ -411,7 +518,9 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               placeholder="nama belakang anda"
               value={form.last_name}
               onChange={(e) => setField("last_name", e.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, last_name: true }))}
+              onBlur={() =>
+                setTouched((current) => ({ ...current, last_name: true }))
+              }
               hasError={Boolean(getError("last_name"))}
             />
           </Field>
@@ -421,7 +530,9 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           <FormSelect
             value={form.gender}
             onChange={(e) => setField("gender", e.target.value)}
-            onBlur={() => setTouched((current) => ({ ...current, gender: true }))}
+            onBlur={() =>
+              setTouched((current) => ({ ...current, gender: true }))
+            }
             aria-invalid={Boolean(getError("gender")) || undefined}
             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 ${
               getError("gender")
@@ -440,8 +551,11 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
             placeholder="masukkan alamat email Anda"
             value={form.email}
             onChange={(e) => setField("email", e.target.value)}
-            onBlur={() => setTouched((current) => ({ ...current, email: true }))}
+            onBlur={() =>
+              setTouched((current) => ({ ...current, email: true }))
+            }
             hasError={Boolean(getError("email"))}
+            readOnly={oauthCompleted}
           />
         </Field>
 
@@ -452,7 +566,9 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               placeholder="masukkan no telp Anda"
               value={form.phone}
               onChange={(e) => setField("phone", e.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
+              onBlur={() =>
+                setTouched((current) => ({ ...current, phone: true }))
+              }
               hasError={Boolean(getError("phone"))}
               className="pl-10"
             />
@@ -463,11 +579,16 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           </div>
         </Field>
 
-        <Field label="Angkatan (Tahun Lulus)" error={getError("graduation_year")}>
+        <Field
+          label="Angkatan (Tahun Lulus)"
+          error={getError("graduation_year")}
+        >
           <FormSelect
             value={form.graduation_year}
             onChange={(e) => setField("graduation_year", e.target.value)}
-            onBlur={() => setTouched((current) => ({ ...current, graduation_year: true }))}
+            onBlur={() =>
+              setTouched((current) => ({ ...current, graduation_year: true }))
+            }
             aria-invalid={Boolean(getError("graduation_year")) || undefined}
             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:ring-2 ${
               getError("graduation_year")
@@ -493,7 +614,9 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               type="date"
               value={form.birth_date}
               onChange={(e) => setField("birth_date", e.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, birth_date: true }))}
+              onBlur={() =>
+                setTouched((current) => ({ ...current, birth_date: true }))
+              }
               max={new Date().toISOString().split("T")[0]}
               hasError={Boolean(getError("birth_date"))}
               className="pr-4"
@@ -508,7 +631,9 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               placeholder="masukkan kata sandi Anda (min. 8 karakter)"
               value={form.password}
               onChange={(e) => setField("password", e.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, password: true }))}
+              onBlur={() =>
+                setTouched((current) => ({ ...current, password: true }))
+              }
               minLength={8}
               hasError={Boolean(getError("password"))}
               className="pr-11"
@@ -538,8 +663,15 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
               type={showConfirmPass ? "text" : "password"}
               placeholder="ulangi kata sandi Anda"
               value={form.password_confirmation}
-              onChange={(e) => setField("password_confirmation", e.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, password_confirmation: true }))}
+              onChange={(e) =>
+                setField("password_confirmation", e.target.value)
+              }
+              onBlur={() =>
+                setTouched((current) => ({
+                  ...current,
+                  password_confirmation: true,
+                }))
+              }
               minLength={8}
               hasError={Boolean(getError("password_confirmation"))}
               className="pr-11"
@@ -555,16 +687,21 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         </Field>
 
         <div className="border-t border-slate-100 pt-4 mt-2">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">Domisili Saat Ini (Opsional)</h3>
+          <h3 className="text-sm font-semibold text-slate-700 mb-3">
+            Domisili Saat Ini (Opsional)
+          </h3>
           <DomicileFormFields
             values={form}
             onChange={(field, value) => setField(field, value)}
-            errors={Object.keys(localErrors).reduce<Record<string, string>>((acc, key) => {
-              if (localErrors[key as RegisterField]) {
-                acc[key] = localErrors[key as RegisterField]!;
-              }
-              return acc;
-            }, {})}
+            errors={Object.keys(localErrors).reduce<Record<string, string>>(
+              (acc, key) => {
+                if (localErrors[key as RegisterField]) {
+                  acc[key] = localErrors[key as RegisterField]!;
+                }
+                return acc;
+              },
+              {},
+            )}
             theme="alumni"
           />
         </div>
@@ -675,15 +812,12 @@ function getRegisterFieldErrors(errors: unknown): RegisterErrors {
   }, {});
 }
 
-
 /* ─── Main AuthCard ───────────────────────────────────────── */
 export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
   const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
 
   return (
-    <div
-      className="min-h-dvh w-full flex items-start justify-center px-3 sm:px-4 md:px-8 pt-8 sm:pt-10 md:pt-12 pb-8 bg-gradient-to-br from-[#E8F5E9]/70 via-[#F4F9F6] to-white"
-    >
+    <div className="min-h-dvh w-full flex items-start justify-center px-3 sm:px-4 md:px-8 pt-8 sm:pt-10 md:pt-12 pb-8 bg-gradient-to-br from-[#E8F5E9]/70 via-[#F4F9F6] to-white">
       <div className="w-full max-w-sm md:max-w-md min-w-0">
         {/* App logo and label */}
         <div className="flex items-center gap-2 mb-5">
@@ -720,10 +854,11 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold capitalize transition-all duration-200 ${activeTab === tab
-                  ? "bg-[#0D5C3A] text-white shadow-sm"
-                  : "text-slate-500 hover:text-[#0D5C3A]"
-                  }`}
+                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold capitalize transition-all duration-200 ${
+                  activeTab === tab
+                    ? "bg-[#0D5C3A] text-white shadow-sm"
+                    : "text-slate-500 hover:text-[#0D5C3A]"
+                }`}
               >
                 {tab === "masuk" ? "Masuk" : "Daftar"}
               </button>
@@ -731,17 +866,27 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
           </div>
 
           {/* Form */}
-          {activeTab === "masuk" ? <LoginForm /> : <RegisterForm onSwitchToLogin={() => setActiveTab("masuk")} />}
+          {activeTab === "masuk" ? (
+            <LoginForm />
+          ) : (
+            <RegisterForm onSwitchToLogin={() => setActiveTab("masuk")} />
+          )}
         </div>
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-slate-500 leading-relaxed px-2">
           Dengan mendaftar, Anda menyetujui{" "}
-          <Link href="/terms" className="font-semibold text-slate-700 underline underline-offset-2">
+          <Link
+            href="/terms"
+            className="font-semibold text-slate-700 underline underline-offset-2"
+          >
             Ketentuan Layanan
           </Link>{" "}
           dan{" "}
-          <Link href="/privacy" className="font-semibold text-slate-700 underline underline-offset-2">
+          <Link
+            href="/privacy"
+            className="font-semibold text-slate-700 underline underline-offset-2"
+          >
             Persetujuan Pemrosesan Data
           </Link>
         </p>

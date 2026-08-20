@@ -22,6 +22,7 @@ import {
 import {
   ENGAGEMENT_SEGMENTS,
   clampEngagementPercentage,
+  getEngagementSegmentConfig,
 } from "@/lib/engagement";
 import { getApiErrorMessage } from "@/lib/api";
 
@@ -160,14 +161,17 @@ export default function EngagementMappingPage() {
         <div className="rounded-2xl border border-[#0D5C3A]/10 bg-white p-4 shadow-sm shadow-[#0D5C3A]/5">
           <p className="text-xs text-[#0D5C3A]/60">Segment Halaman Ini</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {ENGAGEMENT_SEGMENTS.map((segmentName) => (
-              <span
-                key={segmentName}
-                className="rounded-lg border border-[#0D5C3A]/10 bg-[#E8F5E9] px-2 py-1 text-[11px] font-semibold text-[#0D5C3A]/70"
-              >
-                {segmentName}: {segmentCounts[segmentName] ?? 0}
-              </span>
-            ))}
+            {ENGAGEMENT_SEGMENTS.map((segmentName) => {
+              const config = getEngagementSegmentConfig(segmentName);
+              return (
+                <span
+                  key={segmentName}
+                  className="rounded-lg border border-[#0D5C3A]/10 bg-[#E8F5E9] px-2 py-1 text-[11px] font-semibold text-[#0D5C3A]/70"
+                >
+                  {config.arabicLabel} ({segmentName}): {segmentCounts[segmentName] ?? 0}
+                </span>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -195,7 +199,7 @@ export default function EngagementMappingPage() {
             <SearchInput
               leadingIcon={<Search size={16} className="text-gray-400" />}
               wrapperClassName="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 focus-within:border-[#3EBDAF]"
-              placeholder="Cari nama, email, atau angkatan..."
+              placeholder="Cari nama, email, atau tahun kelulusan..."
               value={search}
               onValueChange={(value) => {
                 setSearch(value);
@@ -212,7 +216,7 @@ export default function EngagementMappingPage() {
                   setGraduationYear(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Angkatan"
+                placeholder="Tahun Kelulusan"
                 inputMode="numeric"
                 className="min-w-0 flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
               />
@@ -227,11 +231,14 @@ export default function EngagementMappingPage() {
               className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#3EBDAF]"
             >
               <option value="">Semua Segment</option>
-              {ENGAGEMENT_SEGMENTS.map((segmentName) => (
-                <option key={segmentName} value={segmentName}>
-                  {segmentName}
-                </option>
-              ))}
+              {ENGAGEMENT_SEGMENTS.map((segmentName) => {
+                const config = getEngagementSegmentConfig(segmentName);
+                return (
+                  <option key={segmentName} value={segmentName}>
+                    {config.arabicLabel} ({segmentName})
+                  </option>
+                );
+              })}
             </FormSelect>
 
             <FormSelect
@@ -257,30 +264,30 @@ export default function EngagementMappingPage() {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-xl border border-gray-200">
+          <div className="overflow-hidden rounded-xl border border-[#0D5C3A]/10">
             <div className="w-full overflow-x-auto">
               <table className="w-full min-w-[1040px] text-xs">
-                <thead className="bg-[#0D5C3A]/10">
+                <thead className="bg-gradient-to-r from-[#E8F5E9] to-white border-b border-[#0D5C3A]/10">
                   <tr>
-                    <th className="p-3 text-left font-semibold text-[#0D5C3A]">
+                    <th className="p-3 text-left text-[11px] font-semibold text-[#0D5C3A]">
                       Nama Alumni
                     </th>
-                    <th className="p-3 text-left font-semibold text-[#0D5C3A]">
+                    <th className="p-3 text-left text-[11px] font-semibold text-[#0D5C3A]">
                       Email
                     </th>
-                    <th className="p-3 text-center font-semibold text-[#0D5C3A]">
-                      Angkatan
+                    <th className="p-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
+                      Tahun Kelulusan
                     </th>
-                    <th className="p-3 text-left font-semibold text-[#0D5C3A]">
+                    <th className="p-3 text-left text-[11px] font-semibold text-[#0D5C3A]">
                       Domisili
                     </th>
-                    <th className="p-3 text-center font-semibold text-[#0D5C3A]">
+                    <th className="p-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Kehadiran
                     </th>
-                    <th className="p-3 text-center font-semibold text-[#0D5C3A]">
+                    <th className="p-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Persentase
                     </th>
-                    <th className="p-3 text-center font-semibold text-[#0D5C3A]">
+                    <th className="p-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Segment
                     </th>
                   </tr>
@@ -314,8 +321,10 @@ export default function EngagementMappingPage() {
                       return (
                         <tr
                           key={item.user.id}
-                          className={`border-b border-gray-100 ${
-                            index % 2 === 0 ? "bg-white" : "bg-blue-50"
+                          className={`border-b border-[#0D5C3A]/10 transition-colors ${
+                            index % 2 === 0
+                              ? "bg-white hover:bg-[#E8F5E9]/50"
+                              : "bg-[#E8F5E9]/25 hover:bg-[#E8F5E9]/60"
                           }`}
                         >
                           <td className="p-3 font-semibold text-gray-800">

@@ -132,55 +132,71 @@ function getCompactAngkatanLabel(value: string) {
 
 function AngkatanBreakdownChart({
   items,
+  expanded,
+  onToggle,
 }: {
   items: AttendanceByAngkatan[];
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   if (items.length === 0) {
     return (
       <div className="flex h-[174px] items-center justify-center text-xs text-gray-400">
-        Belum ada data angkatan
+        Belum ada data Tahun Kelulusan
       </div>
     );
   }
 
-  const maxTotal = Math.max(...items.map((item) => item.total), 1);
-  const chartWidth = Math.max(280, items.length * 48);
+  const sortedItems = [...items].sort((a, b) => b.total - a.total);
+  const visibleItems = expanded ? sortedItems : sortedItems.slice(0, 5);
+  const maxTotal = Math.max(...visibleItems.map((item) => item.total), 1);
 
   return (
-    <div className="mt-3 overflow-x-auto pb-1">
+    <div className="mt-3 flex h-[174px] flex-col">
       <div
-        className="flex h-[174px] items-end gap-2 border-b border-[#0D5C3A]/10 px-2"
-        style={{ minWidth: `${chartWidth}px` }}
+        className={`min-h-0 flex-1 space-y-2 pr-1 ${
+          expanded ? "overflow-y-auto" : "overflow-hidden"
+        }`}
       >
-        {items.map((item) => {
-          const barHeight =
+        {visibleItems.map((item, index) => {
+          const barWidth =
             item.total > 0
-              ? Math.max(8, Math.round((item.total / maxTotal) * 112))
+              ? Math.max(4, Math.round((item.total / maxTotal) * 100))
               : 0;
 
           return (
             <div
-              key={item.angkatan}
-              className="flex h-full w-10 shrink-0 flex-col items-center justify-end"
-              title={`${item.angkatan}: ${item.total} kehadiran`}
-              aria-label={`${item.angkatan}, ${item.total} kehadiran`}
+              key={`${item.angkatan}-${index}`}
+              className="flex items-center gap-2 text-[11px]"
+              title={`Tahun Kelulusan ${item.angkatan}: ${item.total} kehadiran`}
+              aria-label={`Tahun Kelulusan ${item.angkatan}, ${item.total} kehadiran`}
             >
-              <span className="mb-1 text-[10px] font-bold text-[#236175]">
-                {item.total}
+              <span className="w-28 shrink-0 truncate text-gray-600 sm:w-36 font-medium">
+                Tahun {item.angkatan}
               </span>
-              <div className="flex h-28 items-end">
+              <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="w-6 rounded-t-md bg-gradient-to-t from-[#0D5C3A] to-[#3EBDAF] transition-[height]"
-                  style={{ height: `${barHeight}px` }}
+                  className="h-full rounded-full bg-gradient-to-r from-[#0D5C3A] to-[#3EBDAF]"
+                  style={{ width: `${barWidth}%` }}
                 />
               </div>
-              <span className="mt-1.5 max-w-10 truncate text-[10px] font-medium text-gray-500">
-                {getCompactAngkatanLabel(item.angkatan)}
+              <span className="w-7 shrink-0 text-right font-bold text-[#0D5C3A]">
+                {item.total}
               </span>
             </div>
           );
         })}
       </div>
+
+      {items.length > 5 && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="mt-2 self-start text-[11px] font-semibold text-[#0D5C3A] transition hover:text-[#0A4D30]"
+        >
+          {expanded ? "Tampilkan ringkas" : `Lihat semua (${items.length})`}
+        </button>
+      )}
     </div>
   );
 }
@@ -202,7 +218,8 @@ function DomicileBreakdownChart({
     );
   }
 
-  const visibleItems = expanded ? items : items.slice(0, 5);
+  const sortedItems = [...items].sort((a, b) => b.total - a.total);
+  const visibleItems = expanded ? sortedItems : sortedItems.slice(0, 5);
   const maxTotal = Math.max(...visibleItems.map((item) => item.total), 1);
 
   return (
@@ -226,7 +243,7 @@ function DomicileBreakdownChart({
               title={`${label}: ${item.total} kehadiran`}
               aria-label={`${label}, ${item.total} kehadiran`}
             >
-              <span className="w-28 shrink-0 truncate text-gray-600 sm:w-36">
+              <span className="w-28 shrink-0 truncate text-gray-600 sm:w-36 font-medium">
                 {label}
               </span>
               <div className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-100">
@@ -328,6 +345,7 @@ export default function ReportsPage() {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventPage, setEventPage] = useState(1);
   const [showAllDomiciles, setShowAllDomiciles] = useState(false);
+  const [showAllCohorts, setShowAllCohorts] = useState(false);
 
   const EVENT_PER_PAGE = 5;
 
@@ -345,6 +363,7 @@ export default function ReportsPage() {
   const openEventDetail = (eventId: number) => {
     setSelectedEventId(eventId);
     setShowAllDomiciles(false);
+    setShowAllCohorts(false);
     setIsEventModalOpen(true);
   };
   const handleAttendanceSort = (column: AttendanceSortColumn) => {
@@ -471,22 +490,22 @@ export default function ReportsPage() {
       </section>
 
       {/* ── Semua Event Table ── */}
-      <section className="bg-white rounded-2xl p-5 shadow-sm shadow-gray-200/70 border border-gray-100">
+      <section className="bg-white rounded-2xl p-5 shadow-md shadow-[#0D5C3A]/5 border border-[#0D5C3A]/10">
         <div className="flex items-center gap-3 mb-4">
           <Icon3D variant="teal" size="md">
             <ClipboardList size={20} strokeWidth={2.5} />
           </Icon3D>
           <div>
-            <h2 className="text-base font-bold text-gray-800 mb-1">
+            <h2 className="text-base font-bold text-[#0D5C3A] mb-1">
               Semua Event
             </h2>
-            <p className="text-gray-500 text-xs">
+            <p className="text-[#0D5C3A]/60 text-xs">
               Klik salah satu event untuk melihat detail kehadiran.
             </p>
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-gray-100">
+        <div className="overflow-hidden rounded-xl border border-[#0D5C3A]/10">
           <div className="w-full max-w-full overflow-x-auto">
             <table className="w-full min-w-[900px] table-fixed text-xs">
               <colgroup>
@@ -496,21 +515,21 @@ export default function ReportsPage() {
                 <col className="w-[25%]" />
                 <col className="w-[15%]" />
               </colgroup>
-              <thead>
-                <tr className="bg-[#7AB2B2]/10">
-                  <th className="p-3 text-center font-semibold text-[#236175] rounded-l-xl">
+              <thead className="bg-gradient-to-r from-[#E8F5E9] to-white">
+                <tr>
+                  <th className="p-3 text-center font-semibold text-[#0D5C3A] rounded-l-xl">
                     Event
                   </th>
-                  <th className="p-3 text-center font-semibold text-[#236175]">
+                  <th className="p-3 text-center font-semibold text-[#0D5C3A]">
                     Tanggal
                   </th>
-                  <th className="p-3 text-center font-semibold text-[#236175]">
+                  <th className="p-3 text-center font-semibold text-[#0D5C3A]">
                     Hadir
                   </th>
-                  <th className="p-3 text-center font-semibold text-[#236175]">
+                  <th className="p-3 text-center font-semibold text-[#0D5C3A]">
                     Tingkat Kehadiran
                   </th>
-                  <th className="p-3 text-center font-semibold text-[#236175] rounded-r-xl">
+                  <th className="p-3 text-center font-semibold text-[#0D5C3A] rounded-r-xl">
                     Status
                   </th>
                 </tr>
@@ -540,7 +559,7 @@ export default function ReportsPage() {
                       <tr
                         key={e.id}
                         onClick={() => openEventDetail(e.id)}
-                        className="cursor-pointer border-b border-gray-100 transition-colors odd:bg-white even:bg-blue-50 hover:bg-blue-100"
+                        className="cursor-pointer border-b border-[#0D5C3A]/5 transition-colors hover:bg-[#E8F5E9]/35"
                       >
                         <td className="p-3 font-medium text-gray-800">
                           <div className="flex min-w-0 items-center gap-3">
@@ -730,9 +749,15 @@ export default function ReportsPage() {
                   <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
                     <section className="h-[252px] overflow-hidden rounded-xl border border-[#0D5C3A]/10 bg-[#0D5C3A]/[0.03] p-4">
                       <h3 className="text-sm font-bold text-[#0D5C3A]">
-                        Kehadiran berdasarkan Angkatan
+                        Kehadiran berdasarkan Tahun Kelulusan
                       </h3>
-                      <AngkatanBreakdownChart items={attendanceByAngkatan} />
+                      <AngkatanBreakdownChart
+                        items={attendanceByAngkatan}
+                        expanded={showAllCohorts}
+                        onToggle={() =>
+                          setShowAllCohorts((previous) => !previous)
+                        }
+                      />
                     </section>
 
                     <section className="h-[252px] overflow-hidden rounded-xl border border-[#2D7EA0]/10 bg-[#2D7EA0]/[0.03] p-4">
@@ -749,11 +774,11 @@ export default function ReportsPage() {
                     </section>
                   </div>
 
-                  <div className="overflow-hidden rounded-xl border border-gray-100">
-                <div className="w-full overflow-x-auto">
-                  <table className="w-full min-w-[1180px] text-xs">
-                    <thead>
-                      <tr className="bg-[#0D5C3A]/10">
+                  <div className="overflow-hidden rounded-xl border border-[#0D5C3A]/10">
+                    <div className="w-full overflow-x-auto">
+                      <table className="w-full min-w-[1180px] text-xs">
+                        <thead className="bg-gradient-to-r from-[#E8F5E9] to-white border-b border-[#0D5C3A]/10">
+                          <tr>
                         <th className="p-3 text-center font-semibold text-[#0D5C3A] rounded-l-xl">
                           Nama
                         </th>
@@ -768,9 +793,9 @@ export default function ReportsPage() {
                             type="button"
                             onClick={() => handleAttendanceSort("angkatan")}
                             className="inline-flex w-full cursor-pointer items-center justify-center gap-1 px-3 py-3 transition hover:bg-[#0D5C3A]/5"
-                            title="Urutkan berdasarkan angkatan"
+                            title="Urutkan berdasarkan Tahun Kelulusan"
                           >
-                            Angkatan
+                            Tahun Kelulusan
                             <span className="text-[11px] text-[#2D7EA0]">
                               {getAttendanceSortIndicator("angkatan")}
                             </span>

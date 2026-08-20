@@ -688,7 +688,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
 
         <div className="border-t border-slate-100 pt-4 mt-2">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">
-            Domisili Saat Ini (Opsional)
+            Domisili Saat Ini (Wajib)
           </h3>
           <DomicileFormFields
             values={form}
@@ -772,20 +772,27 @@ function getRegisterErrors(form: RegisterPayload): RegisterErrors {
     errors.password_confirmation = "Konfirmasi kata sandi tidak sama.";
   }
 
-  // Domicile validation
-  if (form.domicile_city_code && !form.domicile_province_code) {
+  // Domicile validation (Wajib)
+  if (!form.domicile_province_code) {
     errors.domicile_province_code = "Provinsi wajib dipilih.";
   }
-  if (form.domicile_district_code && !form.domicile_city_code) {
+  if (!form.domicile_city_code) {
     errors.domicile_city_code = "Kabupaten/kota wajib dipilih.";
   }
-  if (form.domicile_village_code && !form.domicile_district_code) {
+  if (!form.domicile_district_code) {
     errors.domicile_district_code = "Kecamatan wajib dipilih.";
   }
-  if (form.domicile_postal_code && form.domicile_postal_code.length > 10) {
+  if (!form.domicile_village_code) {
+    errors.domicile_village_code = "Kelurahan/desa wajib dipilih.";
+  }
+  if (!form.domicile_postal_code?.trim()) {
+    errors.domicile_postal_code = "Kode pos wajib diisi.";
+  } else if (form.domicile_postal_code.length > 10) {
     errors.domicile_postal_code = "Kode pos maksimal 10 karakter.";
   }
-  if (form.domicile_address && form.domicile_address.length > 1000) {
+  if (!form.domicile_address?.trim()) {
+    errors.domicile_address = "Alamat wajib diisi.";
+  } else if (form.domicile_address.length > 1000) {
     errors.domicile_address = "Alamat maksimal 1000 karakter.";
   }
 

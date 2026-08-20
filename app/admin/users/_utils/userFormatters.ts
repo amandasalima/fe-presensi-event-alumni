@@ -72,12 +72,27 @@ function escapeExcelValue(value: unknown) {
 		.replace(/"/g, "&quot;");
 }
 
+export function formatDomicile(
+	cityName?: string | null,
+	provinceName?: string | null,
+	fallback = "-",
+) {
+	if (!cityName || cityName === "Tidak diketahui") return fallback;
+	return provinceName ? `${cityName}, ${provinceName}` : cityName;
+}
+
 function getExportRows(users: User[]) {
 	return users.map((user, index) => ({
 		no: index + 1,
 		name: user.name,
 		email: user.email,
 		phone: getUserPhone(user) || "-",
+		graduationYear: user.graduation_year ?? "-",
+		domicile: formatDomicile(
+			user.domicile?.city?.name,
+			user.domicile?.province?.name,
+			"-",
+		),
 		role: formatLabel(user.role),
 		status: getStatusLabel(user.status),
 		createdAt: formatDate(user.created_at),
@@ -100,9 +115,11 @@ export function exportUsersToExcel(users: User[]) {
 			<td>${escapeExcelValue(user.name)}</td>
 			<td>${escapeExcelValue(user.email)}</td>
 			<td>${escapeExcelValue(user.phone)}</td>
-			<td>${escapeExcelValue(user.role)}</td>
+			<td class="center">${escapeExcelValue(user.graduationYear)}</td>
+			<td>${escapeExcelValue(user.domicile)}</td>
+			<td class="center">${escapeExcelValue(user.role)}</td>
 			<td>${escapeExcelValue(user.status)}</td>
-			<td>${escapeExcelValue(user.createdAt)}</td>
+			<td class="center">${escapeExcelValue(user.createdAt)}</td>
 		</tr>
 	`,
 	);
@@ -112,17 +129,17 @@ export function exportUsersToExcel(users: User[]) {
 				<meta charset="UTF-8" />
 				<style>
 					body { font-family: Arial, sans-serif; color: #1f2937; }
-					.report-title { font-size: 20px; font-weight: 700; color: #236175; }
-					.report-meta { color: #6b7280; margin: 4px 0 16px; }
+					.report-title { font-size: 20px; font-weight: 700; color: #0D5C3A; }
+					.report-meta { color: #4b5563; margin: 4px 0 16px; }
 					table { border-collapse: collapse; width: 100%; }
 					th {
-						background: #2D7EA0;
+						background: #0D5C3A;
 						color: #ffffff;
 						font-weight: 700;
 						padding: 10px;
-						border: 1px solid #1f6a84;
+						border: 1px solid #0a4d30;
 					}
-					td { padding: 9px; border: 1px solid #d1d5db; vertical-align: top; }
+					td { padding: 9px; border: 1px solid #e2e8f0; vertical-align: top; }
 					tr:nth-child(even) td { background: #f8fafc; }
 					.center { text-align: center; }
 				</style>
@@ -137,6 +154,8 @@ export function exportUsersToExcel(users: User[]) {
 							<th>Nama</th>
 							<th>Email</th>
 							<th>Nomor Telepon</th>
+							<th>Tahun Kelulusan</th>
+							<th>Domisili</th>
 							<th>Peran</th>
 							<th>Status</th>
 							<th>Tanggal Dibuat</th>
@@ -160,7 +179,7 @@ export function exportUsersToExcel(users: User[]) {
 	URL.revokeObjectURL(url);
 }
 
-export function exportUsersToPdf(users: User[]) {
+export function exportUsersToPdf(users: User[], preparedWindow?: Window | null) {
 	const rows = getExportRows(users).map(
 		(user) => `
 		<tr>
@@ -168,13 +187,20 @@ export function exportUsersToPdf(users: User[]) {
 			<td>${escapeExcelValue(user.name)}</td>
 			<td>${escapeExcelValue(user.email)}</td>
 			<td>${escapeExcelValue(user.phone)}</td>
-			<td>${escapeExcelValue(user.role)}</td>
-			<td>${escapeExcelValue(user.status)}</td>
-			<td>${escapeExcelValue(user.createdAt)}</td>
+			<td class="center">${escapeExcelValue(user.graduationYear)}</td>
+			<td>${escapeExcelValue(user.domicile)}</td>
+			<td class="center">${escapeExcelValue(user.role)}</td>
+			<td class="center">
+				<span class="status-badge status-${String(user.status).toLowerCase().replace(/\s+/g, "")}">
+					${escapeExcelValue(user.status)}
+				</span>
+			</td>
+			<td class="center">${escapeExcelValue(user.createdAt)}</td>
 		</tr>
 	`,
 	);
-	const printWindow = window.open("", "_blank", "width=1120,height=800");
+	const printWindow =
+		preparedWindow ?? window.open("", "_blank", "width=1120,height=800");
 
 	if (!printWindow) return false;
 
@@ -185,7 +211,7 @@ export function exportUsersToPdf(users: User[]) {
 				<meta charset="UTF-8" />
 				<title>Data Pengguna Alumni</title>
 				<style>
-					@page { size: A4 landscape; margin: 14mm; }
+					@page { size: A4 landscape; margin: 12mm; }
 					* { box-sizing: border-box; }
 					body { font-family: Arial, sans-serif; color: #111827; margin: 0; }
 					.header {
@@ -194,31 +220,58 @@ export function exportUsersToPdf(users: User[]) {
 						align-items: flex-start;
 						gap: 20px;
 						padding-bottom: 14px;
-						border-bottom: 3px solid #7AB2B2;
+						border-bottom: 3px solid #D4AF37;
 						margin-bottom: 16px;
 					}
-					h1 { color: #236175; font-size: 22px; margin: 0 0 6px; }
-					.meta { color: #6b7280; font-size: 12px; line-height: 1.6; }
+					h1 { color: #0D5C3A; font-size: 22px; margin: 0 0 6px; }
+					.meta { color: #4b5563; font-size: 12px; line-height: 1.6; }
 					.badge {
-						background: #e8f6f5;
-						color: #236175;
-						border: 1px solid #b8dada;
-						border-radius: 999px;
+						background: #e8f5e9;
+						color: #0D5C3A;
+						border: 1px solid #c8e6c9;
+						border-radius: 8px;
 						font-weight: 700;
 						padding: 8px 12px;
 						white-space: nowrap;
 					}
-					table { width: 100%; border-collapse: collapse; font-size: 11px; }
+					table { width: 100%; border-collapse: collapse; font-size: 10px; }
 					th {
-						background: #2D7EA0;
+						background: #0D5C3A;
 						color: white;
 						text-align: left;
 						padding: 9px;
-						border: 1px solid #236175;
+						border: 1px solid #0a4d30;
 					}
-					td { padding: 8px 9px; border: 1px solid #d1d5db; vertical-align: top; }
+					td { padding: 8px 9px; border: 1px solid #e2e8f0; vertical-align: top; }
 					tr:nth-child(even) td { background: #f8fafc; }
 					.center { text-align: center; }
+					.status-badge {
+						display: inline-block;
+						padding: 2px 6px;
+						border-radius: 4px;
+						font-weight: 600;
+						font-size: 9px;
+					}
+					.status-aktif {
+						background: #e8f5e9;
+						color: #2e7d32;
+						border: 1px solid #c8e6c9;
+					}
+					.status-menunggupersetujuan {
+						background: #fff8e1;
+						color: #f57f17;
+						border: 1px solid #ffe082;
+					}
+					.status-nonaktif {
+						background: #f5f5f5;
+						color: #616161;
+						border: 1px solid #e0e0e0;
+					}
+					.status-ditolak {
+						background: #ffebee;
+						color: #c62828;
+						border: 1px solid #ffcdd2;
+					}
 				</style>
 			</head>
 			<body>
@@ -236,6 +289,8 @@ export function exportUsersToPdf(users: User[]) {
 							<th>Nama</th>
 							<th>Email</th>
 							<th>Nomor Telepon</th>
+							<th>Tahun Kelulusan</th>
+							<th>Domisili</th>
 							<th>Peran</th>
 							<th>Status</th>
 							<th>Tanggal Dibuat</th>

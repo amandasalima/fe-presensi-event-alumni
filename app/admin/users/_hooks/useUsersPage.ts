@@ -11,6 +11,7 @@ import {
   useUpdateUser,
   useUpdateUserStatus,
   useUsers,
+  getUsers,
 } from "@/hooks/admin/users";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getApiErrorMessage } from "@/lib/api";
@@ -516,8 +517,8 @@ export function useUsersPage() {
     });
   };
 
-  const handleExport = (format: "excel" | "pdf") => {
-    if (paginatedUsers.length === 0) {
+  const handleExport = async (format: "excel" | "pdf") => {
+    if (totalFilteredUsers === 0) {
       showFeedback({
         type: "error",
         message: "Tidak ada data pengguna untuk diekspor",
@@ -525,22 +526,50 @@ export function useUsersPage() {
       return;
     }
 
-    if (format === "pdf") {
-      const opened = exportUsersToPdf(paginatedUsers);
+    const preparedPdfWindow =
+      format === "pdf"
+        ? window.open("", "_blank", "width=1120,height=800")
+        : null;
+
+    if (format === "pdf" && !preparedPdfWindow) {
       showFeedback({
-        type: opened ? "success" : "error",
-        message: opened
-          ? "Data pengguna siap dicetak atau disimpan sebagai PDF"
-          : "Popup PDF diblokir browser. Izinkan popup lalu coba lagi",
+        type: "error",
+        message: "Popup PDF diblokir browser. Izinkan popup lalu coba lagi",
       });
       return;
     }
 
-    exportUsersToExcel(paginatedUsers);
-    showFeedback({
-      type: "success",
-      message: "Data pengguna berhasil diekspor ke Excel",
-    });
+    try {
+      const allParams = {
+        ...queryParams,
+        page: 1,
+        per_page: Math.max(10, totalFilteredUsers),
+      };
+      const result = await getUsers(allParams);
+      const allUsers = result.users;
+
+      if (format === "pdf") {
+        const opened = exportUsersToPdf(allUsers, preparedPdfWindow);
+        showFeedback({
+          type: opened ? "success" : "error",
+          message: opened
+            ? "Data pengguna siap dicetak atau disimpan sebagai PDF"
+            : "Popup PDF diblokir browser. Izinkan popup lalu coba lagi",
+        });
+      } else {
+        exportUsersToExcel(allUsers);
+        showFeedback({
+          type: "success",
+          message: "Data pengguna berhasil diekspor ke Excel",
+        });
+      }
+    } catch (err) {
+      preparedPdfWindow?.close();
+      showFeedback({
+        type: "error",
+        message: getApiErrorMessage(err, "Gagal menyiapkan data pengguna untuk diekspor"),
+      });
+    }
   };
 
   return {

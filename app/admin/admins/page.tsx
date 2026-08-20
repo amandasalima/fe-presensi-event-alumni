@@ -557,34 +557,34 @@ export default function AdminManagementPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[#0D5C3A]/10 border-b border-[#0D5C3A]/10">
+            <div className="overflow-x-auto rounded-xl border border-[#0D5C3A]/10">
+              <table className="w-full overflow-hidden rounded-xl">
+                <thead className="bg-gradient-to-r from-[#E8F5E9] to-white">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[11px] font-semibold text-[#0D5C3A]">
                       Nama
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[11px] font-semibold text-[#0D5C3A]">
                       Email
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[11px] font-semibold text-[#0D5C3A]">
                       Nomor Telepon
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Level
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Dibuat
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-[#0D5C3A] uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-[11px] font-semibold text-[#0D5C3A]">
                       Aksi
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-150">
+                <tbody>
                   {isLoading ? (
                     <TableSkeleton />
                   ) : admins.length === 0 ? (
@@ -599,15 +599,19 @@ export default function AdminManagementPage() {
                       </td>
                     </tr>
                   ) : (
-                    admins.map((admin) => {
+                    admins.map((admin, index) => {
                       const isSelf = admin.id === currentUser?.id;
                       const fullName =
                         `${admin.first_name} ${admin.last_name || ""}`.trim();
                       return (
                         <tr
                           key={admin.id}
-                          className={`hover:bg-gray-50 transition-colors ${
-                            isSelf ? "bg-cyan-50/50" : ""
+                          className={`transition-colors border-b border-[#0D5C3A]/10 ${
+                            isSelf
+                              ? "bg-cyan-50/50 hover:bg-cyan-50"
+                              : index % 2 === 0
+                                ? "bg-white hover:bg-[#E8F5E9]/50"
+                                : "bg-[#E8F5E9]/25 hover:bg-[#E8F5E9]/60"
                           }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">

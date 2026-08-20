@@ -322,7 +322,7 @@ function EditUserModal({
             </div>
             <div>
               <label className="text-xs font-medium text-gray-600 mb-1 block">
-                Tahun Lulus / Angkatan
+                Tahun Kelulusan
               </label>
               <FormInput
                 value={form.graduation_year}
@@ -834,7 +834,7 @@ export default function UsersPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {(["excel", "pdf"] as const).map((format) => (
+            {([ "pdf","excel"] as const).map((format) => (
               <button
                 key={format}
                 onClick={() => handleExport(format)}

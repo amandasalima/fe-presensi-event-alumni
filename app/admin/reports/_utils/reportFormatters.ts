@@ -166,7 +166,7 @@ function getAttendanceRows(attendances: Attendance[]) {
 		name: attendance.user?.name ?? `User #${attendance.user_id}`,
 		email: attendance.user?.email ?? "-",
 		phone: attendance.user?.phone ?? "-",
-		angkatan: attendance.user?.angkatan ?? "-",
+		angkatan: attendance.user?.angkatan ?? attendance.user?.graduation_year ?? "-",
 		domicile: formatDomicile(
 			attendance.user?.domicile?.city?.name,
 			attendance.user?.domicile?.province?.name,
@@ -200,10 +200,10 @@ export function exportAttendancesToExcel(
 			<td>${escapeExportValue(row.name)}</td>
 			<td>${escapeExportValue(row.email)}</td>
 			<td>${escapeExportValue(row.phone)}</td>
-			<td>${escapeExportValue(row.angkatan)}</td>
+			<td class="center">${escapeExportValue(row.angkatan)}</td>
 			<td>${escapeExportValue(row.domicile)}</td>
-			<td>${escapeExportValue(row.registeredAt)}</td>
-			<td>${escapeExportValue(row.scannedAt)}</td>
+			<td class="center">${escapeExportValue(row.registeredAt)}</td>
+			<td class="center">${escapeExportValue(row.scannedAt)}</td>
 			<td>${escapeExportValue(row.status)}</td>
 		</tr>
 	`,
@@ -214,27 +214,28 @@ export function exportAttendancesToExcel(
 				<meta charset="UTF-8" />
 				<style>
 					body { font-family: Arial, sans-serif; color: #1f2937; }
-					.report-title { font-size: 20px; font-weight: 700; color: #236175; }
-					.report-meta { color: #6b7280; margin: 4px 0 14px; line-height: 1.5; }
+					.report-title { font-size: 20px; font-weight: 700; color: #0D5C3A; }
+					.report-meta { color: #4b5563; margin: 4px 0 14px; line-height: 1.5; }
 					.summary { margin-bottom: 14px; }
 					.summary span {
 						display: inline-block;
-						background: #e8f6f5;
-						border: 1px solid #b8dada;
-						color: #236175;
+						background: #e8f5e9;
+						border: 1px solid #c8e6c9;
+						color: #0D5C3A;
 						font-weight: 700;
 						padding: 7px 10px;
 						margin-right: 6px;
+						border-radius: 4px;
 					}
 					table { border-collapse: collapse; width: 100%; }
 					th {
-						background: #2D7EA0;
+						background: #0D5C3A;
 						color: #ffffff;
 						font-weight: 700;
 						padding: 10px;
-						border: 1px solid #1f6a84;
+						border: 1px solid #0a4d30;
 					}
-					td { padding: 9px; border: 1px solid #d1d5db; vertical-align: top; }
+					td { padding: 9px; border: 1px solid #e2e8f0; vertical-align: top; }
 					tr:nth-child(even) td { background: #f8fafc; }
 					.center { text-align: center; }
 				</style>
@@ -257,7 +258,7 @@ export function exportAttendancesToExcel(
 							<th>Nama</th>
 							<th>Email</th>
 							<th>No HP</th>
-							<th>Angkatan</th>
+							<th>Tahun Kelulusan</th>
 							<th>Domisili</th>
 							<th>Jam Daftar</th>
 							<th>Jam Hadir / Scan QR</th>
@@ -296,11 +297,15 @@ export function exportAttendancesToPdf(
 			<td>${escapeExportValue(row.name)}</td>
 			<td>${escapeExportValue(row.email)}</td>
 			<td>${escapeExportValue(row.phone)}</td>
-			<td>${escapeExportValue(row.angkatan)}</td>
+			<td class="center">${escapeExportValue(row.angkatan)}</td>
 			<td>${escapeExportValue(row.domicile)}</td>
-			<td>${escapeExportValue(row.registeredAt)}</td>
-			<td>${escapeExportValue(row.scannedAt)}</td>
-			<td>${escapeExportValue(row.status)}</td>
+			<td class="center">${escapeExportValue(row.registeredAt)}</td>
+			<td class="center">${escapeExportValue(row.scannedAt)}</td>
+			<td class="center">
+				<span class="status-badge status-${String(row.status).toLowerCase().replace(/\s+/g, "")}">
+					${escapeExportValue(row.status)}
+				</span>
+			</td>
 		</tr>
 	`,
 	);
@@ -316,7 +321,7 @@ export function exportAttendancesToPdf(
 				<meta charset="UTF-8" />
 				<title>${escapeExportValue(info.title)}</title>
 				<style>
-					@page { size: A4 landscape; margin: 14mm; }
+					@page { size: A4 landscape; margin: 12mm; }
 					* { box-sizing: border-box; }
 					body { font-family: Arial, sans-serif; color: #111827; margin: 0; }
 					.header {
@@ -324,16 +329,16 @@ export function exportAttendancesToPdf(
 						justify-content: space-between;
 						gap: 20px;
 						padding-bottom: 14px;
-						border-bottom: 3px solid #7AB2B2;
+						border-bottom: 3px solid #D4AF37;
 						margin-bottom: 14px;
 					}
-					h1 { color: #236175; font-size: 21px; margin: 0 0 7px; }
-					.meta { color: #6b7280; font-size: 12px; line-height: 1.6; }
+					h1 { color: #0D5C3A; font-size: 21px; margin: 0 0 7px; }
+					.meta { color: #4b5563; font-size: 12px; line-height: 1.6; }
 					.summary { display: flex; gap: 8px; margin-bottom: 14px; }
 					.summary div {
-						background: #e8f6f5;
-						border: 1px solid #b8dada;
-						color: #236175;
+						background: #e8f5e9;
+						border: 1px solid #c8e6c9;
+						color: #0D5C3A;
 						border-radius: 8px;
 						padding: 8px 10px;
 						font-size: 12px;
@@ -341,15 +346,37 @@ export function exportAttendancesToPdf(
 					}
 					table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
 					th {
-						background: #2D7EA0;
+						background: #0D5C3A;
 						color: white;
 						text-align: left;
 						padding: 6px;
-						border: 1px solid #236175;
+						border: 1px solid #0a4d30;
 					}
-					td { padding: 6px; border: 1px solid #d1d5db; vertical-align: top; }
+					td { padding: 6px; border: 1px solid #e2e8f0; vertical-align: top; }
 					tr:nth-child(even) td { background: #f8fafc; }
 					.center { text-align: center; }
+					.status-badge {
+						display: inline-block;
+						padding: 2px 6px;
+						border-radius: 4px;
+						font-weight: 600;
+						font-size: 9px;
+					}
+					.status-hadir {
+						background: #e8f5e9;
+						color: #2e7d32;
+						border: 1px solid #c8e6c9;
+					}
+					.status-registered {
+						background: #e3f2fd;
+						color: #1565c0;
+						border: 1px solid #90caf9;
+					}
+					.status-tidakhadir, .status-absent {
+						background: #ffebee;
+						color: #c62828;
+						border: 1px solid #ffcdd2;
+					}
 				</style>
 			</head>
 			<body>
@@ -375,7 +402,7 @@ export function exportAttendancesToPdf(
 							<th>Nama</th>
 							<th>Email</th>
 							<th>No HP</th>
-							<th>Angkatan</th>
+							<th>Tahun Kelulusan</th>
 							<th>Domisili</th>
 							<th>Jam Daftar</th>
 							<th>Jam Hadir / Scan QR</th>

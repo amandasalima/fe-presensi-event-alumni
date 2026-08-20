@@ -29,21 +29,13 @@ const rankColors = {
   "Al-Muqorrobun": "#D4AF37", // Emas
   "Al-Mutawasithun": "#C0C0C0", // Perak
   "Al-Mubtadi'un": "#CD7F32", // Perunggu
-  "Ghoir Mukayyad": "rgba(255,255,255,0.5)", // Putih transparan
+  "Ghoiru Muqayyad": "rgba(255,255,255,0.5)", // Putih transparan
 };
-
-const levelLabels = {
-  "Al-Muqorrobun": "Level Utama",
-  "Al-Mutawasithun": "Level Menengah",
-  "Al-Mubtadi'un": "Level Awal",
-  "Ghoir Mukayyad": "Level Mulai",
-};
-
 const rankIcons = {
   "Al-Muqorrobun": Flame,
   "Al-Mutawasithun": Zap,
   "Al-Mubtadi'un": Star,
-  "Ghoir Mukayyad": Sparkles,
+  "Ghoiru Muqayyad": Sparkles,
 };
 
 function SkeletonLine({ className }: { className: string }) {
@@ -111,14 +103,15 @@ export default function EngagementProgressCard({
   const color = toneColors[config.tone];
   const ringColor =
     rankColors[config.label as keyof typeof rankColors] ??
-    rankColors["Ghoir Mukayyad"];
+    rankColors["Ghoiru Muqayyad"];
   const recentAttendances = engagement.recent_attendances ?? [];
   const hasEligibleEvents = totalEvents > 0;
 
+  const nextSegmentConfig = engagement.next_segment ? getEngagementSegmentConfig(engagement.next_segment) : null;
   const nextHint = !hasEligibleEvents
     ? "Engagement akan muncul setelah ada event yang selesai."
-    : engagement.next_segment
-      ? `Butuh ${engagement.remaining_attendances_to_next_segment} kehadiran lagi untuk naik ke ${engagement.next_segment}.`
+    : nextSegmentConfig
+      ? `Butuh ${engagement.remaining_attendances_to_next_segment} kehadiran lagi untuk naik ke ${nextSegmentConfig.arabicLabel} (${nextSegmentConfig.label}).`
       : "Kamu sudah berada di segment tertinggi. Pertahankan konsistensimu.";
 
   return (
@@ -140,8 +133,9 @@ export default function EngagementProgressCard({
             <p className="text-xs font-semibold uppercase tracking-wide text-[#E8F5E9]/60">
               Peringkat Anda Saat Ini
             </p>
-            <h2 className="mt-1 text-lg font-bold leading-tight text-[#E8F5E9]">
-              {config.label}
+            <h2 className="mt-1 flex items-baseline gap-2 leading-none text-[#E8F5E9]">
+              <span className="text-2xl font-bold">{config.arabicLabel}</span>
+              <span className="text-xs font-medium text-[#D4AF37]">({config.label})</span>
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-white/75">
               {config.competitiveCopy}
@@ -220,11 +214,12 @@ export default function EngagementProgressCard({
             ["Utama", "Al-Muqorrobun"],
             ["Menengah", "Al-Mutawasithun"],
             ["Awal", "Al-Mubtadi'un"],
-            ["Mulai", "Ghoir Mukayyad"],
+            ["Mulai", "Ghoiru Muqayyad"],
           ].map(([rank, segmentName]) => {
             const isCurrent = segmentName === config.label;
             const RankIcon =
               rankIcons[segmentName as keyof typeof rankIcons] ?? Award;
+            const segmentConfig = getEngagementSegmentConfig(segmentName);
 
             return (
               <div
@@ -255,16 +250,17 @@ export default function EngagementProgressCard({
                   />
                 )}
                 <p
-                  className={`mt-1 text-[10px] font-bold ${isCurrent ? "text-[#0D5C3A]" : "text-gray-700"}`}
+                  className={`mt-1 text-[11px] font-bold leading-tight ${isCurrent ? "text-[#0D5C3A]" : "text-gray-800"}`}
                 >
-                  {rank}
+                  {segmentConfig.arabicLabel}
                 </p>
                 <p
-                  className={`mt-0.5 truncate text-[9px] font-semibold ${
-                    isCurrent ? "text-[#0D5C3A]" : "text-gray-300"
+                  className={`mt-0.5 truncate text-[8px] font-semibold ${
+                    isCurrent ? "text-[#0D5C3A]/70" : "text-gray-400"
                   }`}
+                  title={segmentConfig.label}
                 >
-                  {levelLabels[segmentName as keyof typeof levelLabels]}
+                  {segmentConfig.label}
                 </p>
               </div>
             );

@@ -197,13 +197,10 @@ const AdminLogin = () => {
               <div className="relative px-6 py-4">
                 <div className="text-center">
                   <h1 className="text-2xl font-bold text-[#D4AF37] tracking-wide">
-                    Pondok Pesantren Al-Qur&apos;an
+                    Pondok Pesantren Al-Qur&apos;an Al-Falah
                   </h1>
-                  <h2 className="text-xl font-bold text-white tracking-wide">
-                    Al-Falah
-                  </h2>
                   <p className="text-[#E8F5E9]/90 text-xs font-medium uppercase tracking-widest mt-1">
-                    Nagreg - Bandung
+                    Cicalengka - Nagreg, Bandung
                   </p>
                   <div className="mt-2 pt-2 border-t border-[#D4AF37]/30">
                     <p className="text-[#D4AF37] text-xs font-semibold uppercase tracking-wider">

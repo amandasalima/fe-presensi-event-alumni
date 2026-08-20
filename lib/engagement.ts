@@ -2,7 +2,7 @@ export const ENGAGEMENT_SEGMENTS = [
 	"Al-Muqorrobun",
 	"Al-Mutawasithun",
 	"Al-Mubtadi'un",
-	"Ghoir Mukayyad",
+	"Ghoiru Muqayyad",
 ] as const;
 
 export type EngagementSegment = (typeof ENGAGEMENT_SEGMENTS)[number];
@@ -12,6 +12,7 @@ export const engagementSegments: Record<
 	EngagementSegment,
 	{
 		label: EngagementSegment;
+		arabicLabel: string;
 		range: string;
 		tone: EngagementTone;
 		description: string;
@@ -21,6 +22,7 @@ export const engagementSegments: Record<
 > = {
 	"Al-Muqorrobun": {
 		label: "Al-Muqorrobun",
+		arabicLabel: "المقربون",
 		range: ">= 70%",
 		tone: "success",
 		description: "Kehadiran sangat aktif",
@@ -29,6 +31,7 @@ export const engagementSegments: Record<
 	},
 	"Al-Mutawasithun": {
 		label: "Al-Mutawasithun",
+		arabicLabel: "المتوسطون",
 		range: "40% - < 70%",
 		tone: "warning",
 		description: "Kehadiran cukup aktif",
@@ -37,14 +40,16 @@ export const engagementSegments: Record<
 	},
 	"Al-Mubtadi'un": {
 		label: "Al-Mubtadi'un",
+		arabicLabel: "المبتدئون",
 		range: "> 0% - < 40%",
 		tone: "info",
 		description: "Mulai aktif mengikuti kegiatan",
 		motivation: "Kamu sudah mulai hadir di kegiatan alumni. Terus tingkatkan partisipasimu.",
 		competitiveCopy: "Langkah awalmu sudah tercatat. Naikkan skor hadir dan dorong progresmu ke level berikutnya.",
 	},
-	"Ghoir Mukayyad": {
-		label: "Ghoir Mukayyad",
+	"Ghoiru Muqayyad": {
+		label: "Ghoiru Muqayyad",
+		arabicLabel: "غير مقيد",
 		range: "0%",
 		tone: "neutral",
 		description: "Belum tercatat hadir",
@@ -60,7 +65,7 @@ export function isEngagementSegment(value?: string | null): value is EngagementS
 export function getEngagementSegmentConfig(segment?: string | null) {
 	return isEngagementSegment(segment)
 		? engagementSegments[segment]
-		: engagementSegments["Ghoir Mukayyad"];
+		: engagementSegments["Ghoiru Muqayyad"];
 }
 
 export function clampEngagementPercentage(value?: number | null) {

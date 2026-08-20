@@ -1103,7 +1103,7 @@ function EventFormModal({
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                placeholder="Contoh: Reuni alumni angkatan 2010-2015"
+                placeholder="Contoh: Reuni alumni kelulusan 2010-2015"
                 rows={2}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] resize-none"
               />
@@ -1720,7 +1720,7 @@ function EventRegistrationsModal({
                     "Nama",
                     "Email",
                     "No HP",
-                    "Angkatan",
+                    "Tahun Kelulusan",
                     "Status pendaftaran / kehadiran",
                     "Jam daftar",
                     "Waktu pemindaian QR",
@@ -2611,31 +2611,65 @@ export default function KelolEventPage() {
   return (
     <AdminLayout title="Kelola Event">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-        <StatCard
-          label="Total Event"
-          value={isLoading ? "..." : events.length}
-          sub="Semua event"
-        />
+        <div className="bg-white rounded-2xl border border-[#0D5C3A]/10 shadow-md shadow-[#0D5C3A]/5 p-5 hover:shadow-lg hover:shadow-[#0D5C3A]/10 transition-all duration-300 hover:-translate-y-1">
+          <p className="text-[#0D5C3A]/70 text-xs font-semibold uppercase tracking-wide">
+            Total Event
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <Icon3D variant="teal" size="md">
+              <CalendarDays size={20} strokeWidth={2.5} />
+            </Icon3D>
+            <h2 className="text-3xl font-bold text-[#0D5C3A]">
+              {isLoading ? "..." : events.length}
+            </h2>
+          </div>
+          <p className="text-[#0D5C3A]/50 text-xs mt-2">Semua event</p>
+        </div>
 
-        <StatCard
-          label="Event Mendatang"
-          value={isLoading ? "..." : upcoming.length}
-          sub="Event aktif"
-          accent="border-[#7AB2B2]"
-        />
+        <div className="bg-white rounded-2xl border border-[#0D5C3A]/10 shadow-md shadow-[#0D5C3A]/5 p-5 hover:shadow-lg hover:shadow-[#0D5C3A]/10 transition-all duration-300 hover:-translate-y-1">
+          <p className="text-[#0D5C3A]/70 text-xs font-semibold uppercase tracking-wide">
+            Event Mendatang
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <Icon3D variant="blue" size="md">
+              <CalendarDays size={20} strokeWidth={2.5} />
+            </Icon3D>
+            <h2 className="text-3xl font-bold text-[#0D5C3A]">
+              {isLoading ? "..." : upcoming.length}
+            </h2>
+          </div>
+          <p className="text-[#0D5C3A]/50 text-xs mt-2">Event aktif</p>
+        </div>
 
-        <StatCard
-          label="Event Selesai"
-          value={isLoading ? "..." : done.length}
-          sub="Event selesai"
-        />
+        <div className="bg-white rounded-2xl border border-[#0D5C3A]/10 shadow-md shadow-[#0D5C3A]/5 p-5 hover:shadow-lg hover:shadow-[#0D5C3A]/10 transition-all duration-300 hover:-translate-y-1">
+          <p className="text-[#0D5C3A]/70 text-xs font-semibold uppercase tracking-wide">
+            Event Selesai
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <Icon3D variant="green" size="md">
+              <CalendarDays size={20} strokeWidth={2.5} />
+            </Icon3D>
+            <h2 className="text-3xl font-bold text-[#0D5C3A]">
+              {isLoading ? "..." : done.length}
+            </h2>
+          </div>
+          <p className="text-[#0D5C3A]/50 text-xs mt-2">Event selesai</p>
+        </div>
 
-        <StatCard
-          label="Total Peserta"
-          value={isLoading ? "..." : totalPeserta}
-          sub="Total peserta"
-          accent="border-[#D4AF37]"
-        />
+        <div className="bg-white rounded-2xl border border-[#0D5C3A]/10 shadow-md shadow-[#0D5C3A]/5 p-5 hover:shadow-lg hover:shadow-[#0D5C3A]/10 transition-all duration-300 hover:-translate-y-1">
+          <p className="text-[#0D5C3A]/70 text-xs font-semibold uppercase tracking-wide">
+            Total Peserta
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <Icon3D variant="gold" size="md">
+              <Users size={20} strokeWidth={2.5} />
+            </Icon3D>
+            <h2 className="text-3xl font-bold text-[#0D5C3A]">
+              {isLoading ? "..." : totalPeserta}
+            </h2>
+          </div>
+          <p className="text-[#0D5C3A]/50 text-xs mt-2">Total peserta</p>
+        </div>
       </div>
 
       <EventCategorySection

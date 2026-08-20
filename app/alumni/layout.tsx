@@ -32,7 +32,13 @@ export default function AlumniLayout({
   const router = useRouter();
   const pathname = usePathname();
   const isPublicPage = isPublicAlumniPage(pathname);
-  const [authorized, setAuthorized] = useState(() => isPublicPage);
+
+  // Synchronous check during render to prevent Back button cache bypass
+  const token = typeof window !== "undefined" ? getAlumniToken() : null;
+  const isSynchronouslyAuthorized = isPublicPage ? true : !!token;
+
+  const [authorized, setAuthorized] = useState(() => isSynchronouslyAuthorized);
+  const isCurrentlyAuthorized = authorized && isSynchronouslyAuthorized;
 
   useEffect(() => {
     const verifyAccess = () => {
@@ -68,7 +74,7 @@ export default function AlumniLayout({
     };
   }, [isPublicPage, pathname, router]);
 
-  if (!authorized) {
+  if (!isCurrentlyAuthorized) {
     if (isPublicPage) {
       return null;
     }

@@ -320,6 +320,7 @@ export function exportAttendancesToPdf(
 			<head>
 				<meta charset="UTF-8" />
 				<title>${escapeExportValue(info.title)}</title>
+				<link rel="icon" href="/images/logo-pesantren.png" type="image/png" />
 				<style>
 					@page { size: A4 landscape; margin: 12mm; }
 					* { box-sizing: border-box; }

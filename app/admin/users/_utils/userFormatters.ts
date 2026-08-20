@@ -210,6 +210,7 @@ export function exportUsersToPdf(users: User[], preparedWindow?: Window | null) 
 			<head>
 				<meta charset="UTF-8" />
 				<title>Data Pengguna Alumni</title>
+				<link rel="icon" href="/images/logo-pesantren.png" type="image/png" />
 				<style>
 					@page { size: A4 landscape; margin: 12mm; }
 					* { box-sizing: border-box; }

@@ -11,6 +11,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "QR Event System - Pesantren",
   description: "Sistem Presensi Event Alumni Pesantren",
+  icons: {
+    icon: "/images/logo-pesantren.png",
+  },
 };
 
 export const viewport: Viewport = {

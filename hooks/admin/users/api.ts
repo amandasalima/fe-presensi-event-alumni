@@ -86,29 +86,30 @@ export async function getUsers(params?: GetUsersParams): Promise<PaginatedUsersR
 }
 
 export function updateUser(id: number, data: UpdateUserPayload) {
-	return fetchAPI(`/users/${id}`, {
+	return fetchAPI(`/admin/users/${id}`, {
 		method: "PUT",
 		body: JSON.stringify(data),
 	});
 }
 
 export function deleteUser(id: number) {
-	return fetchAPI(`/users/${id}`, { method: "DELETE" });
+	return fetchAPI(`/admin/users/${id}`, { method: "DELETE" });
 }
 
-export function updateUserStatus(id: number, status: UserStatus) {
+export function updateUserStatus(id: number, status: UserStatus, reason?: string) {
 	return fetchAPI(`/admin/users/${id}/status`, {
 		method: "PATCH",
-		body: JSON.stringify({ status }),
+		body: JSON.stringify({ status, reason }),
 	}) as Promise<UpdateUserStatusResponse>;
 }
 
 export function bulkUpdateUserStatus(
 	userIds: number[],
 	status: BulkUserTargetStatus,
+	reason?: string,
 ) {
 	return fetchAPI("/admin/users/bulk-status", {
 		method: "PATCH",
-		body: JSON.stringify({ user_ids: userIds, status }),
+		body: JSON.stringify({ user_ids: userIds, status, reason }),
 	}) as Promise<BulkUpdateUserStatusResponse>;
 }

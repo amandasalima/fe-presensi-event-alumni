@@ -34,6 +34,8 @@ import type { UpdateUserPayload, User, UserStatus } from "@/hooks/admin/users";
 import {
   type UserSortKey,
   type UserStatusAction,
+  type BulkUserStatusAction,
+  type UserStatusTarget,
   useUsersPage,
 } from "./_hooks/useUsersPage";
 import {
@@ -99,6 +101,7 @@ type EditUserForm = {
   graduation_year: string;
   birth_date: string;
   status: UserStatus;
+  status_reason: string;
   domicile_province_code: string;
   domicile_city_code: string;
   domicile_district_code: string;
@@ -232,6 +235,7 @@ function EditUserModal({
     graduation_year: getInputValue(initial.graduation_year),
     birth_date: getDateInputValue(initial.birth_date),
     status: getKnownUserStatus(initial.status),
+    status_reason: getInputValue(initial.status_reason),
     domicile_province_code: getInputValue(initial.domicile?.province?.code),
     domicile_city_code: getInputValue(initial.domicile?.city?.code),
     domicile_district_code: getInputValue(initial.domicile?.district?.code),
@@ -349,7 +353,16 @@ function EditUserModal({
             </label>
             <FormSelect
               value={form.status}
-              onChange={(e) => set("status", e.target.value as UserStatus)}
+              onChange={(e) => {
+                const nextStatus = e.target.value as UserStatus;
+                setForm((current) => ({
+                  ...current,
+                  status: nextStatus,
+                  status_reason: ["inactive", "rejected"].includes(nextStatus)
+                    ? current.status_reason
+                    : "",
+                }));
+              }}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2] bg-white"
             >
               {STATUS_OPTIONS.map((status) => (
@@ -359,6 +372,24 @@ function EditUserModal({
               ))}
             </FormSelect>
           </div>
+          {["inactive", "rejected"].includes(form.status) && (
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1 block font-semibold text-red-700">
+                Alasan Keterangan (Wajib)
+              </label>
+              <textarea
+                value={form.status_reason}
+                onChange={(e) => set("status_reason", e.target.value)}
+                placeholder={
+                  form.status === "inactive"
+                    ? "Masukkan alasan mengapa akun dinonaktifkan..."
+                    : "Masukkan alasan mengapa pendaftaran ditolak..."
+                }
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+              />
+            </div>
+          )}
           <div className="border-t border-gray-100 pt-4 mt-2">
             <h4 className="text-sm font-semibold text-gray-700 mb-3">
               Domisili Saat Ini (Opsional)
@@ -386,8 +417,8 @@ function EditUserModal({
                 onSubmit(form);
               }
             }}
-            disabled={loading || Object.keys(validateDomicile(form)).length > 0}
-            className="flex-1 bg-[#2D7EA0] hover:bg-[#236175] disabled:bg-[#A8D5D5] text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            disabled={loading || Object.keys(validateDomicile(form)).length > 0 || (["inactive", "rejected"].includes(form.status) && !form.status_reason.trim())}
+            className="flex-1 bg-[#2D7EA0] hover:bg-[#236175] disabled:bg-[#A8D5D5] text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading && (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -726,8 +757,37 @@ export default function UsersPage() {
     setCityFilter,
     setDistrictFilter,
     setVillageFilter,
+    requestStatusUpdate: runRequestStatusUpdate,
+    confirmStatusUpdate: runConfirmStatusUpdate,
+    statusTarget,
+    cancelStatusUpdate: runCancelStatusUpdate,
+    updateUserStatus,
   } = useUsersPage();
   const [historyUser, setHistoryUser] = useState<User | null>(null);
+  const [statusReason, setStatusReason] = useState("");
+  const [bulkActionTarget, setBulkActionTarget] = useState<BulkUserStatusAction | null>(null);
+  const [bulkReason, setBulkReason] = useState("");
+
+  const handleBulkActionClick = () => {
+    if (!bulkAction) return;
+    setBulkActionTarget(bulkAction.action);
+    setBulkReason("");
+  };
+
+  const requestStatusUpdate = (target: UserStatusTarget) => {
+    setStatusReason("");
+    runRequestStatusUpdate(target);
+  };
+
+  const cancelStatusUpdate = () => {
+    setStatusReason("");
+    runCancelStatusUpdate();
+  };
+
+  const confirmStatusUpdate = (reason?: string) => {
+    setStatusReason("");
+    runConfirmStatusUpdate(reason);
+  };
 
   const { data: provinces = [] } = useProvinces();
   const { data: cities = [] } = useCities(provinceFilter);
@@ -767,7 +827,7 @@ export default function UsersPage() {
 
   return (
     <AdminLayout title="Kelola Alumni">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
         {[
           {
             title: "Total Pengguna",
@@ -789,6 +849,13 @@ export default function UsersPage() {
             desc: "Perlu ditinjau admin",
             icon: <Clock3 size={20} strokeWidth={2.5} />,
             variant: "yellow" as const,
+          },
+          {
+            title: "Nonaktif",
+            value: isLoading ? "..." : stats.inactiveUsers,
+            desc: "Akun dinonaktifkan",
+            icon: <AlertCircle size={20} strokeWidth={2.5} />,
+            variant: "red" as const,
           },
           {
             title: "Bulan Ini",
@@ -959,7 +1026,7 @@ export default function UsersPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => runBulkAction(bulkAction.action)}
+                  onClick={handleBulkActionClick}
                   disabled={bulkActionLoading || selectedUsers.length === 0}
                   className={`rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${bulkAction.className}`}
                 >
@@ -1172,11 +1239,21 @@ export default function UsersPage() {
                             </span>
                           </td>
                           <td className="p-3 text-center">
-                            <span
-                              className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusClass(user.status)}`}
-                            >
-                              {getStatusLabel(user.status)}
-                            </span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span
+                                className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusClass(user.status)}`}
+                              >
+                                {getStatusLabel(user.status)}
+                              </span>
+                              {user.status_reason && (
+                                <span
+                                  className="text-[10px] text-[#0D5C3A]/50 italic max-w-[120px] truncate"
+                                  title={user.status_reason}
+                                >
+                                  Ket: {user.status_reason}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3 text-center text-[#0D5C3A]/60 text-xs">
                             {formatDate(user.created_at)}
@@ -1194,6 +1271,76 @@ export default function UsersPage() {
                               >
                                 <Clock3 size={14} strokeWidth={2.5} />
                               </button>
+
+                              {!isAdminUser(user) && user.status === "pending" && (
+                                <>
+                                  <button
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      requestStatusUpdate({ user, status: "active", action: "approve" });
+                                    }}
+                                    className="rounded-lg p-1 text-emerald-600 transition-colors hover:bg-emerald-50"
+                                    title="Setujui Pendaftaran"
+                                    aria-label={`Setujui ${user.name}`}
+                                  >
+                                    <UserCheck size={14} strokeWidth={2.5} />
+                                  </button>
+                                  <button
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      requestStatusUpdate({ user, status: "rejected", action: "reject" });
+                                    }}
+                                    className="rounded-lg p-1 text-red-500 transition-colors hover:bg-red-50"
+                                    title="Tolak Pendaftaran"
+                                    aria-label={`Tolak ${user.name}`}
+                                  >
+                                    <X size={14} strokeWidth={2.5} />
+                                  </button>
+                                </>
+                              )}
+
+                              {!isAdminUser(user) && user.status === "active" && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    requestStatusUpdate({ user, status: "inactive", action: "deactivate" });
+                                  }}
+                                  className="rounded-lg p-1 text-orange-500 transition-colors hover:bg-orange-50"
+                                  title="Nonaktifkan Pengguna"
+                                  aria-label={`Nonaktifkan ${user.name}`}
+                                >
+                                  <AlertCircle size={14} strokeWidth={2.5} />
+                                </button>
+                              )}
+
+                              {!isAdminUser(user) && user.status === "inactive" && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    requestStatusUpdate({ user, status: "active", action: "activate" });
+                                  }}
+                                  className="rounded-lg p-1 text-emerald-600 transition-colors hover:bg-emerald-50"
+                                  title="Aktifkan Pengguna"
+                                  aria-label={`Aktifkan ${user.name}`}
+                                >
+                                  <UserCheck size={14} strokeWidth={2.5} />
+                                </button>
+                              )}
+
+                              {!isAdminUser(user) && user.status === "rejected" && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    requestStatusUpdate({ user, status: "active", action: "approve" });
+                                  }}
+                                  className="rounded-lg p-1 text-emerald-600 transition-colors hover:bg-emerald-50"
+                                  title="Setujui Ulang"
+                                  aria-label={`Setujui ulang ${user.name}`}
+                                >
+                                  <UserCheck size={14} strokeWidth={2.5} />
+                                </button>
+                              )}
+
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
@@ -1327,6 +1474,168 @@ export default function UsersPage() {
         onCancel={cancelDelete}
         onConfirm={confirmDelete}
       />
+
+      {statusTarget && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2.5 rounded-xl ${
+                ["deactivate", "reject"].includes(statusTarget.action)
+                  ? "bg-red-50 text-red-500"
+                  : "bg-emerald-50 text-emerald-600"
+              }`}>
+                {["deactivate", "reject"].includes(statusTarget.action) ? (
+                  <AlertCircle size={22} strokeWidth={2.5} />
+                ) : (
+                  <CheckCircle size={22} strokeWidth={2.5} />
+                )}
+              </div>
+              <h3 className="font-semibold text-gray-800 text-lg">
+                {statusTarget.action === "approve" && "Setujui Pendaftaran"}
+                {statusTarget.action === "reject" && "Tolak Pendaftaran"}
+                {statusTarget.action === "deactivate" && "Nonaktifkan Akun"}
+                {statusTarget.action === "activate" && "Aktifkan Akun"}
+              </h3>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              {statusTarget.action === "approve" && `Apakah Anda yakin ingin menyetujui pendaftaran "${statusTarget.user.name}"?`}
+              {statusTarget.action === "reject" && `Apakah Anda yakin ingin menolak pendaftaran "${statusTarget.user.name}"?`}
+              {statusTarget.action === "deactivate" && `Apakah Anda yakin ingin menonaktifkan akun "${statusTarget.user.name}"?`}
+              {statusTarget.action === "activate" && `Apakah Anda yakin ingin mengaktifkan kembali akun "${statusTarget.user.name}"?`}
+            </p>
+
+            {["deactivate", "reject"].includes(statusTarget.action) && (
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-red-700 mb-1.5 block">
+                  Alasan Keterangan (Wajib)
+                </label>
+                <textarea
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                  placeholder={
+                    statusTarget.action === "deactivate"
+                      ? "Masukkan alasan mengapa akun dinonaktifkan..."
+                      : "Masukkan alasan mengapa pendaftaran ditolak..."
+                  }
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={cancelStatusUpdate}
+                disabled={updateUserStatus.isPending}
+                className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-xl text-sm font-medium transition-colors active:scale-[0.98] disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmStatusUpdate(statusReason)}
+                disabled={
+                  updateUserStatus.isPending || 
+                  (["deactivate", "reject"].includes(statusTarget.action) && !statusReason.trim())
+                }
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${
+                  ["deactivate", "reject"].includes(statusTarget.action)
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-[#0D5C3A] hover:bg-[#073D26] text-white"
+                }`}
+              >
+                {updateUserStatus.isPending && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                Konfirmasi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkActionTarget && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2.5 rounded-xl ${
+                ["deactivate", "reject"].includes(bulkActionTarget)
+                  ? "bg-red-50 text-red-500"
+                  : "bg-emerald-50 text-emerald-600"
+              }`}>
+                {["deactivate", "reject"].includes(bulkActionTarget) ? (
+                  <AlertCircle size={22} strokeWidth={2.5} />
+                ) : (
+                  <CheckCircle size={22} strokeWidth={2.5} />
+                )}
+              </div>
+              <h3 className="font-semibold text-gray-800 text-lg">
+                {bulkActionTarget === "approve" && "Setujui Pendaftaran Massal"}
+                {bulkActionTarget === "reject" && "Tolak Pendaftaran Massal"}
+                {bulkActionTarget === "deactivate" && "Nonaktifkan Akun Massal"}
+                {bulkActionTarget === "activate" && "Aktifkan Akun Massal"}
+              </h3>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Apakah Anda yakin ingin memproses status untuk <strong>{selectedUsers.length}</strong> pengguna terpilih?
+            </p>
+
+            {["deactivate", "reject"].includes(bulkActionTarget) && (
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-red-700 mb-1.5 block">
+                  Alasan Keterangan Massal (Wajib)
+                </label>
+                <textarea
+                  value={bulkReason}
+                  onChange={(e) => setBulkReason(e.target.value)}
+                  placeholder={
+                    bulkActionTarget === "deactivate"
+                      ? "Masukkan alasan mengapa akun-akun ini dinonaktifkan..."
+                      : "Masukkan alasan mengapa pendaftaran-pendaftaran ini ditolak..."
+                  }
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7AB2B2]"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setBulkActionTarget(null)}
+                disabled={bulkActionLoading}
+                className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-xl text-sm font-medium transition-colors active:scale-[0.98] disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  runBulkAction(bulkActionTarget, bulkReason);
+                  setBulkActionTarget(null);
+                }}
+                disabled={
+                  bulkActionLoading || 
+                  (["deactivate", "reject"].includes(bulkActionTarget) && !bulkReason.trim())
+                }
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${
+                  ["deactivate", "reject"].includes(bulkActionTarget)
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-[#0D5C3A] hover:bg-[#073D26] text-white"
+                }`}
+              >
+                {bulkActionLoading && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                Konfirmasi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {historyUser && (
         <UserPresenceHistoryModal

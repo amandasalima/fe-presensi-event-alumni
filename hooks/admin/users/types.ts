@@ -15,13 +15,15 @@ export interface User {
 	avatar_url?: string | null;
 	role: string;
 	status?: UserStatus | null;
+	status_reason?: string | null;
 	created_at: string;
 	domicile?: Domicile | null;
 }
 
-export type RawUser = Omit<User, "name" | "status"> & {
+export type RawUser = Omit<User, "name" | "status" | "status_reason"> & {
 	name?: string | null;
 	status?: string | null;
+	status_reason?: string | null;
 	angkatan?: string | null;
 };
 
@@ -70,6 +72,7 @@ export type UpdateUserPayload = {
 	graduation_year?: string | null;
 	birth_date?: string | null;
 	status: UserStatus;
+	status_reason?: string | null;
 	domicile_province_code?: string | null;
 	domicile_city_code?: string | null;
 	domicile_district_code?: string | null;

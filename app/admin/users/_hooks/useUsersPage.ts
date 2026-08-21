@@ -337,7 +337,7 @@ export function useUsersPage() {
 
   const clearSelectedUsers = () => setSelectedUserIds(new Set());
 
-  const runBulkAction = (action: BulkUserStatusAction) => {
+  const runBulkAction = (action: BulkUserStatusAction, reason?: string) => {
     const eligibleUsers = selectedUsers.filter((user) => {
       if (!isBulkSelectable(user)) return false;
 
@@ -386,6 +386,7 @@ export function useUsersPage() {
       {
         userIds: eligibleUsers.map((user) => user.id),
         status: targetStatus,
+        reason,
       },
       {
         onSuccess: (result) => {
@@ -463,12 +464,12 @@ export function useUsersPage() {
     setStatusTarget(target);
   };
 
-  const confirmStatusUpdate = () => {
+  const confirmStatusUpdate = (reason?: string) => {
     if (!statusTarget) return;
 
     setFeedback(null);
     updateUserStatus.mutate(
-      { id: statusTarget.user.id, status: statusTarget.status },
+      { id: statusTarget.user.id, status: statusTarget.status, reason },
       {
         onSuccess: () => {
           const successMessages: Record<UserStatusAction, string> = {

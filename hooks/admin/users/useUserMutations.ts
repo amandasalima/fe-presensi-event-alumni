@@ -35,8 +35,8 @@ export function useUpdateUserStatus() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, status }: { id: number; status: UserStatus }) =>
-			updateUserStatus(id, status),
+		mutationFn: ({ id, status, reason }: { id: number; status: UserStatus; reason?: string }) =>
+			updateUserStatus(id, status, reason),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
 		},
@@ -50,10 +50,12 @@ export function useBulkUpdateUserStatus() {
 		mutationFn: ({
 			userIds,
 			status,
+			reason,
 		}: {
 			userIds: number[];
 			status: BulkUserTargetStatus;
-		}) => bulkUpdateUserStatus(userIds, status),
+			reason?: string;
+		}) => bulkUpdateUserStatus(userIds, status, reason),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
 		},

@@ -33,6 +33,8 @@ export default function AdminSidebar() {
     isCollapsed,
     toggleSidebar,
     setIsCollapsed,
+    isMobileOpen,
+    setIsMobileOpen,
     expandedMenus,
     toggleMenu,
     setMenuExpanded,
@@ -159,68 +161,76 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside
-      className={`bg-gradient-to-b from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white flex flex-col fixed left-0 top-0 h-screen z-50 transition-all duration-300 shadow-2xl ${
-        isCollapsed ? "w-20" : "w-64"
-      }`}
-    >
-      {/* Islamic Pattern Background */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id="sidebar-pattern"
-              width="40"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle
-                cx="20"
-                cy="20"
-                r="15"
-                fill="none"
-                stroke="#D4AF37"
-                strokeWidth="0.5"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#sidebar-pattern)" />
-        </svg>
-      </div>
+    <>
+      {/* Backdrop for mobile screen overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+      <aside
+        className={`bg-gradient-to-b from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white flex flex-col fixed left-0 top-0 h-screen z-50 transition-all duration-300 shadow-2xl lg:translate-x-0 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
+      >
+        {/* Islamic Pattern Background */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="sidebar-pattern"
+                width="40"
+                height="40"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="15"
+                  fill="none"
+                  stroke="#D4AF37"
+                  strokeWidth="0.5"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#sidebar-pattern)" />
+          </svg>
+        </div>
 
-      {/* Logo Section */}
-      <div className="relative z-10 p-4 border-b border-[#D4AF37]/20 h-auto">
-        <div className="flex items-center gap-3">
-          {/* Logo Pesantren */}
-          <div className="relative flex-shrink-0">
-            <div className="w-12 h-12 bg-white rounded-full p-1 shadow-lg ring-2 ring-[#D4AF37]/30">
-              <img
-                src="/images/logo-pesantren.png"
-                alt="Logo Pesantren Al-Falah"
-                className="w-full h-full object-contain"
-              />
+        {/* Logo Section */}
+        <div className="relative z-10 p-4 border-b border-[#D4AF37]/20 h-auto">
+          <div className="flex items-center gap-3">
+            {/* Logo Pesantren */}
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 bg-white rounded-full p-1 shadow-lg ring-2 ring-[#D4AF37]/30">
+                <img
+                  src="/images/logo-pesantren.png"
+                  alt="Logo Pesantren Al-Falah"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+
+            <div
+              className={`flex flex-col transition-all duration-300 ${
+                isCollapsed
+                  ? "lg:opacity-0 lg:max-w-0 lg:overflow-hidden opacity-100 max-w-xs"
+                  : "opacity-100 max-w-xs"
+              }`}
+            >
+              <h1 className="font-bold text-[15px] tracking-wide text-white leading-tight">
+                Pondok Pesantren
+              </h1>
+              <h2 className="font-bold text-[15px] tracking-wide text-[#D4AF37] leading-tight">
+                Al-Qur&apos;an Al-Falah
+              </h2>
+              <p className="text-[10px] text-[#E8F5E9]/70 uppercase tracking-wider mt-0.5">
+                Portal Admin
+              </p>
             </div>
           </div>
-
-          <div
-            className={`flex flex-col transition-all duration-300 ${
-              isCollapsed
-                ? "opacity-0 max-w-0 overflow-hidden"
-                : "opacity-100 max-w-xs"
-            }`}
-          >
-            <h1 className="font-bold text-[15px] tracking-wide text-white leading-tight">
-              Pondok Pesantren
-            </h1>
-            <h2 className="font-bold text-[15px] tracking-wide text-[#D4AF37] leading-tight">
-              Al-Qur&apos;an Al-Falah
-            </h2>
-            <p className="text-[10px] text-[#E8F5E9]/70 uppercase tracking-wider mt-0.5">
-              Portal Admin
-            </p>
-          </div>
         </div>
-      </div>
 
       {/* Navigation Menus */}
       <nav className="relative z-10 flex-1 p-3 space-y-1.5 overflow-y-auto custom-scrollbar">
@@ -233,6 +243,7 @@ export default function AdminSidebar() {
               <Link
                 key={index}
                 href={group.path!}
+                onClick={() => setIsMobileOpen(false)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                   active
                     ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941F] shadow-lg text-white font-semibold"
@@ -246,14 +257,14 @@ export default function AdminSidebar() {
                   <span
                     className={`text-sm transition-all duration-300 ${
                       isCollapsed
-                        ? "opacity-0 max-w-0 overflow-hidden"
+                        ? "lg:opacity-0 lg:max-w-0 lg:overflow-hidden opacity-100 max-w-xs"
                         : "opacity-100 max-w-xs"
                     }`}
                   >
                     {group.name}
                   </span>
                 </div>
-                {!isCollapsed && active && (
+                {(!isCollapsed || isMobileOpen) && active && (
                   <span className="text-[10px] animate-pulse">●</span>
                 )}
               </Link>
@@ -291,14 +302,14 @@ export default function AdminSidebar() {
                     <span
                       className={`text-sm text-left transition-all duration-300 ${
                         isCollapsed
-                          ? "opacity-0 max-w-0 overflow-hidden"
+                          ? "lg:opacity-0 lg:max-w-0 lg:overflow-hidden opacity-100 max-w-xs"
                           : "opacity-100 max-w-xs"
                       }`}
                     >
                       {group.name}
                     </span>
                   </div>
-                  {!isCollapsed && (
+                  {(!isCollapsed || isMobileOpen) && (
                     <span className="text-white/60">
                       {isExpanded ? (
                         <ChevronUp className="h-3.5 w-3.5" />
@@ -310,7 +321,7 @@ export default function AdminSidebar() {
                 </button>
 
                 {/* Sub items */}
-                {!isCollapsed && isExpanded && (
+                {(!isCollapsed || isMobileOpen) && isExpanded && (
                   <div className="ml-5 pl-4 border-l border-[#D4AF37]/20 mt-1 mb-2 space-y-1 transition-all duration-300">
                     {visibleSubItems.map((sub, idx) => {
                       const subActive = pathname === sub.path;
@@ -320,6 +331,7 @@ export default function AdminSidebar() {
                         <Link
                           key={idx}
                           href={sub.path}
+                          onClick={() => setIsMobileOpen(false)}
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 group ${
                             subActive
                               ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941F] shadow-md text-white font-semibold"
@@ -346,7 +358,7 @@ export default function AdminSidebar() {
         {/* Toggle Collapse Button */}
         <button
           onClick={toggleSidebar}
-          className="w-full py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition duration-200 text-xs flex items-center justify-center gap-2 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40"
+          className="hidden lg:flex w-full py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition duration-200 text-xs items-center justify-center gap-2 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40"
           title={isCollapsed ? "Expand Sidebar" : "Minimize Sidebar"}
         >
           {isCollapsed ? (
@@ -364,13 +376,22 @@ export default function AdminSidebar() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full py-2.5 rounded-xl  text-white/70 hover:text-white hover:bg-[#DC2626] transition duration-200 text-xs flex items-center justify-center gap-2 border border-[#D4AF37]/20  hover:border-[#DC2626]/40 "
+          className="w-full py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#DC2626] transition duration-200 text-xs flex items-center justify-center gap-2 border border-[#D4AF37]/20 hover:border-[#DC2626]/40"
           title="Keluar"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && <span className="whitespace-nowrap">Keluar</span>}
+          <span
+            className={`whitespace-nowrap transition-all duration-300 ${
+              isCollapsed
+                ? "lg:opacity-0 lg:max-w-0 lg:overflow-hidden opacity-100 max-w-xs"
+                : "opacity-100 max-w-xs"
+            }`}
+          >
+            Keluar
+          </span>
         </button>
       </div>
     </aside>
+  </>
   );
 }

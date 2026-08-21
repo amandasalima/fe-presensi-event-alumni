@@ -6,6 +6,9 @@ interface SidebarContextType {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  isMobileOpen: boolean;
+  setIsMobileOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
   expandedMenus: Record<string, boolean>;
   toggleMenu: (menuName: string) => void;
   setMenuExpanded: (menuName: string, expanded: boolean) => void;
@@ -20,6 +23,12 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem("sidebar_collapsed");
     return saved === "true";
   });
+
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const toggleMobileSidebar = () => {
+    setIsMobileOpen((prev) => !prev);
+  };
 
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
     () => {
@@ -80,6 +89,9 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
         isCollapsed,
         setIsCollapsed,
         toggleSidebar,
+        isMobileOpen,
+        setIsMobileOpen,
+        toggleMobileSidebar,
         expandedMenus,
         toggleMenu,
         setMenuExpanded,

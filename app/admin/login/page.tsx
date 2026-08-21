@@ -119,9 +119,9 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col md:flex-row">
       {/* ── Left Panel ── */}
-      <div className="w-1/2 bg-gradient-to-br from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white p-12 flex flex-col justify-center relative overflow-hidden">
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-[#0D5C3A] via-[#0A4D30] to-[#073D26] text-white p-12 flex-col justify-center relative overflow-hidden">
         {/* Islamic Geometric Pattern Background */}
         <div className="absolute inset-0 opacity-[0.15]">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -243,8 +243,26 @@ const AdminLogin = () => {
       </div>
 
       {/* ── Right Panel ── */}
-      <div className="w-1/2 flex items-center justify-center bg-white p-8">
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-6 sm:p-8 min-h-screen">
         <div className="w-full max-w-md">
+          {/* Logo & Title for Mobile Screen */}
+          <div className="flex flex-col items-center mb-6 md:hidden">
+            <div className="w-20 h-20 relative mb-3">
+              <div className="absolute inset-0 bg-[#D4AF37]/10 rounded-full blur-xl"></div>
+              <img
+                src="/images/logo-pesantren.png"
+                alt="Logo Pondok Pesantren Al-Qur'an Al-Falah"
+                className="w-full h-full object-contain relative z-10"
+              />
+            </div>
+            <h1 className="text-base font-bold text-[#0D5C3A] text-center tracking-wide leading-tight">
+              Pondok Pesantren Al-Qur&apos;an Al-Falah
+            </h1>
+            <p className="text-[#0D5C3A]/60 text-[10px] font-semibold uppercase tracking-wider mt-0.5">
+              Portal Administrator
+            </p>
+          </div>
+
           <div className="text-center mb-5">
             <h2 className="text-xl font-bold text-gray-800">
               Masuk sebagai Admin

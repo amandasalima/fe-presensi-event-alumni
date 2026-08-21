@@ -767,7 +767,7 @@ export default function UsersPage() {
 
   return (
     <AdminLayout title="Kelola Alumni">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
         {[
           {
             title: "Total Pengguna",
@@ -995,7 +995,7 @@ export default function UsersPage() {
 
           {!isError && (
             <div className="overflow-x-auto rounded-xl border border-[#0D5C3A]/10">
-              <table className="w-full overflow-hidden rounded-xl">
+              <table className="w-full min-w-[900px] overflow-hidden rounded-xl">
                 <thead className="bg-gradient-to-r from-[#E8F5E9] to-white">
                   <tr>
                     {statusFilter !== "all" && (

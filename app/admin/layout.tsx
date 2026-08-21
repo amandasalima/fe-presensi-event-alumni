@@ -45,12 +45,9 @@ export default function AdminLayout({
 
   // Synchronous check during render to prevent Back button cache bypass
   const isLoginPage = pathname === ADMIN_LOGIN_PATH;
-  const credentials = typeof window !== "undefined" ? getAdminCredentials() : { token: null, role: null };
-  const hasValidToken = !!credentials.token && credentials.role === "admin";
-  const isSynchronouslyAuthorized = isLoginPage ? true : hasValidToken;
 
-  const [authorized, setAuthorized] = useState(() => isSynchronouslyAuthorized);
-  const isCurrentlyAuthorized = authorized && isSynchronouslyAuthorized;
+  const [authorized, setAuthorized] = useState(() => isLoginPage);
+  const isCurrentlyAuthorized = authorized;
 
   useEffect(() => {
     const verifyAccess = async () => {

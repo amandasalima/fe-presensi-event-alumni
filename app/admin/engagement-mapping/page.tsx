@@ -129,7 +129,7 @@ export default function EngagementMappingPage() {
 
   return (
     <AdminLayout title="Statistik Kehadiran Alumni">
-      <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-2xl border border-[#0D5C3A]/10 bg-white p-4 shadow-sm shadow-[#0D5C3A]/5">
           <p className="text-xs text-[#0D5C3A]/60">Total Alumni</p>
           <div className="mt-1 flex items-center gap-3">
@@ -158,7 +158,7 @@ export default function EngagementMappingPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#0D5C3A]/10 bg-white p-4 shadow-sm shadow-[#0D5C3A]/5">
+        <div className="rounded-2xl border border-[#0D5C3A]/10 bg-white p-4 shadow-sm shadow-[#0D5C3A]/5 sm:col-span-2 lg:col-span-1">
           <p className="text-xs text-[#0D5C3A]/60">Segment Halaman Ini</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {ENGAGEMENT_SEGMENTS.map((segmentName) => {

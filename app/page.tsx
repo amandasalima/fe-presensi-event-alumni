@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   LogIn,
@@ -16,7 +16,10 @@ import {
   X,
   QrCode,
   Smartphone,
+  Clock,
 } from "lucide-react";
+import { usePublicEvents, AlumniEventQuery } from "@/hooks/alumni/queries/events";
+import { getImageUrl } from "@/lib/api";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -31,6 +34,150 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  const { data: publicEvents = [], isLoading } = usePublicEvents();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Initialize scroll position to the start of the middle clone set
+  useEffect(() => {
+    if (publicEvents.length > 3 && scrollRef.current) {
+      const container = scrollRef.current;
+      
+      const initScroll = () => {
+        const firstChild = container.firstElementChild as HTMLElement;
+        if (firstChild) {
+          const itemWidth = firstChild.clientWidth + 32; // card width + gap
+          container.scrollLeft = itemWidth * publicEvents.length;
+        }
+      };
+
+      // Execute on load and window resize
+      initScroll();
+      window.addEventListener("resize", initScroll);
+      return () => window.removeEventListener("resize", initScroll);
+    }
+  }, [publicEvents]);
+
+  // Handle scroll boundary wrap-around for infinite scroll
+  const handleScroll = () => {
+    if (scrollRef.current && publicEvents.length > 3) {
+      const container = scrollRef.current;
+      const firstChild = container.firstElementChild as HTMLElement;
+      if (!firstChild) return;
+
+      const itemWidth = firstChild.clientWidth + 32;
+      const setWidth = itemWidth * publicEvents.length;
+
+      if (container.scrollLeft >= setWidth * 2) {
+        container.scrollTo({ left: container.scrollLeft - setWidth, behavior: "auto" });
+      } else if (container.scrollLeft <= setWidth - 10) {
+        container.scrollTo({ left: container.scrollLeft + setWidth, behavior: "auto" });
+      }
+    }
+  };
+
+  // Auto-scroll loop
+  useEffect(() => {
+    if (publicEvents.length <= 3 || isPaused) return;
+
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        const firstChild = container.firstElementChild as HTMLElement;
+        if (!firstChild) return;
+
+        const itemWidth = firstChild.clientWidth + 32;
+        container.scrollBy({ left: itemWidth, behavior: "smooth" });
+      }
+    }, 3000); // Auto scroll every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [publicEvents, isPaused]);
+
+  const formatEventDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const renderEventCard = (event: AlumniEventQuery, idx: number, isCarousel = false) => {
+    return (
+      <div
+        key={idx}
+        className={`bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#0D5C3A]/5 ${
+          isCarousel
+            ? "w-full md:w-[calc(50%-16px)] lg:w-[calc(33.333%-22px)] min-w-full md:min-w-[calc(50%-16px)] lg:min-w-[calc(33.333%-22px)] snap-start shrink-0"
+            : ""
+        }`}
+      >
+        {event.poster_url && (
+          <div className="relative w-full h-48 overflow-hidden">
+            <img
+              src={getImageUrl(event.poster_url)}
+              alt={event.event_title}
+              className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
+            />
+          </div>
+        )}
+        <div className="p-6 sm:p-8 space-y-4 flex-1 flex flex-col justify-between">
+          <div className="space-y-4">
+            {/* Badge & Date */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-block px-2.5 py-1 rounded-md bg-[#E8F5E9] text-[#0D5C3A] text-[10px] font-bold uppercase tracking-wider shrink-0">
+                {event.category?.category_name || "Event"}
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 min-w-0 truncate">
+                <Calendar size={12} className="text-[#D4AF37] shrink-0" />
+                {formatEventDate(event.event_date)}
+              </span>
+            </div>
+
+            <h3 className="text-base font-bold text-[#1A1A1A] hover:text-[#0D5C3A] transition line-clamp-2">
+              {event.event_title}
+            </h3>
+
+            <p className="text-slate-500 text-xs leading-relaxed line-clamp-3">
+              {event.event_description || event.description}
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-slate-50/50 mt-4 space-y-3">
+            {/* Location info */}
+            <div className="flex items-center gap-2 text-slate-400 text-xs">
+              <MapPin size={14} className="text-[#D4AF37] shrink-0" />
+              <span className="truncate">{event.location}</span>
+            </div>
+
+            {/* Time info */}
+            <div className="flex items-center gap-2 text-slate-400 text-xs">
+              <Clock size={14} className="text-[#D4AF37] shrink-0" />
+              <span className="truncate">
+                {event.start_time ? `${event.start_time.substring(0, 5)} - ${event.end_time ? event.end_time.substring(0, 5) : "Selesai"} WIB` : "Waktu belum ditentukan"}
+              </span>
+            </div>
+
+            <Link
+              href="/alumni/login"
+              className="w-full inline-flex items-center justify-center py-2.5 rounded-xl bg-slate-50 hover:bg-[#E8F5E9] text-[#0D5C3A] hover:text-[#0D5C3A] font-semibold text-xs border border-[#0D5C3A]/10 transition-colors mt-2"
+            >
+              Daftar (Perlu Login)
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     // Fail-safe redirect if opened inside installed PWA standalone mode
@@ -95,33 +242,6 @@ export default function Home() {
     },
   ];
 
-  const events = [
-    {
-      badge: "Utama",
-      date: "12 Syawal 1447 H / 2026",
-      location: "Aula Utama Pesantren",
-      title: "Reuni Akbar & Halalbihalal 2026",
-      description:
-        "Temu kangen seluruh angkatan alumni Al-Falah. Mempererat ukhuwah, mengenang masa khidmah, dan koordinasi kontribusi untuk umat.",
-    },
-    {
-      badge: "Bulanan",
-      date: "Ahad Pertama Setiap Bulan",
-      location: "Masjid Ponpes Al-Falah",
-      title: "Pengajian Rutin Alumni & Doa Bersama",
-      description:
-        "Majelis ilmu rutin bersama Masyayikh Al-Falah guna menjaga ruhul khidmah, memperkuat spiritual, dan silaturahmi berkala.",
-    },
-    {
-      badge: "Edukasi",
-      date: "Sabtu, 15 November 2026",
-      location: "Gedung Aula Putera",
-      title: "Workshop Karir & Mentoring Santri",
-      description:
-        "Sharing pengalaman dan bimbingan karir praktis dari alumni inspiratif Al-Falah untuk santri kelas akhir menghadapi dunia kerja.",
-    },
-  ];
-
   const steps = [
     {
       number: "1",
@@ -163,6 +283,13 @@ export default function Home() {
         }
         html {
           scroll-behavior: smooth;
+        }
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
 
@@ -514,59 +641,73 @@ export default function Home() {
                 akbar, serta seminar karir mendatang.
               </p>
             </div>
-            <Link
-              href="/alumni/login"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0D5C3A] hover:text-[#D4AF37] transition self-start md:self-auto"
-            >
-              Lihat Seluruh Agenda
-              <ChevronRight size={16} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {events.map((event, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-[#0D5C3A]/5"
+            
+            <div className="flex items-center gap-4 self-start md:self-auto">
+              <Link
+                href="/alumni/login"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0D5C3A] hover:text-[#D4AF37] transition"
               >
-                <div className="p-6 sm:p-8 space-y-4">
-                  {/* Badge & Date */}
-                  <div className="flex items-center justify-between">
-                    <span className="inline-block px-2.5 py-1 rounded-md bg-[#E8F5E9] text-[#0D5C3A] text-[10px] font-bold uppercase tracking-wider">
-                      {event.badge}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                      <Calendar size={12} className="text-[#D4AF37]" />
-                      {event.date}
-                    </span>
-                  </div>
-
-                  <h3 className="text-base font-bold text-[#1A1A1A] hover:text-[#0D5C3A] transition">
-                    {event.title}
-                  </h3>
-
-                  <p className="text-slate-500 text-xs leading-relaxed">
-                    {event.description}
-                  </p>
-                </div>
-
-                <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0 border-t border-slate-50/50 mt-auto space-y-4">
-                  {/* Location info */}
-                  <div className="flex items-center gap-1.5 text-slate-400 text-xs mt-4">
-                    <MapPin size={14} className="text-[#D4AF37] shrink-0" />
-                    <span className="truncate">{event.location}</span>
-                  </div>
-
-                  <Link
-                    href="/alumni/login"
-                    className="w-full inline-flex items-center justify-center py-2.5 rounded-xl bg-slate-50 hover:bg-[#E8F5E9] text-[#0D5C3A] hover:text-[#0D5C3A] font-semibold text-xs border border-[#0D5C3A]/10 transition-colors"
-                  >
-                    Daftar (Perlu Login)
-                  </Link>
-                </div>
-              </div>
-            ))}
+                Lihat Seluruh Agenda
+                <ChevronRight size={16} />
+              </Link>
+            </div>
           </div>
+
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm flex flex-col justify-between p-6 sm:p-8 space-y-6 animate-pulse"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 w-16 bg-slate-200 rounded"></div>
+                      <div className="h-4 w-24 bg-slate-200 rounded"></div>
+                    </div>
+                    <div className="h-6 w-3/4 bg-slate-200 rounded"></div>
+                    <div className="space-y-2">
+                      <div className="h-3 w-full bg-slate-200 rounded"></div>
+                      <div className="h-3 w-5/6 bg-slate-200 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-slate-50 space-y-4 mt-auto">
+                    <div className="h-4 w-1/2 bg-slate-200 rounded"></div>
+                    <div className="h-10 w-full bg-slate-200 rounded-xl"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : publicEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-3xl border border-slate-100 shadow-sm max-w-lg mx-auto text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#0D5C3A] animate-pulse-ring">
+                <Calendar size={28} />
+              </div>
+              <h3 className="text-lg font-bold text-[#1A1A1A]">Belum Ada Event Terdekat</h3>
+              <p className="text-slate-500 text-xs max-w-xs">
+                Saat ini belum ada agenda kegiatan mendatang yang aktif di sistem. Silakan kembali lagi nanti.
+              </p>
+            </div>
+          ) : publicEvents.length > 3 ? (
+            <div className="relative">
+              {/* Carousel Items Container */}
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                className="flex gap-8 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-4"
+              >
+                {([...publicEvents, ...publicEvents, ...publicEvents]).map((event, idx) => 
+                  renderEventCard(event, idx, true)
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {publicEvents.map((event, idx) => renderEventCard(event, idx, false))}
+            </div>
+          )}
         </div>
       </section>
 

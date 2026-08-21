@@ -247,3 +247,24 @@ export function useCancelRegistration() {
 		},
 	});
 }
+
+export function usePublicEvents() {
+	return useQuery({
+		queryKey: ["public-events"],
+		queryFn: async () => {
+			let backendEvents: AlumniEventQuery[] = [];
+
+			try {
+				const res = await fetchAPI("/events/public");
+				backendEvents = (res?.data?.events || []) as AlumniEventQuery[];
+			} catch (error) {
+				console.error(
+					"Failed to fetch public events from backend:",
+					error,
+				);
+			}
+
+			return backendEvents.map(withEventDateTime);
+		},
+	});
+}

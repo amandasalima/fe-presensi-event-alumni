@@ -58,6 +58,10 @@ export default function AlumniLayout({
         clearAlumniToken();
         stopHeartbeat();
         setAuthorized(false);
+        if (typeof window !== "undefined" && sessionStorage.getItem("just_logged_out") === "true") {
+          window.history.back();
+          return;
+        }
         router.replace(ALUMNI_LOGIN_PATH);
         return;
       }

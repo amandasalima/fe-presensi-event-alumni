@@ -364,7 +364,7 @@ export default function AlumniProfilePage() {
   function handleLogout() {
     stopHeartbeat();
     clearAuthStorage();
-    window.location.href = "/alumni/login";
+    window.location.replace("/alumni/login");
   }
 
   function formatDate(dateStr?: string | null) {

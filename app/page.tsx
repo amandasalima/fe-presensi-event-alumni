@@ -35,6 +35,7 @@ export default function Home() {
   useEffect(() => {
     // Fail-safe redirect if opened inside installed PWA standalone mode
     if (typeof window !== "undefined") {
+      sessionStorage.removeItem("just_logged_out");
       const isStandalone = 
         window.matchMedia("(display-mode: standalone)").matches || 
         (navigator as Navigator & { standalone?: boolean }).standalone;

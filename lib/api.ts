@@ -67,6 +67,7 @@ function getAuthToken() {
 
 export function clearAuthStorage() {
   if (typeof window === "undefined") return;
+  sessionStorage.setItem("just_logged_out", "true");
   // Clear localStorage (legacy + migration)
   localStorage.removeItem("access_token");
   localStorage.removeItem("admin_token");

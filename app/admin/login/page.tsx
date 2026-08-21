@@ -96,11 +96,12 @@ const AdminLogin = () => {
       sessionStorage.setItem("token_type", token_type);
       sessionStorage.setItem("user", JSON.stringify(user));
       sessionStorage.setItem("role", user.role);
+      sessionStorage.removeItem("just_logged_out");
 
       // Mulai heartbeat untuk menjaga token tetap hidup
       startHeartbeat();
 
-      router.push("/admin/dashboard");
+      router.replace("/admin/dashboard");
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage(

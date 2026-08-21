@@ -41,7 +41,7 @@ export default function AdminSidebar() {
   const handleLogout = () => {
     stopHeartbeat();
     clearAuthStorage();
-    window.location.href = "/admin/login";
+    window.location.replace("/admin/login");
   };
 
   // Define sidebar menu structure

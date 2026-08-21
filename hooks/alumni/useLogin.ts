@@ -30,11 +30,13 @@ export function useLogin() {
         if (variables.remember) {
           localStorage.setItem("alumni_token", token);
         }
+        
+        sessionStorage.removeItem("just_logged_out");
 
         // Mulai heartbeat untuk menjaga token tetap hidup
         startHeartbeat();
 
-        router.push("/alumni/main/dashboard");
+        router.replace("/alumni/main/dashboard");
       },
     }
   );

@@ -70,6 +70,10 @@ export default function AdminLayout({
         clearAdminCredentials();
         stopHeartbeat();
         setAuthorized(false);
+        if (typeof window !== "undefined" && sessionStorage.getItem("just_logged_out") === "true") {
+          window.history.back();
+          return;
+        }
         router.replace(ADMIN_LOGIN_PATH);
         return;
       }

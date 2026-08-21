@@ -99,7 +99,7 @@ export default function AlumniHeader() {
   const handleLogout = () => {
     stopHeartbeat();
     clearAuthStorage();
-    window.location.href = "/alumni/login";
+    window.location.replace("/alumni/login");
   };
 
   return (

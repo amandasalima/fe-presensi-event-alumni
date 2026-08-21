@@ -215,7 +215,7 @@ export default function EngagementProgressCard({
             ["Menengah", "Al-Mutawasithun"],
             ["Awal", "Al-Mubtadi'un"],
             ["Mulai", "Ghoiru Muqayyad"],
-          ].map(([rank, segmentName]) => {
+          ].map(([, segmentName]) => {
             const isCurrent = segmentName === config.label;
             const RankIcon =
               rankIcons[segmentName as keyof typeof rankIcons] ?? Award;

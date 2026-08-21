@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Presensi Event Alumni Al-Falah",
     short_name: "Presensi Al-Falah",
     description: "Sistem Presensi Event Alumni Pondok Pesantren Al-Qur'an Al-Falah",
-    start_url: "/",
+    start_url: "/alumni/login",
     display: "standalone",
     background_color: "#0D5C3A",
     theme_color: "#0D5C3A",

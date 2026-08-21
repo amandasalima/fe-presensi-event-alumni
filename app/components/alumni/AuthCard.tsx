@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Phone } from "lucide-react";
 import { useLogin } from "@/hooks/alumni/useLogin";
@@ -822,6 +822,20 @@ function getRegisterFieldErrors(errors: unknown): RegisterErrors {
 /* ─── Main AuthCard ───────────────────────────────────────── */
 export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
   const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const standalone = 
+        window.matchMedia("(display-mode: standalone)").matches || 
+        (navigator as Navigator & { standalone?: boolean }).standalone;
+      
+      const frameId = requestAnimationFrame(() => {
+        setIsStandalone(!!standalone);
+      });
+      return () => cancelAnimationFrame(frameId);
+    }
+  }, []);
 
   return (
     <div className="min-h-dvh w-full flex items-start justify-center px-3 sm:px-4 md:px-8 pt-8 sm:pt-10 md:pt-12 pb-8 bg-gradient-to-br from-[#E8F5E9]/70 via-[#F4F9F6] to-white">
@@ -899,14 +913,16 @@ export default function AuthCard({ defaultTab = "masuk" }: AuthCardProps) {
         </p>
 
         {/* Back to Home Link */}
-        <div className="text-center mt-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D5C3A] hover:text-[#D4AF37] transition-colors"
-          >
-            ← Kembali ke Halaman Utama
-          </Link>
-        </div>
+        {!isStandalone && (
+          <div className="text-center mt-6">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D5C3A] hover:text-[#D4AF37] transition-colors"
+            >
+              ← Kembali ke Halaman Utama
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

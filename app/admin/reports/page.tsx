@@ -124,12 +124,6 @@ function Pagination({
   );
 }
 
-function getCompactAngkatanLabel(value: string) {
-  if (value === "Tidak diketahui") return "?";
-  if (/^\d{4}$/.test(value)) return value.slice(-2);
-  return value.length > 5 ? `${value.slice(0, 4)}…` : value;
-}
-
 function AngkatanBreakdownChart({
   items,
   expanded,

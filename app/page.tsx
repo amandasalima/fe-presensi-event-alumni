@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LogIn,
@@ -15,10 +15,63 @@ import {
   Menu,
   X,
   QrCode,
+  Smartphone,
 } from "lucide-react";
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  useEffect(() => {
+    // Fail-safe redirect if opened inside installed PWA standalone mode
+    if (typeof window !== "undefined") {
+      const isStandalone = 
+        window.matchMedia("(display-mode: standalone)").matches || 
+        (navigator as Navigator & { standalone?: boolean }).standalone;
+
+      if (isStandalone) {
+        const token = sessionStorage.getItem("alumni_token") || localStorage.getItem("alumni_token");
+        if (token) {
+          window.location.replace("/alumni/main/dashboard");
+        } else {
+          window.location.replace("/alumni/login");
+        }
+        return;
+      }
+    }
+
+    // Capture beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`PWA installation outcome: ${outcome}`);
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
+  };
 
   const features = [
     {
@@ -203,6 +256,15 @@ export default function Home() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-4">
+              {showInstallBtn && (
+                <button
+                  onClick={handleInstallClick}
+                  className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#D4AF37] hover:bg-[#D4AF37]/50 text-[#0D5C3A] font-semibold text-xs transition duration-250 hover:-translate-y-0.5 hover:shadow-md hover:border-2 hover:border-[#0D5C3A]"
+                >
+                  <Smartphone size={14} className="mr-1.5" />
+                  Unduh Aplikasi
+                </button>
+              )}
               <Link
                 href="/alumni/login"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border-2 border-[#0D5C3A] text-[#0D5C3A] font-semibold text-xs transition duration-250 hover:bg-[#0D5C3A]/5 hover:border-[#D4AF37] hover:text-[#D4AF37]"
@@ -266,6 +328,18 @@ export default function Home() {
               </a>
             </nav>
             <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+              {showInstallBtn && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleInstallClick();
+                  }}
+                  className="w-full inline-flex items-center justify-center py-2.5 rounded-xl bg-[#D4AF37] text-[#0D5C3A] text-xs font-semibold shadow"
+                >
+                  <Smartphone size={14} className="mr-2" />
+                  Unduh Aplikasi
+                </button>
+              )}
               <Link
                 href="/alumni/login"
                 className="w-full inline-flex items-center justify-center py-2.5 rounded-xl border border-[#0D5C3A] text-[#0D5C3A] text-xs font-semibold"
@@ -314,6 +388,15 @@ export default function Home() {
                   Masuk Ke Portal Alumni
                   <ArrowRight size={16} className="ml-2 text-[#D4AF37]" />
                 </Link>
+                {showInstallBtn && (
+                  <button
+                    onClick={handleInstallClick}
+                    className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl bg-[#D4AF37] hover:bg-[#D4AF37]/80 text-[#0D5C3A] font-semibold text-sm shadow-md transition duration-250 hover:-translate-y-0.5 hover:shadow-lg border border-[#D4AF37]/50"
+                  >
+                    <Smartphone size={16} className="mr-2" />
+                    Unduh Aplikasi
+                  </button>
+                )}
                 <a
                   href="#agenda"
                   className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl border border-slate-200 bg-white hover:border-[#0D5C3A] hover:text-[#0D5C3A] text-slate-700 font-semibold text-sm shadow-sm transition duration-250 hover:-translate-y-0.5"

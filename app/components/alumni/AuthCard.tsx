@@ -216,6 +216,7 @@ function LoginForm() {
     email: "",
     password: "",
     remember: false,
+    role: "alumni",
   });
   const [submitted, setSubmitted] = useState(false);
   const [showPass, setShowPass] = useState(false);

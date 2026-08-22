@@ -527,7 +527,7 @@ export default function DashboardPage() {
         <div className="relative z-10 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">
-              Assalamualaikum, Admin!
+              Assalamu&apos;alaikum, Admin!
             </h1>
             <p className="text-[#E8F5E9]/90 text-sm">
               Selamat datang di Dashboard Pesantren Al-Falah

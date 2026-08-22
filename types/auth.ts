@@ -4,6 +4,7 @@ export interface LoginPayload {
   email: string;
   password: string;
   remember?: boolean;
+  role?: string;
 }
 
 export interface RegisterPayload {

@@ -70,6 +70,7 @@ const AdminLogin = () => {
         body: JSON.stringify({
           email,
           password,
+          role: "admin",
         }),
       });
 

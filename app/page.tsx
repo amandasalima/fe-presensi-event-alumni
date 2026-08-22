@@ -17,6 +17,10 @@ import {
   QrCode,
   Smartphone,
   Clock,
+  Share,
+  MoreVertical,
+  Download,
+  Info,
 } from "lucide-react";
 import { usePublicEvents, AlumniEventQuery } from "@/hooks/alumni/queries/events";
 import { getImageUrl } from "@/lib/api";
@@ -34,6 +38,8 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [devicePlatform, setDevicePlatform] = useState<"ios" | "android" | "other">("other");
 
   const { data: publicEvents = [], isLoading } = usePublicEvents();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -196,6 +202,25 @@ export default function Home() {
         }
         return;
       }
+
+      // If not running in standalone mode, always show the install button so it appears in Safari
+      if (!isStandalone) {
+        setTimeout(() => {
+          setShowInstallBtn(true);
+        }, 0);
+      }
+
+      // Detect user platform
+      const ua = navigator.userAgent.toLowerCase();
+      const platform = /ipad|iphone|ipod/.test(ua)
+        ? "ios"
+        : /android/.test(ua)
+        ? "android"
+        : "other";
+
+      setTimeout(() => {
+        setDevicePlatform(platform);
+      }, 0);
     }
 
     // Capture beforeinstallprompt event
@@ -213,12 +238,17 @@ export default function Home() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      setShowGuideModal(true);
+      return;
+    }
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     console.log(`PWA installation outcome: ${outcome}`);
     setDeferredPrompt(null);
-    setShowInstallBtn(false);
+    if (outcome === "accepted") {
+      setShowInstallBtn(false);
+    }
   };
 
   const features = [
@@ -270,16 +300,37 @@ export default function Home() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
         @keyframes pulse-ring {
           0% { transform: scale(0.95); opacity: 0.5; }
           50% { transform: scale(1.05); opacity: 0.8; }
           100% { transform: scale(0.95); opacity: 0.5; }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleUp {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
         .animate-float {
           animation: float 4s ease-in-out infinite;
         }
+        .animate-float-slow {
+          animation: float-slow 5s ease-in-out infinite;
+        }
         .animate-pulse-ring {
           animation: pulse-ring 3s ease-in-out infinite;
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.25s ease-out forwards;
+        }
+        .animate-scale-up {
+          animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         html {
           scroll-behavior: smooth;
@@ -799,14 +850,20 @@ export default function Home() {
                 berbakti kepada nusa, bangsa, serta agama.
               </p>
               <div className="space-y-2 text-xs text-slate-400">
-                <p className="flex items-center gap-2">
+                <a
+                  href="tel:085174402152"
+                  className="flex items-center gap-2 hover:text-[#D4AF37] transition duration-200"
+                >
                   <Phone size={14} className="text-[#D4AF37]" />
-                  +62 812-3456-7890
-                </p>
-                <p className="flex items-center gap-2">
+                  0851-7440-2152
+                </a>
+                <a
+                  href="mailto:info@alfalah.ponpes.id"
+                  className="flex items-center gap-2 hover:text-[#D4AF37] transition duration-200"
+                >
                   <Mail size={14} className="text-[#D4AF37]" />
-                  alumni@ponpes-alfalah.or.id
-                </p>
+                  info@alfalah.ponpes.id
+                </a>
               </div>
             </div>
 
@@ -875,7 +932,7 @@ export default function Home() {
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/official_ponpesalquranalfalah/"
                 target="_blank"
                 rel="noreferrer"
                 className="hover:text-[#D4AF37] transition"
@@ -899,6 +956,133 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* PWA GUIDANCE MODAL */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl border border-slate-100 max-w-md w-full shadow-2xl p-6 relative overflow-hidden animate-scale-up">
+            {/* Header decoration */}
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#0D5C3A] via-[#D4AF37] to-[#0D5C3A]" />
+            
+            <button
+              onClick={() => setShowGuideModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition"
+              aria-label="Tutup"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex flex-col items-center text-center mt-2 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#E8F5E9] flex items-center justify-center text-[#0D5C3A] shadow-sm">
+                <Smartphone size={28} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#1A1A1A]">Pasang Aplikasi Alumni</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  Pasang aplikasi di layar utama perangkat Anda untuk kemudahan akses presensi dan info event.
+                </p>
+              </div>
+            </div>
+
+            {/* Platform instructions */}
+            <div className="mt-6 border-t border-slate-100 pt-6 space-y-4">
+              {devicePlatform === "ios" ? (
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#E8F5E9]/30 rounded-2xl border border-[#0D5C3A]/10 text-xs text-[#0D5C3A] font-semibold text-center flex items-center justify-center gap-2">
+                    <Info size={16} className="shrink-0" />
+                    Terdeteksi menggunakan perangkat Apple (iOS)
+                  </div>
+                  <ol className="space-y-3.5 text-xs text-slate-600">
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">1</span>
+                      <span>Buka halaman ini menggunakan browser <strong>Safari</strong> bawaan iOS.</span>
+                    </li>
+                    <li className="flex gap-3 items-center">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">2</span>
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        Ketuk tombol <strong>Bagikan (Share)</strong>
+                        <Share className="inline-block text-blue-500 shrink-0" size={16} />
+                        pada bar menu bawah atau atas Safari.
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">3</span>
+                      <span>Gulir ke bawah dan ketuk opsi <strong>Tambahkan ke Layar Utama (Add to Home Screen)</strong>.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">4</span>
+                      <span>Ketuk <strong>Tambah (Add)</strong> di sudut kanan atas untuk mengonfirmasi.</span>
+                    </li>
+                  </ol>
+                </div>
+              ) : devicePlatform === "android" ? (
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#E8F5E9]/30 rounded-2xl border border-[#0D5C3A]/10 text-xs text-[#0D5C3A] font-semibold text-center flex items-center justify-center gap-2">
+                    <Info size={16} className="shrink-0" />
+                    Terdeteksi menggunakan perangkat Android
+                  </div>
+                  <ol className="space-y-3.5 text-xs text-slate-600">
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">1</span>
+                      <span>Buka halaman ini dengan browser <strong>Chrome</strong> atau browser bawaan Anda.</span>
+                    </li>
+                    <li className="flex gap-3 items-center">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">2</span>
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        Ketuk tombol menu <strong>titik tiga</strong>
+                        <MoreVertical className="inline-block shrink-0" size={16} />
+                        di sudut kanan atas browser.
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">3</span>
+                      <span>Pilih opsi <strong>Instal aplikasi</strong> atau <strong>Tambahkan ke Layar Utama</strong>.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">4</span>
+                      <span>Ikuti konfirmasi pop-up yang muncul untuk menyelesaikan pemasangan.</span>
+                    </li>
+                  </ol>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#E8F5E9]/30 rounded-2xl border border-[#0D5C3A]/10 text-xs text-[#0D5C3A] font-semibold text-center flex items-center justify-center gap-2">
+                    <Info size={16} className="shrink-0" />
+                    Terdeteksi menggunakan browser Komputer / Desktop
+                  </div>
+                  <ol className="space-y-3.5 text-xs text-slate-600">
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">1</span>
+                      <span>Gunakan browser berbasis Chromium seperti <strong>Google Chrome</strong> atau <strong>Microsoft Edge</strong>.</span>
+                    </li>
+                    <li className="flex gap-3 items-center">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">2</span>
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        Klik ikon <strong>Instal (gambar komputer/panah ke bawah)</strong>
+                        <Download className="inline-block text-[#0D5C3A] shrink-0" size={16} />
+                        di sebelah kanan kolom alamat URL (address bar).
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#E8F5E9] text-[#0D5C3A] font-bold flex items-center justify-center shrink-0">3</span>
+                      <span>Klik <strong>Instal</strong> pada dialog konfirmasi untuk menyelesaikannya.</span>
+                    </li>
+                  </ol>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8">
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="w-full inline-flex items-center justify-center py-3 rounded-xl bg-[#0D5C3A] text-white font-semibold text-sm hover:bg-[#084028] transition duration-250 shadow-md"
+              >
+                Saya Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
